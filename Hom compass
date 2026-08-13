@@ -1,0 +1,3 @@
+git remote add origin https://github.com/advaita-hash/HOM-COMPASS.git
+git branch -M main
+git push -u origin main
