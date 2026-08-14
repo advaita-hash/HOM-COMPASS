@@ -2,24 +2,31 @@ import { NavLink, Navigate, Route, Routes } from 'react-router-dom';
 import {
   Activity,
   BookOpen,
+  CalendarDays,
   Compass,
   FlaskConical,
   LayoutDashboard,
+  Library,
   Network,
   Users,
 } from 'lucide-react';
 import { isSupabaseConfigured } from './lib/supabase';
+import DashboardPage from './features/dashboard/DashboardPage';
+import LibraryPage from './features/library/LibraryPage';
+import RemedyOfTheDayPage from './features/remedy/RemedyOfTheDayPage';
+import MateriaMedicaPage from './features/materia-medica/MateriaMedicaPage';
 
 // ---------------------------------------------------------------------------
 // Application shell — sidebar navigation + routed module outlet.
-// Feature modules are stubbed for now; each will be built out in turn.
 // ---------------------------------------------------------------------------
 
 const NAV = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { to: '/remedy-of-the-day', label: 'Remedy of the Day', icon: CalendarDays },
   { to: '/repertory', label: 'Repertory', icon: BookOpen },
   { to: '/analysis', label: 'Repertorisation', icon: Activity },
   { to: '/materia-medica', label: 'Materia Medica', icon: FlaskConical },
+  { to: '/library', label: 'Library', icon: Library },
   { to: '/graph', label: 'Knowledge Graph', icon: Network },
   { to: '/patients', label: 'Patients & Cases', icon: Users },
 ] as const;
@@ -39,7 +46,7 @@ function Placeholder({ title }: { title: string }) {
 
 function Sidebar() {
   return (
-    <aside className="flex w-60 flex-col border-r border-slate-200 bg-white">
+    <aside className="flex w-60 shrink-0 flex-col border-r border-slate-200 bg-white">
       <div className="flex items-center gap-2 px-5 py-5">
         <Compass className="h-7 w-7 text-brand-600" />
         <div>
@@ -65,7 +72,7 @@ function Sidebar() {
               }`
             }
           >
-            <Icon className="h-4.5 w-4.5" />
+            <Icon className="h-[18px] w-[18px]" />
             {label}
           </NavLink>
         ))}
@@ -93,13 +100,13 @@ export default function App() {
       <main className="flex-1 overflow-auto">
         <Routes>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          <Route path="/dashboard" element={<Placeholder title="Dashboard" />} />
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/remedy-of-the-day" element={<RemedyOfTheDayPage />} />
           <Route path="/repertory" element={<Placeholder title="Repertory" />} />
           <Route path="/analysis" element={<Placeholder title="Repertorisation" />} />
-          <Route
-            path="/materia-medica"
-            element={<Placeholder title="Materia Medica" />}
-          />
+          <Route path="/materia-medica" element={<MateriaMedicaPage />} />
+          <Route path="/materia-medica/:remedyId" element={<MateriaMedicaPage />} />
+          <Route path="/library" element={<LibraryPage />} />
           <Route path="/graph" element={<Placeholder title="Knowledge Graph" />} />
           <Route path="/patients" element={<Placeholder title="Patients & Cases" />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />

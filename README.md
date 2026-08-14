@@ -6,10 +6,22 @@ Hompath Firefly), built on a **Supabase GraphRAG knowledge graph** (relational
 Node/Edge schema + `pgvector` for hybrid entity resolution) with a React /
 Tailwind frontend.
 
-> ⚠️ **Status: scaffolding.** The project skeleton, design system, routing
-> shell, Supabase client and the GraphRAG database schema are in place. The
-> feature modules (Repertory, Repertorisation, Materia Medica, Knowledge Graph,
-> Patients & Cases) are stubbed and will be implemented next.
+> ⚠️ **Status: early build.** The project skeleton, design system, routing
+> shell, Supabase client and the GraphRAG database schema are in place. Working
+> modules so far: **Dashboard**, **Remedy of the Day**, **Materia Medica**
+> (browse + search) and the **Library** (book uploads). Repertory,
+> Repertorisation, Knowledge Graph and Patients & Cases are still stubbed.
+
+### Implemented so far
+
+- **Dashboard** — daily remedy hero card + quick stats and actions.
+- **Remedy of the Day** — a short daily study card that rotates deterministically
+  through the bundled materia medica (same remedy for everyone on a given date).
+- **Materia Medica** — searchable list of classic polychrests with short-form
+  profiles (keynotes, mind, generals, modalities, representative rubrics).
+- **Library** — drag-and-drop upload of repertories / materia medica. In demo
+  mode books are catalogued locally (persisted in the browser); with a Supabase
+  backend the ingestion function parses them into the knowledge graph.
 
 ---
 
