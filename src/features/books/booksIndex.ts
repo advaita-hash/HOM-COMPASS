@@ -14,7 +14,7 @@ export const BOOKS: BookMeta[] = [
     blurb:
       'The classic bedside repertory-materia medica — concise, system-by-system remedy pictures with modalities and relationships.',
     cover: 'from-teal-600 to-emerald-500',
-    approxRemedies: 600,
+    approxRemedies: 632,
   },
   {
     id: 'tyler',
