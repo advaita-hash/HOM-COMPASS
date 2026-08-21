@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { CalendarDays, FlaskConical, Shuffle } from 'lucide-react';
 import { REMEDIES, remedyOfTheDay } from '../../data/remedies';
 import { RemedyDetail } from './RemedyDetail';
+import { BookCrossLinks } from '../books/BookCrossLinks';
 
 /** "Remedy of the Day" — a short daily study card, rotating deterministically. */
 export default function RemedyOfTheDayPage() {
@@ -42,6 +43,10 @@ export default function RemedyOfTheDayPage() {
       </div>
 
       <RemedyDetail remedy={remedy} />
+
+      <div className="mt-5">
+        <BookCrossLinks remedyName={remedy.name} />
+      </div>
 
       <div className="mt-6 flex items-center justify-between rounded-xl border border-dashed border-slate-300 bg-white/60 px-4 py-3 text-sm text-slate-500">
         <span className="inline-flex items-center gap-2">

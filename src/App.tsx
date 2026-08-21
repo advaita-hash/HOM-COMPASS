@@ -2,6 +2,7 @@ import { NavLink, Navigate, Route, Routes } from 'react-router-dom';
 import {
   Activity,
   BookOpen,
+  BookText,
   CalendarDays,
   Compass,
   FlaskConical,
@@ -15,6 +16,8 @@ import DashboardPage from './features/dashboard/DashboardPage';
 import LibraryPage from './features/library/LibraryPage';
 import RemedyOfTheDayPage from './features/remedy/RemedyOfTheDayPage';
 import MateriaMedicaPage from './features/materia-medica/MateriaMedicaPage';
+import BooksPage from './features/books/BooksPage';
+import BookReaderPage from './features/books/BookReaderPage';
 
 // ---------------------------------------------------------------------------
 // Application shell — sidebar navigation + routed module outlet.
@@ -26,6 +29,7 @@ const NAV = [
   { to: '/repertory', label: 'Repertory', icon: BookOpen },
   { to: '/analysis', label: 'Repertorisation', icon: Activity },
   { to: '/materia-medica', label: 'Materia Medica', icon: FlaskConical },
+  { to: '/books', label: 'Reference Books', icon: BookText },
   { to: '/library', label: 'Library', icon: Library },
   { to: '/graph', label: 'Knowledge Graph', icon: Network },
   { to: '/patients', label: 'Patients & Cases', icon: Users },
@@ -106,6 +110,9 @@ export default function App() {
           <Route path="/analysis" element={<Placeholder title="Repertorisation" />} />
           <Route path="/materia-medica" element={<MateriaMedicaPage />} />
           <Route path="/materia-medica/:remedyId" element={<MateriaMedicaPage />} />
+          <Route path="/books" element={<BooksPage />} />
+          <Route path="/books/:bookId" element={<BookReaderPage />} />
+          <Route path="/books/:bookId/:remedySlug" element={<BookReaderPage />} />
           <Route path="/library" element={<LibraryPage />} />
           <Route path="/graph" element={<Placeholder title="Knowledge Graph" />} />
           <Route path="/patients" element={<Placeholder title="Patients & Cases" />} />

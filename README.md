@@ -18,7 +18,12 @@ Tailwind frontend.
 - **Remedy of the Day** — a short daily study card that rotates deterministically
   through the bundled materia medica (same remedy for everyone on a given date).
 - **Materia Medica** — searchable list of classic polychrests with short-form
-  profiles (keynotes, mind, generals, modalities, representative rubrics).
+  profiles (keynotes, mind, generals, modalities, representative rubrics), with
+  cross-links to the full drug pictures in the reference books.
+- **Reference Books** — full-text materia medica, browsable and searchable by
+  remedy. Ships with two classic works (Boericke's *Pocket Manual* and Tyler's
+  *Homœopathic Drug Pictures*), served as static JSON and read in an in-app
+  reader. Extracted from source PDFs (Boericke via OCR).
 - **Library** — drag-and-drop upload of repertories / materia medica. In demo
   mode books are catalogued locally (persisted in the browser); with a Supabase
   backend the ingestion function parses them into the knowledge graph.

@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { ChevronLeft, FlaskConical, Search } from 'lucide-react';
 import { REMEDIES, getRemedyById } from '../../data/remedies';
 import { RemedyDetail } from '../remedy/RemedyDetail';
+import { BookCrossLinks } from '../books/BookCrossLinks';
 
 function RemedyList() {
   const [query, setQuery] = useState('');
@@ -88,6 +89,9 @@ export default function MateriaMedicaPage() {
         <ChevronLeft className="h-4 w-4" /> Back to Materia Medica
       </Link>
       <RemedyDetail remedy={remedy} />
+      <div className="mt-5">
+        <BookCrossLinks remedyName={remedy.name} />
+      </div>
     </div>
   );
 }
