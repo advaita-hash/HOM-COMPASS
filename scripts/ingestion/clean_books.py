@@ -56,17 +56,40 @@ def fix_label(label):
 # applied on word boundaries; capitalisation of the first letter is preserved.
 WORD_FIXES = {
     "aud": "and", "amd": "and", "aad": "and",
-    "fong": "long", "fong": "long",
+    "fong": "long",
     "nase": "nose", "stumach": "stomach", "stemach": "stomach",
     "femonade": "lemonade", "semarkable": "remarkable",
     "nasebleed": "nosebleed", "fendency": "tendency", "tendeney": "tendency",
-    "weemoptysis": "haemoptysis", "discharze": "discharge", "dischage": "discharge",
+    "weemoptysis": "haemoptysis", "hamoptysis": "haemoptysis",
+    "discharze": "discharge", "dischage": "discharge",
     "inflammatien": "inflammation", "eruptien": "eruption", "menstrua": "menstrual",
     "constipatien": "constipation", "sensatien": "sensation", "affectien": "affection",
-    "worse": "worse", "aggravatien": "aggravation", "amelioratien": "amelioration",
+    "aggravatien": "aggravation", "amelioratien": "amelioration",
     "respiratery": "respiratory", "extremites": "extremities", "abdemen": "abdomen",
     "swoolen": "swollen", "vemiting": "vomiting", "coug": "cough",
+    # verified deep whitelist (common OCR word-errors → correct words)
+    "cating": "eating", "fecling": "feeling", "fecls": "feels", "fecl": "feel",
+    "tecth": "teeth", "forchead": "forehead", "beart": "heart", "hetter": "better",
+    "heen": "been", "hody": "body", "cyes": "eyes", "paius": "pains",
+    "anxicty": "anxiety", "howels": "bowels", "worts": "warts", "contmual": "continual",
+    "membrancs": "membranes", "mation": "motion", "wakefut": "wakeful",
+    "nausca": "nausea", "uleers": "ulcers", "jtching": "itching",
+    "paipitation": "palpitation", "worsc": "worse", "wilf": "will",
 }
+
+# Systematic æ/œ medical families (OCR renders æ/œ as a, aa, e, ee, oe, cea).
+AE_OE_RULES = [
+    (r"\b([Dd])iarrh(?:aa|eea|ea|a)\b", r"\1iarrhoea"),
+    (r"\b([Gg])onorrh(?:aa|eea|ea|a)\b", r"\1onorrhoea"),
+    (r"\b([Ll])eucorrh(?:aa|eea|ea|cea|a)\b", r"\1eucorrhoea"),
+    (r"\b([Oo])torrh(?:aa|eea|ea|a)\b", r"\1otorrhoea"),
+    (r"\b([Hh])(?:a|ae|e)morrh", r"\1aemorrh"),
+    (r"\b([Dd])yspn(?:aa|ea|oea|a)\b", r"\1yspnoea"),
+    (r"\b([Aa])n(?:a|ae|e)mia\b", r"\1naemia"),
+    (r"\boedema\b", "oedema"), (r"\bedema\b", "oedema"),
+    (r"\boedematous\b", "oedematous"), (r"\bedematous\b", "oedematous"),
+    (r"\b([Ff])(?:oe|ae|e)ces\b", r"\1aeces"),
+]
 
 # Specific glued/@/# tokens best fixed by exact replacement.
 TOKEN_FIXES = {
@@ -102,6 +125,10 @@ def clean_ocr(text):
     t = re.sub(r"\s+([,;:.])", r"\1", t)               # space before punctuation
     t = re.sub(r"\.{3,}", "…", t)
     t = re.sub(r"[ \t]{2,}", " ", t)
+
+    # 3b. Systematic æ/œ medical-word normalisation.
+    for pat, rep in AE_OE_RULES:
+        t = re.sub(pat, rep, t)
 
     # 4. Curated word fixes (word-boundary, case-preserving).
     def wsub(m):
