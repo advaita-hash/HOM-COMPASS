@@ -19,6 +19,14 @@ method and the re-runnable cleanup step.
    - Boericke specifics: strip running page-headers, split `NAME—SYNONYM`
      headings on the em-dash, take the leading all-caps run as the remedy name,
      and fuzzy-dedupe OCR heading echoes.
+   - **Running-header recovery:** some monographs have no clean title line — the
+     name survives only in page-numbered running headers (e.g. `440 KREOSOTUM`).
+     A recovery pass reads single-name running headers to find remedies missing
+     from the detected titles and inserts boundaries for them (guarded against
+     continuation-page fragments by prefix/substring checks).
+   - **Title fixes:** a curated map corrects OCR-garbled remedy names, merges
+     duplicate fragments into their canonical entry, and repairs split two-word
+     titles (e.g. `MOSA` → *Cimicifuga Racemosa*, `RUBER` → *Cinnabaris*).
    - Output shape per book: `{ id, title, author, source, remedyCount,
      remedies: [{ slug, name, commonName, text }] }`.
 
