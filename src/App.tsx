@@ -18,6 +18,8 @@ import RemedyOfTheDayPage from './features/remedy/RemedyOfTheDayPage';
 import MateriaMedicaPage from './features/materia-medica/MateriaMedicaPage';
 import BooksPage from './features/books/BooksPage';
 import BookReaderPage from './features/books/BookReaderPage';
+import RepertoryPage from './features/repertory/RepertoryPage';
+import RepertorizationPage from './features/repertory/RepertorizationPage';
 
 // ---------------------------------------------------------------------------
 // Application shell — sidebar navigation + routed module outlet.
@@ -106,8 +108,8 @@ export default function App() {
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/remedy-of-the-day" element={<RemedyOfTheDayPage />} />
-          <Route path="/repertory" element={<Placeholder title="Repertory" />} />
-          <Route path="/analysis" element={<Placeholder title="Repertorisation" />} />
+          <Route path="/repertory" element={<RepertoryPage />} />
+          <Route path="/analysis" element={<RepertorizationPage />} />
           <Route path="/materia-medica" element={<MateriaMedicaPage />} />
           <Route path="/materia-medica/:remedyId" element={<MateriaMedicaPage />} />
           <Route path="/books" element={<BooksPage />} />

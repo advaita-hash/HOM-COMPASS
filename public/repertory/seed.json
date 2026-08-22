@@ -1,0 +1,1806 @@
+{
+"id": "seed",
+"title": "Seed Repertory",
+"author": "HOM-COMPASS",
+"source": "Study seed · classic Kent-style rubrics",
+"note": "A compact demo repertory. Replace with a full Kent ingestion when available.",
+"chapters": [
+"Mind",
+"Vertigo",
+"Head",
+"Eye",
+"Nose",
+"Face",
+"Mouth",
+"Throat",
+"Stomach",
+"Abdomen",
+"Rectum",
+"Bladder",
+"Male",
+"Female",
+"Respiration",
+"Cough",
+"Chest",
+"Back",
+"Extremities",
+"Sleep",
+"Chill",
+"Fever",
+"Perspiration",
+"Skin",
+"Generalities"
+],
+"rubricCount": 55,
+"rubrics": [
+{
+"id": "mind-anxiety",
+"chapter": "Mind",
+"rubric": "Anxiety",
+"remedies": [
+{
+"name": "Aconitum",
+"grade": 3
+},
+{
+"name": "Arsenicum Album",
+"grade": 3
+},
+{
+"name": "Phosphorus",
+"grade": 3
+},
+{
+"name": "Calcarea Carbonica",
+"grade": 2
+},
+{
+"name": "Causticum",
+"grade": 2
+},
+{
+"name": "Kali Arsenicum",
+"grade": 2
+},
+{
+"name": "Natrum Muriaticum",
+"grade": 2
+},
+{
+"name": "Ignatia",
+"grade": 2
+},
+{
+"name": "Nux Vomica",
+"grade": 2
+},
+{
+"name": "Pulsatilla",
+"grade": 1
+},
+{
+"name": "Lycopodium",
+"grade": 1
+},
+{
+"name": "Sepia",
+"grade": 1
+}
+]
+},
+{
+"id": "mind-anxiety-health-about",
+"chapter": "Mind",
+"rubric": "Anxiety, health, about",
+"remedies": [
+{
+"name": "Arsenicum Album",
+"grade": 3
+},
+{
+"name": "Calcarea Carbonica",
+"grade": 3
+},
+{
+"name": "Kali Arsenicum",
+"grade": 2
+},
+{
+"name": "Nitric Acid",
+"grade": 2
+},
+{
+"name": "Phosphorus",
+"grade": 2
+},
+{
+"name": "Nux Vomica",
+"grade": 1
+},
+{
+"name": "Sepia",
+"grade": 1
+},
+{
+"name": "Sulphur",
+"grade": 1
+}
+]
+},
+{
+"id": "mind-fear-death-of",
+"chapter": "Mind",
+"rubric": "Fear, death, of",
+"remedies": [
+{
+"name": "Aconitum",
+"grade": 3
+},
+{
+"name": "Arsenicum Album",
+"grade": 3
+},
+{
+"name": "Calcarea Carbonica",
+"grade": 2
+},
+{
+"name": "Phosphorus",
+"grade": 2
+},
+{
+"name": "Nitric Acid",
+"grade": 2
+},
+{
+"name": "Nux Vomica",
+"grade": 1
+},
+{
+"name": "Platina",
+"grade": 1
+},
+{
+"name": "Gelsemium",
+"grade": 1
+}
+]
+},
+{
+"id": "mind-grief-ailments-from",
+"chapter": "Mind",
+"rubric": "Grief, ailments from",
+"remedies": [
+{
+"name": "Ignatia",
+"grade": 3
+},
+{
+"name": "Natrum Muriaticum",
+"grade": 3
+},
+{
+"name": "Phosphoric Acid",
+"grade": 2
+},
+{
+"name": "Staphysagria",
+"grade": 2
+},
+{
+"name": "Causticum",
+"grade": 2
+},
+{
+"name": "Aurum",
+"grade": 1
+},
+{
+"name": "Pulsatilla",
+"grade": 1
+},
+{
+"name": "Lachesis",
+"grade": 1
+}
+]
+},
+{
+"id": "mind-consolation-aggravates",
+"chapter": "Mind",
+"rubric": "Consolation aggravates",
+"remedies": [
+{
+"name": "Natrum Muriaticum",
+"grade": 3
+},
+{
+"name": "Sepia",
+"grade": 3
+},
+{
+"name": "Silica",
+"grade": 2
+},
+{
+"name": "Ignatia",
+"grade": 2
+},
+{
+"name": "Lycopodium",
+"grade": 1
+},
+{
+"name": "Nitric Acid",
+"grade": 1
+},
+{
+"name": "Calcarea Phosphorica",
+"grade": 1
+}
+]
+},
+{
+"id": "mind-irritability",
+"chapter": "Mind",
+"rubric": "Irritability",
+"remedies": [
+{
+"name": "Nux Vomica",
+"grade": 3
+},
+{
+"name": "Bryonia",
+"grade": 3
+},
+{
+"name": "Chamomilla",
+"grade": 3
+},
+{
+"name": "Anacardium",
+"grade": 2
+},
+{
+"name": "Lycopodium",
+"grade": 2
+},
+{
+"name": "Sepia",
+"grade": 2
+},
+{
+"name": "Sulphur",
+"grade": 2
+},
+{
+"name": "Hepar",
+"grade": 2
+},
+{
+"name": "Natrum Muriaticum",
+"grade": 1
+},
+{
+"name": "Staphysagria",
+"grade": 1
+}
+]
+},
+{
+"id": "mind-weeping-consolation-aggravates",
+"chapter": "Mind",
+"rubric": "Weeping, consolation aggravates",
+"remedies": [
+{
+"name": "Natrum Muriaticum",
+"grade": 3
+},
+{
+"name": "Sepia",
+"grade": 2
+},
+{
+"name": "Silica",
+"grade": 2
+},
+{
+"name": "Ignatia",
+"grade": 1
+},
+{
+"name": "Lycopodium",
+"grade": 1
+}
+]
+},
+{
+"id": "mind-indifference-loved-ones-to",
+"chapter": "Mind",
+"rubric": "Indifference, loved ones, to",
+"remedies": [
+{
+"name": "Sepia",
+"grade": 3
+},
+{
+"name": "Phosphoric Acid",
+"grade": 2
+},
+{
+"name": "Natrum Muriaticum",
+"grade": 2
+},
+{
+"name": "Fluoric-acid",
+"grade": 2
+},
+{
+"name": "Lilium Tigrinum",
+"grade": 1
+},
+{
+"name": "Aurum",
+"grade": 1
+}
+]
+},
+{
+"id": "mind-fastidious",
+"chapter": "Mind",
+"rubric": "Fastidious",
+"remedies": [
+{
+"name": "Arsenicum Album",
+"grade": 3
+},
+{
+"name": "Nux Vomica",
+"grade": 2
+},
+{
+"name": "Anacardium",
+"grade": 1
+},
+{
+"name": "Graphites",
+"grade": 1
+},
+{
+"name": "Silica",
+"grade": 1
+}
+]
+},
+{
+"id": "mind-restlessness",
+"chapter": "Mind",
+"rubric": "Restlessness",
+"remedies": [
+{
+"name": "Arsenicum Album",
+"grade": 3
+},
+{
+"name": "Aconitum",
+"grade": 3
+},
+{
+"name": "Rhus Toxicodendron",
+"grade": 3
+},
+{
+"name": "Tarentula",
+"grade": 2
+},
+{
+"name": "Mercurius",
+"grade": 2
+},
+{
+"name": "Ferrum",
+"grade": 1
+},
+{
+"name": "Pulsatilla",
+"grade": 1
+}
+]
+},
+{
+"id": "mind-anticipation-ailments-from",
+"chapter": "Mind",
+"rubric": "Anticipation, ailments from",
+"remedies": [
+{
+"name": "Argentum Nitricum",
+"grade": 3
+},
+{
+"name": "Gelsemium",
+"grade": 3
+},
+{
+"name": "Lycopodium",
+"grade": 3
+},
+{
+"name": "Silica",
+"grade": 2
+},
+{
+"name": "Arsenicum Album",
+"grade": 1
+},
+{
+"name": "Phosphoric Acid",
+"grade": 1
+}
+]
+},
+{
+"id": "vertigo-vertigo-general",
+"chapter": "Vertigo",
+"rubric": "Vertigo, general",
+"remedies": [
+{
+"name": "Conium",
+"grade": 3
+},
+{
+"name": "Cocculus",
+"grade": 2
+},
+{
+"name": "Gelsemium",
+"grade": 2
+},
+{
+"name": "Bryonia",
+"grade": 2
+},
+{
+"name": "Phosphorus",
+"grade": 2
+},
+{
+"name": "Pulsatilla",
+"grade": 1
+},
+{
+"name": "Nux Vomica",
+"grade": 1
+},
+{
+"name": "Silica",
+"grade": 1
+}
+]
+},
+{
+"id": "head-pain-headache-general",
+"chapter": "Head",
+"rubric": "Pain, headache, general",
+"remedies": [
+{
+"name": "Belladonna",
+"grade": 3
+},
+{
+"name": "Bryonia",
+"grade": 3
+},
+{
+"name": "Natrum Muriaticum",
+"grade": 3
+},
+{
+"name": "Nux Vomica",
+"grade": 2
+},
+{
+"name": "Sanguinaria",
+"grade": 2
+},
+{
+"name": "Silica",
+"grade": 2
+},
+{
+"name": "Glonoine",
+"grade": 2
+},
+{
+"name": "Spigelia",
+"grade": 2
+},
+{
+"name": "Gelsemium",
+"grade": 1
+}
+]
+},
+{
+"id": "head-pain-sun-from",
+"chapter": "Head",
+"rubric": "Pain, sun, from",
+"remedies": [
+{
+"name": "Natrum Muriaticum",
+"grade": 3
+},
+{
+"name": "Glonoine",
+"grade": 3
+},
+{
+"name": "Belladonna",
+"grade": 2
+},
+{
+"name": "Lachesis",
+"grade": 1
+},
+{
+"name": "Gelsemium",
+"grade": 1
+}
+]
+},
+{
+"id": "head-pain-throbbing",
+"chapter": "Head",
+"rubric": "Pain, throbbing",
+"remedies": [
+{
+"name": "Belladonna",
+"grade": 3
+},
+{
+"name": "Glonoine",
+"grade": 3
+},
+{
+"name": "China",
+"grade": 2
+},
+{
+"name": "Natrum Muriaticum",
+"grade": 2
+},
+{
+"name": "Sanguinaria",
+"grade": 2
+},
+{
+"name": "Melilotus",
+"grade": 1
+}
+]
+},
+{
+"id": "eye-inflammation-conjunctivitis",
+"chapter": "Eye",
+"rubric": "Inflammation, conjunctivitis",
+"remedies": [
+{
+"name": "Belladonna",
+"grade": 3
+},
+{
+"name": "Euphrasia",
+"grade": 3
+},
+{
+"name": "Argentum Nitricum",
+"grade": 2
+},
+{
+"name": "Apis",
+"grade": 2
+},
+{
+"name": "Pulsatilla",
+"grade": 2
+},
+{
+"name": "Mercurius",
+"grade": 2
+},
+{
+"name": "Sulphur",
+"grade": 1
+}
+]
+},
+{
+"id": "nose-coryza",
+"chapter": "Nose",
+"rubric": "Coryza",
+"remedies": [
+{
+"name": "Allium Cepa",
+"grade": 3
+},
+{
+"name": "Euphrasia",
+"grade": 2
+},
+{
+"name": "Arsenicum Album",
+"grade": 2
+},
+{
+"name": "Natrum Muriaticum",
+"grade": 2
+},
+{
+"name": "Nux Vomica",
+"grade": 2
+},
+{
+"name": "Gelsemium",
+"grade": 1
+},
+{
+"name": "Sabadilla",
+"grade": 1
+}
+]
+},
+{
+"id": "face-neuralgia-prosopalgia",
+"chapter": "Face",
+"rubric": "Neuralgia, prosopalgia",
+"remedies": [
+{
+"name": "Spigelia",
+"grade": 3
+},
+{
+"name": "Colocynth",
+"grade": 2
+},
+{
+"name": "Magnesia Phosphorica",
+"grade": 2
+},
+{
+"name": "Belladonna",
+"grade": 2
+},
+{
+"name": "Verbascum",
+"grade": 1
+},
+{
+"name": "Chamomilla",
+"grade": 1
+}
+]
+},
+{
+"id": "mouth-salivation",
+"chapter": "Mouth",
+"rubric": "Salivation",
+"remedies": [
+{
+"name": "Mercurius",
+"grade": 3
+},
+{
+"name": "Iodum",
+"grade": 2
+},
+{
+"name": "Pulsatilla",
+"grade": 1
+},
+{
+"name": "Nitric Acid",
+"grade": 1
+},
+{
+"name": "Baryta Carbonica",
+"grade": 1
+}
+]
+},
+{
+"id": "throat-pain-sore-throat",
+"chapter": "Throat",
+"rubric": "Pain, sore throat",
+"remedies": [
+{
+"name": "Belladonna",
+"grade": 3
+},
+{
+"name": "Lachesis",
+"grade": 3
+},
+{
+"name": "Mercurius",
+"grade": 3
+},
+{
+"name": "Phytolacca",
+"grade": 2
+},
+{
+"name": "Apis",
+"grade": 2
+},
+{
+"name": "Hepar",
+"grade": 2
+},
+{
+"name": "Lycopodium",
+"grade": 2
+},
+{
+"name": "Baryta Carbonica",
+"grade": 1
+}
+]
+},
+{
+"id": "stomach-nausea",
+"chapter": "Stomach",
+"rubric": "Nausea",
+"remedies": [
+{
+"name": "Ipecacuanha",
+"grade": 3
+},
+{
+"name": "Arsenicum Album",
+"grade": 2
+},
+{
+"name": "Nux Vomica",
+"grade": 2
+},
+{
+"name": "Pulsatilla",
+"grade": 2
+},
+{
+"name": "Tabacum",
+"grade": 2
+},
+{
+"name": "Sepia",
+"grade": 1
+},
+{
+"name": "Colchicum",
+"grade": 1
+}
+]
+},
+{
+"id": "stomach-thirst-thirstless",
+"chapter": "Stomach",
+"rubric": "Thirst, thirstless",
+"remedies": [
+{
+"name": "Pulsatilla",
+"grade": 3
+},
+{
+"name": "Apis",
+"grade": 2
+},
+{
+"name": "Gelsemium",
+"grade": 1
+},
+{
+"name": "Nux Moschata",
+"grade": 1
+}
+]
+},
+{
+"id": "stomach-thirst-large-quantities",
+"chapter": "Stomach",
+"rubric": "Thirst, large quantities",
+"remedies": [
+{
+"name": "Bryonia",
+"grade": 3
+},
+{
+"name": "Natrum Muriaticum",
+"grade": 2
+},
+{
+"name": "Phosphorus",
+"grade": 2
+},
+{
+"name": "Sulphur",
+"grade": 1
+},
+{
+"name": "Arsenicum Album",
+"grade": 1
+}
+]
+},
+{
+"id": "stomach-desires-sweets",
+"chapter": "Stomach",
+"rubric": "Desires, sweets",
+"remedies": [
+{
+"name": "Argentum Nitricum",
+"grade": 3
+},
+{
+"name": "Lycopodium",
+"grade": 2
+},
+{
+"name": "Sulphur",
+"grade": 2
+},
+{
+"name": "China",
+"grade": 1
+},
+{
+"name": "Kali Carbonicum",
+"grade": 1
+}
+]
+},
+{
+"id": "stomach-desires-salt",
+"chapter": "Stomach",
+"rubric": "Desires, salt",
+"remedies": [
+{
+"name": "Natrum Muriaticum",
+"grade": 3
+},
+{
+"name": "Calcarea Carbonica",
+"grade": 1
+},
+{
+"name": "Carbo Vegetabilis",
+"grade": 1
+},
+{
+"name": "Phosphorus",
+"grade": 1
+}
+]
+},
+{
+"id": "abdomen-flatulence-distension",
+"chapter": "Abdomen",
+"rubric": "Flatulence, distension",
+"remedies": [
+{
+"name": "Lycopodium",
+"grade": 3
+},
+{
+"name": "China",
+"grade": 3
+},
+{
+"name": "Carbo Vegetabilis",
+"grade": 3
+},
+{
+"name": "Argentum Nitricum",
+"grade": 2
+},
+{
+"name": "Nux Vomica",
+"grade": 1
+},
+{
+"name": "Chamomilla",
+"grade": 1
+}
+]
+},
+{
+"id": "abdomen-pain-cramping-colic",
+"chapter": "Abdomen",
+"rubric": "Pain, cramping, colic",
+"remedies": [
+{
+"name": "Colocynth",
+"grade": 3
+},
+{
+"name": "Magnesia Phosphorica",
+"grade": 3
+},
+{
+"name": "Chamomilla",
+"grade": 2
+},
+{
+"name": "Dioscorea",
+"grade": 2
+},
+{
+"name": "Nux Vomica",
+"grade": 2
+},
+{
+"name": "Belladonna",
+"grade": 1
+}
+]
+},
+{
+"id": "rectum-constipation",
+"chapter": "Rectum",
+"rubric": "Constipation",
+"remedies": [
+{
+"name": "Nux Vomica",
+"grade": 3
+},
+{
+"name": "Bryonia",
+"grade": 2
+},
+{
+"name": "Alumina",
+"grade": 2
+},
+{
+"name": "Silica",
+"grade": 2
+},
+{
+"name": "Lycopodium",
+"grade": 2
+},
+{
+"name": "Opium",
+"grade": 2
+},
+{
+"name": "Sepia",
+"grade": 1
+},
+{
+"name": "Sulphur",
+"grade": 1
+}
+]
+},
+{
+"id": "rectum-diarrhoea",
+"chapter": "Rectum",
+"rubric": "Diarrhoea",
+"remedies": [
+{
+"name": "Arsenicum Album",
+"grade": 3
+},
+{
+"name": "Podophyllum",
+"grade": 3
+},
+{
+"name": "Sulphur",
+"grade": 2
+},
+{
+"name": "Aloe",
+"grade": 2
+},
+{
+"name": "Veratrum",
+"grade": 2
+},
+{
+"name": "Chamomilla",
+"grade": 2
+},
+{
+"name": "Mercurius",
+"grade": 1
+}
+]
+},
+{
+"id": "rectum-urging-ineffectual",
+"chapter": "Rectum",
+"rubric": "Urging, ineffectual",
+"remedies": [
+{
+"name": "Nux Vomica",
+"grade": 3
+},
+{
+"name": "Mercurius",
+"grade": 2
+},
+{
+"name": "Lycopodium",
+"grade": 1
+},
+{
+"name": "Rhus Toxicodendron",
+"grade": 1
+}
+]
+},
+{
+"id": "bladder-urination-frequent",
+"chapter": "Bladder",
+"rubric": "Urination, frequent",
+"remedies": [
+{
+"name": "Pulsatilla",
+"grade": 2
+},
+{
+"name": "Causticum",
+"grade": 2
+},
+{
+"name": "Sulphur",
+"grade": 2
+},
+{
+"name": "Phosphorus",
+"grade": 1
+},
+{
+"name": "Natrum Muriaticum",
+"grade": 1
+}
+]
+},
+{
+"id": "male-sexual-desire-increased",
+"chapter": "Male",
+"rubric": "Sexual desire, increased",
+"remedies": [
+{
+"name": "Phosphorus",
+"grade": 2
+},
+{
+"name": "Platina",
+"grade": 2
+},
+{
+"name": "Nux Vomica",
+"grade": 2
+},
+{
+"name": "Cantharis",
+"grade": 2
+},
+{
+"name": "Lycopodium",
+"grade": 1
+}
+]
+},
+{
+"id": "female-menses-before-aggravation",
+"chapter": "Female",
+"rubric": "Menses, before, aggravation",
+"remedies": [
+{
+"name": "Sepia",
+"grade": 3
+},
+{
+"name": "Lachesis",
+"grade": 3
+},
+{
+"name": "Pulsatilla",
+"grade": 2
+},
+{
+"name": "Natrum Muriaticum",
+"grade": 2
+},
+{
+"name": "Calcarea Carbonica",
+"grade": 2
+},
+{
+"name": "Lycopodium",
+"grade": 1
+}
+]
+},
+{
+"id": "female-bearing-down-sensation",
+"chapter": "Female",
+"rubric": "Bearing down sensation",
+"remedies": [
+{
+"name": "Sepia",
+"grade": 3
+},
+{
+"name": "Lilium Tigrinum",
+"grade": 3
+},
+{
+"name": "Belladonna",
+"grade": 2
+},
+{
+"name": "Murex",
+"grade": 2
+},
+{
+"name": "Platina",
+"grade": 1
+},
+{
+"name": "Lachesis",
+"grade": 1
+}
+]
+},
+{
+"id": "respiration-asthmatic",
+"chapter": "Respiration",
+"rubric": "Asthmatic",
+"remedies": [
+{
+"name": "Arsenicum Album",
+"grade": 3
+},
+{
+"name": "Ipecacuanha",
+"grade": 2
+},
+{
+"name": "Nux Vomica",
+"grade": 2
+},
+{
+"name": "Kali Carbonicum",
+"grade": 2
+},
+{
+"name": "Antimonium Tartaricum",
+"grade": 2
+},
+{
+"name": "Lobelia",
+"grade": 2
+},
+{
+"name": "Spongia",
+"grade": 1
+}
+]
+},
+{
+"id": "cough-dry-cough",
+"chapter": "Cough",
+"rubric": "Dry cough",
+"remedies": [
+{
+"name": "Bryonia",
+"grade": 3
+},
+{
+"name": "Rumex",
+"grade": 2
+},
+{
+"name": "Spongia",
+"grade": 2
+},
+{
+"name": "Phosphorus",
+"grade": 2
+},
+{
+"name": "Sticta",
+"grade": 2
+},
+{
+"name": "Aconitum",
+"grade": 1
+},
+{
+"name": "Drosera",
+"grade": 1
+}
+]
+},
+{
+"id": "cough-loose-rattling",
+"chapter": "Cough",
+"rubric": "Loose, rattling",
+"remedies": [
+{
+"name": "Antimonium Tartaricum",
+"grade": 3
+},
+{
+"name": "Ipecacuanha",
+"grade": 2
+},
+{
+"name": "Pulsatilla",
+"grade": 2
+},
+{
+"name": "Kali Sulphuricum",
+"grade": 1
+},
+{
+"name": "Hepar",
+"grade": 1
+}
+]
+},
+{
+"id": "chest-palpitation",
+"chapter": "Chest",
+"rubric": "Palpitation",
+"remedies": [
+{
+"name": "Aconitum",
+"grade": 2
+},
+{
+"name": "Digitalis",
+"grade": 2
+},
+{
+"name": "Spigelia",
+"grade": 2
+},
+{
+"name": "Lachesis",
+"grade": 2
+},
+{
+"name": "Cactus",
+"grade": 2
+},
+{
+"name": "Natrum Muriaticum",
+"grade": 1
+}
+]
+},
+{
+"id": "back-pain-lumbar",
+"chapter": "Back",
+"rubric": "Pain, lumbar",
+"remedies": [
+{
+"name": "Rhus Toxicodendron",
+"grade": 3
+},
+{
+"name": "Bryonia",
+"grade": 2
+},
+{
+"name": "Nux Vomica",
+"grade": 2
+},
+{
+"name": "Kali Carbonicum",
+"grade": 2
+},
+{
+"name": "Berberis",
+"grade": 2
+},
+{
+"name": "Sepia",
+"grade": 1
+}
+]
+},
+{
+"id": "extremities-pain-rheumatic",
+"chapter": "Extremities",
+"rubric": "Pain, rheumatic",
+"remedies": [
+{
+"name": "Rhus Toxicodendron",
+"grade": 3
+},
+{
+"name": "Bryonia",
+"grade": 3
+},
+{
+"name": "Pulsatilla",
+"grade": 2
+},
+{
+"name": "Colchicum",
+"grade": 2
+},
+{
+"name": "Kalmia",
+"grade": 2
+},
+{
+"name": "Ledum",
+"grade": 2
+},
+{
+"name": "Causticum",
+"grade": 1
+}
+]
+},
+{
+"id": "extremities-restless-legs",
+"chapter": "Extremities",
+"rubric": "Restless legs",
+"remedies": [
+{
+"name": "Zincum",
+"grade": 3
+},
+{
+"name": "Rhus Toxicodendron",
+"grade": 2
+},
+{
+"name": "Arsenicum Album",
+"grade": 1
+},
+{
+"name": "Causticum",
+"grade": 1
+},
+{
+"name": "Tarentula",
+"grade": 1
+}
+]
+},
+{
+"id": "sleep-sleeplessness-insomnia",
+"chapter": "Sleep",
+"rubric": "Sleeplessness, insomnia",
+"remedies": [
+{
+"name": "Coffea",
+"grade": 3
+},
+{
+"name": "Nux Vomica",
+"grade": 2
+},
+{
+"name": "Arsenicum Album",
+"grade": 2
+},
+{
+"name": "Pulsatilla",
+"grade": 2
+},
+{
+"name": "Cocculus",
+"grade": 2
+},
+{
+"name": "Ignatia",
+"grade": 1
+},
+{
+"name": "Aconitum",
+"grade": 1
+}
+]
+},
+{
+"id": "sleep-sleepiness-drowsiness",
+"chapter": "Sleep",
+"rubric": "Sleepiness, drowsiness",
+"remedies": [
+{
+"name": "Nux Moschata",
+"grade": 3
+},
+{
+"name": "Opium",
+"grade": 2
+},
+{
+"name": "Antimonium Tartaricum",
+"grade": 2
+},
+{
+"name": "Gelsemium",
+"grade": 2
+},
+{
+"name": "Phosphoric Acid",
+"grade": 1
+}
+]
+},
+{
+"id": "chill-chilliness-general",
+"chapter": "Chill",
+"rubric": "Chilliness, general",
+"remedies": [
+{
+"name": "Nux Vomica",
+"grade": 3
+},
+{
+"name": "Arsenicum Album",
+"grade": 2
+},
+{
+"name": "Silica",
+"grade": 2
+},
+{
+"name": "Calcarea Carbonica",
+"grade": 2
+},
+{
+"name": "Hepar",
+"grade": 2
+},
+{
+"name": "Pulsatilla",
+"grade": 1
+}
+]
+},
+{
+"id": "fever-heat-general",
+"chapter": "Fever",
+"rubric": "Heat, general",
+"remedies": [
+{
+"name": "Aconitum",
+"grade": 3
+},
+{
+"name": "Belladonna",
+"grade": 3
+},
+{
+"name": "Arsenicum Album",
+"grade": 2
+},
+{
+"name": "Sulphur",
+"grade": 2
+},
+{
+"name": "Bryonia",
+"grade": 2
+},
+{
+"name": "Gelsemium",
+"grade": 1
+}
+]
+},
+{
+"id": "perspiration-profuse",
+"chapter": "Perspiration",
+"rubric": "Profuse",
+"remedies": [
+{
+"name": "Mercurius",
+"grade": 3
+},
+{
+"name": "Calcarea Carbonica",
+"grade": 2
+},
+{
+"name": "Silica",
+"grade": 2
+},
+{
+"name": "China",
+"grade": 2
+},
+{
+"name": "Sambucus",
+"grade": 1
+},
+{
+"name": "Sulphur",
+"grade": 1
+}
+]
+},
+{
+"id": "skin-itching",
+"chapter": "Skin",
+"rubric": "Itching",
+"remedies": [
+{
+"name": "Sulphur",
+"grade": 3
+},
+{
+"name": "Rhus Toxicodendron",
+"grade": 2
+},
+{
+"name": "Arsenicum Album",
+"grade": 2
+},
+{
+"name": "Mezereum",
+"grade": 2
+},
+{
+"name": "Psorinum",
+"grade": 2
+},
+{
+"name": "Dolichos",
+"grade": 1
+}
+]
+},
+{
+"id": "skin-eruptions-urticaria",
+"chapter": "Skin",
+"rubric": "Eruptions, urticaria",
+"remedies": [
+{
+"name": "Apis",
+"grade": 3
+},
+{
+"name": "Urtica Urens",
+"grade": 3
+},
+{
+"name": "Rhus Toxicodendron",
+"grade": 2
+},
+{
+"name": "Natrum Muriaticum",
+"grade": 1
+},
+{
+"name": "Sulphur",
+"grade": 1
+}
+]
+},
+{
+"id": "generalities-aggravation-warmth",
+"chapter": "Generalities",
+"rubric": "Aggravation, warmth",
+"remedies": [
+{
+"name": "Pulsatilla",
+"grade": 3
+},
+{
+"name": "Sulphur",
+"grade": 2
+},
+{
+"name": "Lachesis",
+"grade": 2
+},
+{
+"name": "Apis",
+"grade": 2
+},
+{
+"name": "Iodum",
+"grade": 2
+},
+{
+"name": "Kali Sulphuricum",
+"grade": 1
+}
+]
+},
+{
+"id": "generalities-aggravation-cold",
+"chapter": "Generalities",
+"rubric": "Aggravation, cold",
+"remedies": [
+{
+"name": "Arsenicum Album",
+"grade": 3
+},
+{
+"name": "Nux Vomica",
+"grade": 3
+},
+{
+"name": "Hepar",
+"grade": 2
+},
+{
+"name": "Silica",
+"grade": 2
+},
+{
+"name": "Rhus Toxicodendron",
+"grade": 2
+},
+{
+"name": "Calcarea Carbonica",
+"grade": 2
+},
+{
+"name": "Dulcamara",
+"grade": 2
+}
+]
+},
+{
+"id": "generalities-amelioration-open-air",
+"chapter": "Generalities",
+"rubric": "Amelioration, open air",
+"remedies": [
+{
+"name": "Pulsatilla",
+"grade": 3
+},
+{
+"name": "Natrum Sulphuricum",
+"grade": 2
+},
+{
+"name": "Argentum Nitricum",
+"grade": 2
+},
+{
+"name": "Apis",
+"grade": 1
+},
+{
+"name": "Sulphur",
+"grade": 1
+}
+]
+},
+{
+"id": "generalities-right-sided",
+"chapter": "Generalities",
+"rubric": "Right sided",
+"remedies": [
+{
+"name": "Lycopodium",
+"grade": 3
+},
+{
+"name": "Belladonna",
+"grade": 2
+},
+{
+"name": "Apis",
+"grade": 2
+},
+{
+"name": "Sanguinaria",
+"grade": 2
+},
+{
+"name": "Chelidonium",
+"grade": 2
+},
+{
+"name": "Bryonia",
+"grade": 1
+}
+]
+},
+{
+"id": "generalities-left-sided",
+"chapter": "Generalities",
+"rubric": "Left sided",
+"remedies": [
+{
+"name": "Lachesis",
+"grade": 3
+},
+{
+"name": "Phosphorus",
+"grade": 2
+},
+{
+"name": "Sepia",
+"grade": 2
+},
+{
+"name": "Argentum Nitricum",
+"grade": 1
+},
+{
+"name": "Spigelia",
+"grade": 1
+}
+]
+},
+{
+"id": "generalities-periodicity",
+"chapter": "Generalities",
+"rubric": "Periodicity",
+"remedies": [
+{
+"name": "China",
+"grade": 3
+},
+{
+"name": "Arsenicum Album",
+"grade": 2
+},
+{
+"name": "Cedron",
+"grade": 2
+},
+{
+"name": "Natrum Muriaticum",
+"grade": 2
+},
+{
+"name": "Sulphur",
+"grade": 1
+}
+]
+},
+{
+"id": "generalities-weakness-prostration",
+"chapter": "Generalities",
+"rubric": "Weakness, prostration",
+"remedies": [
+{
+"name": "Arsenicum Album",
+"grade": 3
+},
+{
+"name": "China",
+"grade": 3
+},
+{
+"name": "Phosphoric Acid",
+"grade": 2
+},
+{
+"name": "Gelsemium",
+"grade": 2
+},
+{
+"name": "Muriatic Acid",
+"grade": 2
+},
+{
+"name": "Carbo Vegetabilis",
+"grade": 2
+},
+{
+"name": "Picric Acid",
+"grade": 1
+}
+]
+}
+]
+}

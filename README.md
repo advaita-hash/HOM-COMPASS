@@ -20,6 +20,12 @@ Tailwind frontend.
 - **Materia Medica** — searchable list of classic polychrests with short-form
   profiles (keynotes, mind, generals, modalities, representative rubrics), with
   cross-links to the full drug pictures in the reference books.
+- **Repertory** — searchable, chapter-filterable rubrics with grade-coloured
+  remedy lists; add rubrics to the repertorisation worksheet in one click.
+- **Repertorisation** — the analysis board: a rubric × remedy grid with live,
+  grade-weighted scoring (Σ grade × rubric intensity), remedy ranking, adjustable
+  rubric intensities, and cross-links to the reference books. Ships with a study
+  seed repertory (55 classic rubrics) pending a full Kent ingestion.
 - **Reference Books** — full-text materia medica, browsable and searchable by
   remedy. Ships with two classic works (Boericke's *Pocket Manual* and Tyler's
   *Homœopathic Drug Pictures*), served as static JSON and read in an in-app
