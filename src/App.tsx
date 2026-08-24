@@ -9,6 +9,7 @@ import {
   LayoutDashboard,
   Library,
   Network,
+  Search,
   Users,
 } from 'lucide-react';
 import { isSupabaseConfigured } from './lib/supabase';
@@ -20,6 +21,10 @@ import BooksPage from './features/books/BooksPage';
 import BookReaderPage from './features/books/BookReaderPage';
 import RepertoryPage from './features/repertory/RepertoryPage';
 import RepertorizationPage from './features/repertory/RepertorizationPage';
+import GlobalSearchPage from './features/search/GlobalSearchPage';
+import PatientsPage from './features/patients/PatientsPage';
+import PatientDetailPage from './features/patients/PatientDetailPage';
+import KnowledgeGraphPage from './features/graph/KnowledgeGraphPage';
 
 // ---------------------------------------------------------------------------
 // Application shell — sidebar navigation + routed module outlet.
@@ -27,6 +32,7 @@ import RepertorizationPage from './features/repertory/RepertorizationPage';
 
 const NAV = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { to: '/search', label: 'Search', icon: Search },
   { to: '/remedy-of-the-day', label: 'Remedy of the Day', icon: CalendarDays },
   { to: '/repertory', label: 'Repertory', icon: BookOpen },
   { to: '/analysis', label: 'Repertorisation', icon: Activity },
@@ -36,19 +42,6 @@ const NAV = [
   { to: '/graph', label: 'Knowledge Graph', icon: Network },
   { to: '/patients', label: 'Patients & Cases', icon: Users },
 ] as const;
-
-function Placeholder({ title }: { title: string }) {
-  return (
-    <div className="p-8">
-      <h1 className="text-2xl font-semibold text-slate-800">{title}</h1>
-      <p className="mt-2 max-w-prose text-sm text-slate-500">
-        This module is scaffolded and will be implemented next. The application
-        shell, routing, design system, Supabase client and the GraphRAG database
-        schema are already in place.
-      </p>
-    </div>
-  );
-}
 
 function Sidebar() {
   return (
@@ -116,8 +109,10 @@ export default function App() {
           <Route path="/books/:bookId" element={<BookReaderPage />} />
           <Route path="/books/:bookId/:remedySlug" element={<BookReaderPage />} />
           <Route path="/library" element={<LibraryPage />} />
-          <Route path="/graph" element={<Placeholder title="Knowledge Graph" />} />
-          <Route path="/patients" element={<Placeholder title="Patients & Cases" />} />
+          <Route path="/graph" element={<KnowledgeGraphPage />} />
+          <Route path="/search" element={<GlobalSearchPage />} />
+          <Route path="/patients" element={<PatientsPage />} />
+          <Route path="/patients/:patientId" element={<PatientDetailPage />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </main>
