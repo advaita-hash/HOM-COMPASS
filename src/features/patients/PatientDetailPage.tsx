@@ -70,10 +70,10 @@ function CaseCard({ caseId }: { caseId: string }) {
       />
 
       <Link
-        to="/repertory"
+        to="/analysis"
         className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-brand-600 hover:underline"
       >
-        <StickyNote className="h-3.5 w-3.5" /> Repertorise these symptoms →
+        <StickyNote className="h-3.5 w-3.5" /> Open the case workspace →
       </Link>
     </div>
   );

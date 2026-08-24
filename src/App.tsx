@@ -35,12 +35,12 @@ const NAV = [
   { to: '/search', label: 'Search', icon: Search },
   { to: '/remedy-of-the-day', label: 'Remedy of the Day', icon: CalendarDays },
   { to: '/repertory', label: 'Repertory', icon: BookOpen },
-  { to: '/analysis', label: 'Repertorisation', icon: Activity },
+  { to: '/analysis', label: 'Cases', icon: Activity },
   { to: '/materia-medica', label: 'Materia Medica', icon: FlaskConical },
   { to: '/books', label: 'Reference Books', icon: BookText },
   { to: '/library', label: 'Library', icon: Library },
   { to: '/graph', label: 'Knowledge Graph', icon: Network },
-  { to: '/patients', label: 'Patients & Cases', icon: Users },
+  { to: '/patients', label: 'Patients', icon: Users },
 ] as const;
 
 function Sidebar() {
