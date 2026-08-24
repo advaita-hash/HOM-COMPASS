@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { ChevronLeft, Loader2, Search } from 'lucide-react';
 import { getBookMeta, useBook } from './booksIndex';
+import { DrugPictureView } from './DrugPictureView';
 import type { BookRemedy } from './types';
 
 function RemedyText({ remedy }: { remedy: BookRemedy }) {
@@ -30,6 +31,7 @@ export default function BookReaderPage() {
   const meta = getBookMeta(bookId);
   const { data: book, isLoading, isError, error } = useBook(bookId);
   const [query, setQuery] = useState(searchParams.get('q') ?? '');
+  const [view, setView] = useState<'portrait' | 'full'>('portrait');
 
   const q = query.trim().toLowerCase();
   const remedies = book?.remedies ?? [];
@@ -121,7 +123,24 @@ export default function BookReaderPage() {
           )}
           {selected ? (
             <div className="mx-auto max-w-2xl">
-              <RemedyText remedy={selected} />
+              <div className="mb-4 inline-flex rounded-lg border border-slate-200 p-0.5 text-sm">
+                {(['portrait', 'full'] as const).map((v) => (
+                  <button
+                    key={v}
+                    onClick={() => setView(v)}
+                    className={`rounded-md px-3 py-1 font-medium transition-colors ${
+                      view === v ? 'bg-brand-600 text-white' : 'text-slate-600 hover:bg-slate-100'
+                    }`}
+                  >
+                    {v === 'portrait' ? 'Drug picture' : 'Full text'}
+                  </button>
+                ))}
+              </div>
+              {view === 'portrait' ? (
+                <DrugPictureView remedy={selected} />
+              ) : (
+                <RemedyText remedy={selected} />
+              )}
             </div>
           ) : (
             !isLoading && (
