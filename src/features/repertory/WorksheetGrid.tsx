@@ -89,8 +89,8 @@ export function WorksheetGrid({ rep }: { rep: Repertory | undefined }) {
               if (!rubric) return null;
               return (
                 <tr key={rubricId} className="border-b border-slate-100 hover:bg-slate-50">
-                  <td className="sticky left-0 z-10 max-w-[240px] bg-white px-3 py-2">
-                    <div className="truncate" title={rubric.rubric}>
+                  <td className="sticky left-0 z-10 w-[360px] min-w-[240px] max-w-[360px] bg-white px-3 py-2 align-top">
+                    <div className="break-words">
                       <span className="text-[10px] uppercase tracking-wide text-slate-400">
                         {rubric.chapter}
                       </span>{' '}

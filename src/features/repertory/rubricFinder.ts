@@ -49,6 +49,20 @@ const SYNONYMS: Record<string, string[]> = {
   // times
   morning: ['morning'], evening: ['evening'], night: ['night'], midnight: ['midnight'],
   afternoon: ['afternoon'], noon: ['noon'],
+  // general modalities (mostly live in the Generalities chapter)
+  motion: ['motion'], movement: ['motion'], moving: ['motion'], exertion: ['exertion'],
+  rest: ['rest'], resting: ['rest'], touch: ['touch'], touched: ['touch'],
+  pressure: ['pressure'], lying: ['lying'], standing: ['standing'], walking: ['walking'],
+  sitting: ['sitting'], stooping: ['stooping'], ascending: ['ascending'],
+  air: ['air'], outdoors: ['air', 'open'], outside: ['air', 'open'], open: ['open'],
+  weather: ['weather'], storm: ['thunderstorm', 'storm'], thunder: ['thunderstorm'],
+  thunderstorm: ['thunderstorm'], damp: ['damp', 'wet'], wet: ['wet'], humid: ['damp'],
+  draft: ['draft'], draught: ['draft'], noise: ['noise'], light: ['light'],
+  company: ['company'], alone: ['alone'], solitude: ['alone'], eating: ['eating'],
+  drinking: ['drinking'], periodic: ['periodical'], periodical: ['periodical'],
+  menses: ['menses'], period: ['menses'], periods: ['menses'], pregnancy: ['pregnancy'],
+  right: ['right'], left: ['left'], side: ['side'], seaside: ['seashore'],
+  sun: ['sun'], sunlight: ['sun'], jar: ['jar'], jarring: ['jar'], bathing: ['bathing'],
 };
 
 const STOPWORDS = new Set(
@@ -58,6 +72,17 @@ const STOPWORDS = new Set(
    much some any all each every no not only just about into out up down over under
    after before during then than there here which who whom whose what how why can
    could would should will shall may might must does do did done`
+    .split(/\s+/)
+    .filter(Boolean),
+);
+
+/** If a phrase names one of these, it's a local (not general) symptom. */
+const BODY_PARTS = new Set(
+  `head eye eyes ear ears nose face mouth teeth tooth tongue throat stomach abdomen
+   belly rectum stool bladder kidney kidneys urine urethra chest lung lungs back
+   spine cough larynx heart extremities limb limbs arm arms hand hands finger fingers
+   leg legs foot feet knee knees ankle shoulder hip neck skin hair scalp nail nails
+   vertigo head`
     .split(/\s+/)
     .filter(Boolean),
 );
@@ -105,6 +130,9 @@ export function findRubricsForPhrase(
 ): RubricMatch[] {
   const tokens = expandTokens(phrase);
   if (tokens.length === 0) return [];
+  // does the phrase reference a body part? if not, it's a general symptom and
+  // Generalities rubrics should be preferred.
+  const bodyRefs = tokens.some((t) => BODY_PARTS.has(t));
   const idx = indexOf(rep);
   const scored: RubricMatch[] = [];
   for (const { rubric, low } of idx) {
@@ -114,7 +142,11 @@ export function findRubricsForPhrase(
     // reward covering more of the query; gently prefer more specific (shorter) rubrics
     const coverage = score / tokens.length;
     const specificity = 1 / (1 + low.length / 40);
-    scored.push({ rubric, score: coverage * 2 + specificity });
+    // surface general modalities from the Generalities chapter when no body part
+    // was named (e.g. "worse in warm rooms", "better in open air").
+    const generalBonus =
+      !bodyRefs && rubric.chapter.toLowerCase() === 'generalities' ? 0.6 : 0;
+    scored.push({ rubric, score: coverage * 2 + specificity + generalBonus });
   }
   scored.sort((a, b) => b.score - a.score);
   return scored.slice(0, limit);

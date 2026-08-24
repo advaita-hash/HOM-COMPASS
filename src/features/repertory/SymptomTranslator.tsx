@@ -67,19 +67,19 @@ export function SymptomTranslator({
                         key={m.rubric.id}
                         onClick={() => add(m.rubric.id)}
                         disabled={on}
-                        className={`flex w-full items-center gap-2 rounded-md border px-3 py-1.5 text-left text-sm ${
+                        className={`flex w-full items-start gap-2 rounded-md border px-3 py-1.5 text-left text-sm ${
                           on
                             ? 'border-brand-200 bg-brand-50 text-brand-700'
                             : 'border-slate-200 hover:border-brand-400 hover:bg-slate-50'
                         }`}
                       >
                         {on ? (
-                          <Check className="h-4 w-4 shrink-0 text-brand-600" />
+                          <Check className="mt-0.5 h-4 w-4 shrink-0 text-brand-600" />
                         ) : (
-                          <Plus className="h-4 w-4 shrink-0 text-slate-400" />
+                          <Plus className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
                         )}
-                        <span className="min-w-0 flex-1 truncate">{m.rubric.rubric}</span>
-                        <span className="text-[10px] uppercase text-slate-400">
+                        <span className="min-w-0 flex-1 break-words">{m.rubric.rubric}</span>
+                        <span className="mt-0.5 shrink-0 text-[10px] uppercase text-slate-400">
                           {m.rubric.remedies.length}
                         </span>
                       </button>
