@@ -33,11 +33,11 @@ Tailwind frontend.
   grade-weighted scoring (Σ grade × rubric intensity), remedy ranking, adjustable
   rubric intensities, and cross-links to the reference books.
 
-  > **Kent data caveat:** the uploaded Kent PDF was compressed (which strips
-  > bold/italic) and page-trimmed, so grades are *reconstructed from letter-case*
-  > (emphasised = 2, plain = 1) and are approximate, remedy tallies carry some OCR
-  > noise, and coverage runs Mind → Urine only. Use the study seed for
-  > hand-verified accuracy.
+  The default **Repertorium Publicum** is a complete public Kentian repertory
+  (~74k rubrics, all chapters, proper grades 1–4, clean remedy names), sourced
+  from the open [OOREP](https://github.com/nondeterministic/oorep) database and
+  **GPL-3.0-licensed** — see `public/repertory/ATTRIBUTION.md`. A hand-verified
+  **Study Seed** is also available (original to this project, not GPL).
 - **Reference Books** — full-text materia medica, browsable and searchable by
   remedy. Ships with two classic works (Boericke's *Pocket Manual* and Tyler's
   *Homœopathic Drug Pictures*), served as static JSON and read in an in-app

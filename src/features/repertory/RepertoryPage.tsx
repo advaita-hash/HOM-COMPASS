@@ -71,12 +71,8 @@ export default function RepertoryPage() {
   const { shown, total } = useMemo(() => {
     let rs = rep?.rubrics ?? [];
     if (chapter !== 'All') rs = rs.filter((r) => r.chapter === chapter);
-    if (q)
-      rs = rs.filter(
-        (r) =>
-          r.rubric.toLowerCase().includes(q) ||
-          r.remedies.some((rm) => rm.name.toLowerCase().includes(q)),
-      );
+    // rubric-text search only (fast over tens of thousands of rubrics)
+    if (q) rs = rs.filter((r) => r.rubric.toLowerCase().includes(q));
     return { shown: rs.slice(0, LIMIT), total: rs.length };
   }, [rep, chapter, q]);
   const filtered = shown;

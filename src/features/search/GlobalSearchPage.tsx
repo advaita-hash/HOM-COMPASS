@@ -68,13 +68,14 @@ export default function GlobalSearchPage() {
 
   const rubricHits = useMemo(() => {
     if (!active || !rep) return [];
-    return rep.rubrics
-      .filter(
-        (r) =>
-          r.rubric.toLowerCase().includes(q) ||
-          r.remedies.some((rm) => rm.name.toLowerCase().includes(q)),
-      )
-      .slice(0, 20);
+    const out = [];
+    for (const r of rep.rubrics) {
+      if (r.rubric.toLowerCase().includes(q)) {
+        out.push(r);
+        if (out.length >= 20) break; // early-break over large repertories
+      }
+    }
+    return out;
   }, [q, active, rep]);
 
   return (

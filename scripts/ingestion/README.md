@@ -42,21 +42,20 @@ method and the re-runnable cleanup step.
    Only high-confidence fixes are applied; deeper, low-frequency OCR quirks are
    left untouched to avoid introducing errors.
 
-## Kent's Repertory (`parse_kent.py`)
+## Repertory (`gen_publicum.py`)
 
-`public/repertory/kent.json` is produced from the uploaded Kent PDF (text layer
-extracted with `pypdfium2`). The parser:
+`public/repertory/kent.json` (the "Repertorium Publicum" option) is built from
+the **OOREP** open database (`oorep.sql.gz`) — a complete, properly-graded (1–4)
+public Kentian repertory with clean remedy names and full chapter coverage.
 
-- reads the remedy-abbreviation legend, then detects chapters from page running
-  headers and rubrics from the `RUBRIC.` / `sub-rubric: remedies` structure,
-  reconstructing parent → sub rubric paths;
-- assigns **grades from letter-case** — the source was compressed, which flattened
-  the fonts (bold/italic → plain), so emphasised remedies (capitalised) are graded
-  2 and plain ones graded 1. This is an approximation of Kent's 1/2/3 grading.
+`gen_publicum.py` reads the OOREP PostgreSQL dump and emits a **compact** JSON
+(remedy dictionary + integer-indexed rubric/grade pairs), which the app expands
+at load. Attribution and licensing (GPL-3.0) are in
+`public/repertory/ATTRIBUTION.md`.
 
-Known limitations of this source: the PDF was page-trimmed (coverage Mind → Urine
-only) and OCR introduces some remedy-abbreviation noise. A structured Kent export
-or the uncompressed original would yield exact grades and full coverage.
+> An earlier version reconstructed Kent from a scanned/compressed PDF via OCR,
+> with grades approximated from letter-case; that was replaced by the OOREP
+> import above, which has exact grades and full coverage.
 
 ## Re-running the cleanup
 

@@ -14,9 +14,9 @@ export interface RepertoryOption {
 export const REPERTORIES: RepertoryOption[] = [
   {
     id: 'kent',
-    label: "Kent's Repertory",
+    label: 'Repertorium Publicum',
     blurb:
-      'Full Kent, Mind–Urine (~27k rubrics). Extracted from a compressed scan — grades are reconstructed from case and remedy tallies are approximate.',
+      'A complete public Kentian repertory (~74k rubrics, all chapters) with proper grades 1–4 and clean remedy names, from the open OOREP database (GPL-3.0).',
   },
   {
     id: 'seed',
@@ -38,10 +38,48 @@ export const useRepertorySelection = create<SelectionState>()(
   ),
 );
 
+/** Compact on-disk form (remedy dictionary + integer indices) for large
+ *  repertories, expanded here into the full Repertory shape. */
+interface CompactRepertory {
+  compact: true;
+  id: string;
+  title: string;
+  author: string;
+  source: string;
+  note?: string;
+  chapters: string[];
+  rubricCount: number;
+  remedies: string[];
+  rubrics: [string, [number, number][]][];
+}
+
+function expand(c: CompactRepertory): Repertory {
+  const rubrics = c.rubrics.map(([fullpath, rems], i) => ({
+    id: `k${i}`,
+    chapter: fullpath.split(',')[0].trim(),
+    rubric: fullpath,
+    remedies: rems.map(([idx, grade]) => ({
+      name: c.remedies[idx],
+      grade: grade as 1 | 2 | 3 | 4,
+    })),
+  }));
+  return {
+    id: c.id,
+    title: c.title,
+    author: c.author,
+    source: c.source,
+    note: c.note,
+    chapters: c.chapters,
+    rubricCount: c.rubricCount,
+    rubrics,
+  };
+}
+
 async function fetchRepertory(id: string): Promise<Repertory> {
   const res = await fetch(`${import.meta.env.BASE_URL}repertory/${id}.json`);
   if (!res.ok) throw new Error(`Could not load repertory "${id}" (${res.status})`);
-  return res.json();
+  const data = await res.json();
+  return data.compact ? expand(data as CompactRepertory) : (data as Repertory);
 }
 
 export function useRepertory() {
