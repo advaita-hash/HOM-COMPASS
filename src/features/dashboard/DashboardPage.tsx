@@ -9,7 +9,11 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { REMEDIES, remedyOfTheDay } from '../../data/remedies';
+import { BOOKS } from '../books/booksIndex';
 import { useLibraryStore } from '../library/libraryStore';
+
+const REMEDY_TOTAL =
+  REMEDIES.length + BOOKS.reduce((n, b) => n + b.approxRemedies, 0);
 
 function StatCard({
   icon: Icon,
@@ -96,7 +100,7 @@ export default function DashboardPage() {
 
       {/* Quick stats */}
       <div className="mt-6 grid gap-4 sm:grid-cols-3">
-        <StatCard icon={FlaskConical} label="Remedies in library" value={REMEDIES.length} to="/materia-medica" />
+        <StatCard icon={FlaskConical} label="Remedies" value={`${REMEDY_TOTAL}+`} to="/materia-medica" />
         <StatCard icon={Library} label="Books uploaded" value={bookCount} to="/library" />
         <StatCard icon={BookMarked} label="Repertory chapters" value="—" to="/repertory" />
       </div>
