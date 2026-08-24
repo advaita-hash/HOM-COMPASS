@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { X } from 'lucide-react';
 import type { Grade, Repertory } from './types';
@@ -10,7 +11,7 @@ const GRADE_CELL: Record<number, string> = {
   4: 'bg-red-100 text-red-700 font-bold',
 };
 
-const TOP_N = 12;
+const COLUMN_OPTIONS = [12, 25, 50];
 
 function remedyBookLink(name: string) {
   return `/books/boericke?q=${encodeURIComponent(name.split(/\s+/)[0])}`;
@@ -21,9 +22,10 @@ export function WorksheetGrid({ rep }: { rep: Repertory | undefined }) {
   const items = useWorksheet((s) => s.items);
   const remove = useWorksheet((s) => s.remove);
   const setIntensity = useWorksheet((s) => s.setIntensity);
+  const [showN, setShowN] = useState(25);
 
   const { scores, rubrics } = repertorize(rep, items);
-  const top = scores.slice(0, TOP_N);
+  const top = scores.slice(0, Math.min(showN, scores.length));
   const byId = new Map(rubrics.map((r) => [r.id, r]));
 
   if (items.length === 0) {
@@ -57,6 +59,29 @@ export function WorksheetGrid({ rep }: { rep: Repertory | undefined }) {
             </span>
           </Link>
         ))}
+      </div>
+
+      {/* Controls */}
+      <div className="mb-2 flex items-center justify-between text-xs text-slate-500">
+        <span>
+          {scores.length} remedies across {items.length} rubric
+          {items.length === 1 ? '' : 's'}
+        </span>
+        <label className="inline-flex items-center gap-1.5">
+          Show
+          <select
+            value={showN}
+            onChange={(e) => setShowN(Number(e.target.value))}
+            className="rounded border border-slate-200 bg-white px-1.5 py-0.5 text-xs"
+          >
+            {COLUMN_OPTIONS.map((n) => (
+              <option key={n} value={n}>
+                top {n}
+              </option>
+            ))}
+            <option value={scores.length}>all ({scores.length})</option>
+          </select>
+        </label>
       </div>
 
       {/* Grid */}
@@ -167,7 +192,7 @@ export function WorksheetGrid({ rep }: { rep: Repertory | undefined }) {
 
       <p className="mt-3 text-xs text-slate-400">
         Score = Σ (grade × rubric intensity). Ranked by rubrics covered, then score.
-        Showing top {TOP_N} of {scores.length}.
+        Showing {top.length} of {scores.length} remedies.
       </p>
     </>
   );
