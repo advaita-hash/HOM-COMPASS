@@ -42,6 +42,22 @@ method and the re-runnable cleanup step.
    Only high-confidence fixes are applied; deeper, low-frequency OCR quirks are
    left untouched to avoid introducing errors.
 
+## Kent's Repertory (`parse_kent.py`)
+
+`public/repertory/kent.json` is produced from the uploaded Kent PDF (text layer
+extracted with `pypdfium2`). The parser:
+
+- reads the remedy-abbreviation legend, then detects chapters from page running
+  headers and rubrics from the `RUBRIC.` / `sub-rubric: remedies` structure,
+  reconstructing parent → sub rubric paths;
+- assigns **grades from letter-case** — the source was compressed, which flattened
+  the fonts (bold/italic → plain), so emphasised remedies (capitalised) are graded
+  2 and plain ones graded 1. This is an approximation of Kent's 1/2/3 grading.
+
+Known limitations of this source: the PDF was page-trimmed (coverage Mind → Urine
+only) and OCR introduces some remedy-abbreviation noise. A structured Kent export
+or the uncompressed original would yield exact grades and full coverage.
+
 ## Re-running the cleanup
 
 ```bash

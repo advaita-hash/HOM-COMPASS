@@ -21,11 +21,18 @@ Tailwind frontend.
   profiles (keynotes, mind, generals, modalities, representative rubrics), with
   cross-links to the full drug pictures in the reference books.
 - **Repertory** — searchable, chapter-filterable rubrics with grade-coloured
-  remedy lists; add rubrics to the repertorisation worksheet in one click.
+  remedy lists; add rubrics to the repertorisation worksheet in one click. A
+  repertory selector switches between **Kent's Repertory** (~27k rubrics,
+  Mind–Urine, extracted from a scanned PDF) and a hand-verified **study seed**.
 - **Repertorisation** — the analysis board: a rubric × remedy grid with live,
   grade-weighted scoring (Σ grade × rubric intensity), remedy ranking, adjustable
-  rubric intensities, and cross-links to the reference books. Ships with a study
-  seed repertory (55 classic rubrics) pending a full Kent ingestion.
+  rubric intensities, and cross-links to the reference books.
+
+  > **Kent data caveat:** the uploaded Kent PDF was compressed (which strips
+  > bold/italic) and page-trimmed, so grades are *reconstructed from letter-case*
+  > (emphasised = 2, plain = 1) and are approximate, remedy tallies carry some OCR
+  > noise, and coverage runs Mind → Urine only. Use the study seed for
+  > hand-verified accuracy.
 - **Reference Books** — full-text materia medica, browsable and searchable by
   remedy. Ships with two classic works (Boericke's *Pocket Manual* and Tyler's
   *Homœopathic Drug Pictures*), served as static JSON and read in an in-app

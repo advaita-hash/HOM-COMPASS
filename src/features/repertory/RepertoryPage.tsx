@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { BookOpen, Check, Loader2, Plus, Search } from 'lucide-react';
-import { useRepertory } from './repertoryData';
+import { REPERTORIES, useRepertory, useRepertorySelection } from './repertoryData';
+import { RepertorySelect } from './RepertorySelect';
 import { useWorksheet } from './worksheetStore';
 import type { Grade, Rubric } from './types';
 
@@ -59,23 +60,28 @@ function RubricRow({ rubric }: { rubric: Rubric }) {
 
 export default function RepertoryPage() {
   const { data: rep, isLoading, isError } = useRepertory();
+  const repId = useRepertorySelection((s) => s.id);
+  const repMeta = REPERTORIES.find((r) => r.id === repId);
   const [query, setQuery] = useState('');
   const [chapter, setChapter] = useState<string>('All');
   const count = useWorksheet((s) => s.items.length);
 
+  const LIMIT = 200;
   const q = query.trim().toLowerCase();
-  const filtered = useMemo(() => {
+  const { shown, total } = useMemo(() => {
     let rs = rep?.rubrics ?? [];
     if (chapter !== 'All') rs = rs.filter((r) => r.chapter === chapter);
     if (q)
       rs = rs.filter(
         (r) =>
           r.rubric.toLowerCase().includes(q) ||
-          r.chapter.toLowerCase().includes(q) ||
           r.remedies.some((rm) => rm.name.toLowerCase().includes(q)),
       );
-    return rs;
+    return { shown: rs.slice(0, LIMIT), total: rs.length };
   }, [rep, chapter, q]);
+  const filtered = shown;
+  // With tens of thousands of rubrics, require a search or chapter first.
+  const needsFilter = !q && chapter === 'All' && (rep?.rubrics.length ?? 0) > LIMIT;
 
   return (
     <div className="mx-auto max-w-4xl p-6 md:p-8">
@@ -89,13 +95,22 @@ export default function RepertoryPage() {
             </p>
           </div>
         </div>
-        <Link to="/analysis" className="btn-primary">
-          Worksheet
-          {count > 0 && (
-            <span className="ml-1 rounded-full bg-white/25 px-1.5 text-xs">{count}</span>
-          )}
-        </Link>
+        <div className="flex items-center gap-2">
+          <RepertorySelect />
+          <Link to="/analysis" className="btn-primary">
+            Worksheet
+            {count > 0 && (
+              <span className="ml-1 rounded-full bg-white/25 px-1.5 text-xs">{count}</span>
+            )}
+          </Link>
+        </div>
       </header>
+
+      {repMeta && (
+        <p className="mb-3 rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-500">
+          {repMeta.blurb}
+        </p>
+      )}
 
       <div className="mb-4 flex flex-col gap-2 sm:flex-row">
         <div className="relative flex-1">
@@ -126,15 +141,30 @@ export default function RepertoryPage() {
       )}
       {isError && <p className="p-8 text-sm text-red-600">Failed to load repertory.</p>}
 
-      {rep && (
-        <div className="card overflow-hidden">
-          {filtered.map((r) => (
-            <RubricRow key={r.id} rubric={r} />
-          ))}
-          {filtered.length === 0 && (
-            <p className="p-8 text-center text-sm text-slate-400">No rubrics match.</p>
-          )}
+      {rep && needsFilter && (
+        <div className="card p-10 text-center text-sm text-slate-400">
+          {rep.rubricCount.toLocaleString()} rubrics — type a search above or pick a
+          chapter to browse.
         </div>
+      )}
+
+      {rep && !needsFilter && (
+        <>
+          {total > filtered.length && (
+            <p className="mb-2 text-xs text-slate-400">
+              Showing {filtered.length} of {total.toLocaleString()} matches — refine your
+              search to narrow.
+            </p>
+          )}
+          <div className="card overflow-hidden">
+            {filtered.map((r) => (
+              <RubricRow key={r.id} rubric={r} />
+            ))}
+            {filtered.length === 0 && (
+              <p className="p-8 text-center text-sm text-slate-400">No rubrics match.</p>
+            )}
+          </div>
+        </>
       )}
 
       <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-400">
