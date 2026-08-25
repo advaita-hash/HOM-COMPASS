@@ -76,16 +76,55 @@ const STOPWORDS = new Set(
     .filter(Boolean),
 );
 
-/** If a phrase names one of these, it's a local (not general) symptom. */
-const BODY_PARTS = new Set(
-  `head eye eyes ear ears nose face mouth teeth tooth tongue throat stomach abdomen
-   belly rectum stool bladder kidney kidneys urine urethra chest lung lungs back
-   spine cough larynx heart extremities limb limbs arm arms hand hands finger fingers
-   leg legs foot feet knee knees ankle shoulder hip neck skin hair scalp nail nails
-   vertigo head`
-    .split(/\s+/)
-    .filter(Boolean),
+/**
+ * Body-part / symptom word → the repertory chapter(s) it belongs to, so that a
+ * local symptom is scored against the RIGHT chapter (e.g. "knee" → Extremities)
+ * instead of leaking into short generic rubrics in other chapters.
+ * Chapter strings match the repertory's chapter names (lower-cased).
+ */
+const BODY_TO_CHAPTER: Record<string, string[]> = {};
+function mapBody(words: string, chapters: string[]) {
+  for (const w of words.split(/\s+/).filter(Boolean)) BODY_TO_CHAPTER[w] = chapters;
+}
+mapBody('vertigo dizzy dizziness giddy', ['vertigo']);
+mapBody('head headache forehead temple temples occiput migraine', ['head']);
+mapBody('eye eyes eyelid lachrymation', ['eye']);
+mapBody('vision sight blurred', ['vision']);
+mapBody('ear ears earache otorrhoea', ['ear']);
+mapBody('hearing deaf deafness', ['hearing']);
+mapBody('nose nostril coryza smell sneezing epistaxis nosebleed', ['nose']);
+mapBody('face cheek cheeks jaw', ['face']);
+mapBody('mouth gum gums tongue palate saliva salivation', ['mouth']);
+mapBody('teeth tooth toothache', ['teeth']);
+mapBody('throat tonsil tonsils pharynx swallowing', ['throat']);
+mapBody('stomach gastric nausea vomiting eructation heartburn', ['stomach']);
+mapBody('abdomen belly umbilical navel liver spleen colic hypochondrium flatulence', ['abdomen']);
+mapBody('rectum anus piles haemorrhoids', ['rectum']);
+mapBody('stool diarrhoea diarrhea constipation', ['stool', 'rectum']);
+mapBody('bladder urination micturition', ['bladder']);
+mapBody('urine urination', ['urine']);
+mapBody('kidney kidneys', ['kidneys']);
+mapBody('urethra', ['urethra']);
+mapBody('chest lung lungs breast mammae ribs', ['chest']);
+mapBody('back spine lumbar sacral cervical dorsal', ['back']);
+mapBody(
+  'extremities limb limbs arm arms hand hands finger fingers leg legs foot feet knee ' +
+    'knees ankle ankles hip thigh calf calves toe toes shoulder elbow wrist nail nails joint joints',
+  ['extremities'],
 );
+mapBody('skin eruption eruptions rash itching pimples', ['skin']);
+mapBody('cough coughing', ['cough']);
+mapBody('expectoration sputum phlegm', ['expectoration']);
+mapBody('respiration breathing breath breathless dyspnoea asthma', ['respiration']);
+mapBody('heart palpitation palpitations pulse', ['heart & circulation']);
+mapBody('sleep sleeplessness insomnia sleepy drowsy dreams', ['sleep']);
+mapBody('larynx voice hoarse hoarseness', ['larynx and trachea']);
+mapBody('appetite hunger hungry thirst thirsty', ['appetite']);
+mapBody('chill chilliness chilly', ['chill']);
+mapBody('fever feverish', ['fever']);
+mapBody('perspiration sweat sweating', ['perspiration']);
+mapBody('genitals sexual libido erection', ['genitalia male', 'genitalia female']);
+mapBody('menses menstrual leucorrhoea vagina uterus ovary', ['genitalia female']);
 
 export interface RubricMatch {
   rubric: Rubric;
@@ -130,23 +169,27 @@ export function findRubricsForPhrase(
 ): RubricMatch[] {
   const tokens = expandTokens(phrase);
   if (tokens.length === 0) return [];
-  // does the phrase reference a body part? if not, it's a general symptom and
-  // Generalities rubrics should be preferred.
-  const bodyRefs = tokens.some((t) => BODY_PARTS.has(t));
+  // which chapters does this phrase target? (body parts → their chapters)
+  const targetChapters = new Set<string>();
+  for (const t of tokens) for (const ch of BODY_TO_CHAPTER[t] ?? []) targetChapters.add(ch);
+  const bodyRefs = targetChapters.size > 0;
+
   const idx = indexOf(rep);
   const scored: RubricMatch[] = [];
   for (const { rubric, low } of idx) {
     let score = 0;
     for (const t of tokens) if (low.includes(t)) score += 1;
     if (score === 0) continue;
-    // reward covering more of the query; gently prefer more specific (shorter) rubrics
     const coverage = score / tokens.length;
     const specificity = 1 / (1 + low.length / 40);
-    // surface general modalities from the Generalities chapter when no body part
-    // was named (e.g. "worse in warm rooms", "better in open air").
-    const generalBonus =
-      !bodyRefs && rubric.chapter.toLowerCase() === 'generalities' ? 0.6 : 0;
-    scored.push({ rubric, score: coverage * 2 + specificity + generalBonus });
+    const chap = rubric.chapter.toLowerCase();
+    // steer local symptoms to the right chapter, general symptoms to Generalities
+    const chapterBonus = bodyRefs && targetChapters.has(chap) ? 0.8 : 0;
+    const generalBonus = !bodyRefs && chap === 'generalities' ? 0.6 : 0;
+    scored.push({
+      rubric,
+      score: coverage * 2 + specificity * 0.5 + chapterBonus + generalBonus,
+    });
   }
   scored.sort((a, b) => b.score - a.score);
   return scored.slice(0, limit);
