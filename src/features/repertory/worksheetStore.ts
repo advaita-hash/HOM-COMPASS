@@ -1,9 +1,15 @@
+import { useEffect } from 'react';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { Repertory, RemedyScore, Rubric, WorksheetItem } from './types';
 
 interface WorksheetState {
+  /** Repertory the current worksheet belongs to (rubric ids are per-repertory). */
+  repId: string | null;
   items: WorksheetItem[];
+  /** Bind to a repertory; if it changed, clear items so rubrics only ever come
+   *  from the chosen repertory. */
+  setRepertory: (id: string) => void;
   add: (rubricId: string) => void;
   remove: (rubricId: string) => void;
   toggle: (rubricId: string) => void;
@@ -15,7 +21,11 @@ interface WorksheetState {
 export const useWorksheet = create<WorksheetState>()(
   persist(
     (set, get) => ({
+      repId: null,
       items: [],
+      setRepertory: (id) => {
+        if (get().repId !== id) set({ repId: id, items: [] });
+      },
       add: (rubricId) => {
         if (get().items.some((i) => i.rubricId === rubricId)) return;
         set({ items: [...get().items, { rubricId, intensity: 1 }] });
@@ -36,6 +46,15 @@ export const useWorksheet = create<WorksheetState>()(
     { name: 'hom-compass.worksheet' },
   ),
 );
+
+/** Keep the worksheet bound to the active repertory; resets it if the chosen
+ *  repertory changes, so rubrics are only ever from the chosen repertory. */
+export function useBindWorksheet(repId: string) {
+  const setRepertory = useWorksheet((s) => s.setRepertory);
+  useEffect(() => {
+    setRepertory(repId);
+  }, [repId, setRepertory]);
+}
 
 /**
  * Grade-weighted repertorisation: for each remedy across the selected rubrics,

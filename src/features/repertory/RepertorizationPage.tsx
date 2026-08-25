@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Activity, BookOpen, Check, Save, Trash2 } from 'lucide-react';
-import { useRepertory } from './repertoryData';
-import { repertorize, useWorksheet } from './worksheetStore';
+import { REPERTORIES, useRepertory, useRepertorySelection } from './repertoryData';
+import { repertorize, useBindWorksheet, useWorksheet } from './worksheetStore';
 import { RepertorySelect } from './RepertorySelect';
 import { SymptomTranslator } from './SymptomTranslator';
 import { CausativeFactor } from './CausativeFactor';
@@ -16,6 +16,9 @@ import { usePatients } from '../patients/patientsStore';
  */
 export default function RepertorizationPage() {
   const { data: rep } = useRepertory();
+  const repId = useRepertorySelection((s) => s.id);
+  const repMeta = REPERTORIES.find((r) => r.id === repId);
+  useBindWorksheet(repId); // rubrics only ever from the chosen repertory
   const items = useWorksheet((s) => s.items);
   const clear = useWorksheet((s) => s.clear);
 
@@ -85,9 +88,22 @@ export default function RepertorizationPage() {
         </div>
       </header>
 
+      {/* Chosen repertory — all rubrics come only from here */}
+      <div className="mb-4 flex items-center gap-2 rounded-lg border border-brand-200 bg-brand-50 px-3 py-2 text-xs text-brand-800">
+        <BookOpen className="h-4 w-4" />
+        <span>
+          Rubrics are taken <strong>only</strong> from the chosen repertory:{' '}
+          <strong>{repMeta?.label ?? repId}</strong>. Switch it top-right (this clears the
+          worksheet).
+        </span>
+      </div>
+
       <div className="grid gap-5 lg:grid-cols-[340px_1fr]">
-        {/* Left: patient + symptom translation */}
+        {/* Left: STEP 1 — patient's language → rubrics */}
         <div className="space-y-4">
+          <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+            Step 1 · Patient’s language → rubrics
+          </div>
           <div className="card p-4">
             <h2 className="mb-2 text-sm font-semibold text-slate-700">Patient</h2>
             <select
@@ -160,9 +176,18 @@ export default function RepertorizationPage() {
           )}
         </div>
 
-        {/* Right: repertorisation grid */}
+        {/* Right: STEP 2 & 3 — chosen rubrics graded & evaluated */}
         <div>
+          <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
+            Step 2 &amp; 3 · Chosen rubrics — graded &amp; evaluated
+          </div>
           <WorksheetGrid rep={rep} onRemedy={setSupportRemedy} />
+          {items.length > 0 && (
+            <p className="mt-2 text-xs text-slate-400">
+              Tip: click any remedy (a ranked card or a column heading) to see the Materia
+              Medica lines that support it for these rubrics.
+            </p>
+          )}
         </div>
       </div>
 

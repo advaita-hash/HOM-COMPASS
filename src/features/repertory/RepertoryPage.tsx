@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom';
 import { BookOpen, Check, Loader2, Plus, Search } from 'lucide-react';
 import { REPERTORIES, useRepertory, useRepertorySelection } from './repertoryData';
 import { RepertorySelect } from './RepertorySelect';
-import { useWorksheet } from './worksheetStore';
+import { RemedySupportModal } from './RemedySupportModal';
+import { useBindWorksheet, useWorksheet } from './worksheetStore';
 import type { Grade, Rubric } from './types';
 
 const GRADE_CLASS: Record<Grade, string> = {
@@ -13,19 +14,30 @@ const GRADE_CLASS: Record<Grade, string> = {
   4: 'text-grade-4 font-bold',
 };
 
-function RemedyChips({ rubric }: { rubric: Rubric }) {
+function RemedyChips({
+  rubric,
+  onRemedy,
+}: {
+  rubric: Rubric;
+  onRemedy: (name: string) => void;
+}) {
   return (
     <div className="mt-1 flex flex-wrap gap-x-2 gap-y-0.5 text-sm">
       {rubric.remedies.map((r) => (
-        <span key={r.name} className={GRADE_CLASS[r.grade as Grade]} title={`grade ${r.grade}`}>
+        <button
+          key={r.name}
+          onClick={() => onRemedy(r.name)}
+          className={`${GRADE_CLASS[r.grade as Grade]} hover:underline`}
+          title={`grade ${r.grade} — Materia Medica support`}
+        >
           {r.name}
-        </span>
+        </button>
       ))}
     </div>
   );
 }
 
-function RubricRow({ rubric }: { rubric: Rubric }) {
+function RubricRow({ rubric, onRemedy }: { rubric: Rubric; onRemedy: (name: string) => void }) {
   const has = useWorksheet((s) => s.has(rubric.id));
   const toggle = useWorksheet((s) => s.toggle);
   return (
@@ -52,7 +64,7 @@ function RubricRow({ rubric }: { rubric: Rubric }) {
             {rubric.remedies.length} remedies
           </span>
         </div>
-        <RemedyChips rubric={rubric} />
+        <RemedyChips rubric={rubric} onRemedy={onRemedy} />
       </div>
     </div>
   );
@@ -62,8 +74,10 @@ export default function RepertoryPage() {
   const { data: rep, isLoading, isError } = useRepertory();
   const repId = useRepertorySelection((s) => s.id);
   const repMeta = REPERTORIES.find((r) => r.id === repId);
+  useBindWorksheet(repId); // rubrics only ever from the chosen repertory
   const [query, setQuery] = useState('');
   const [chapter, setChapter] = useState<string>('All');
+  const [support, setSupport] = useState<{ name: string; rubric: Rubric } | null>(null);
   const count = useWorksheet((s) => s.items.length);
 
   const LIMIT = 200;
@@ -154,7 +168,11 @@ export default function RepertoryPage() {
           )}
           <div className="card overflow-hidden">
             {filtered.map((r) => (
-              <RubricRow key={r.id} rubric={r} />
+              <RubricRow
+                key={r.id}
+                rubric={r}
+                onRemedy={(name) => setSupport({ name, rubric: r })}
+              />
             ))}
             {filtered.length === 0 && (
               <p className="p-8 text-center text-sm text-slate-400">No rubrics match.</p>
@@ -169,6 +187,14 @@ export default function RepertoryPage() {
         <span className="text-grade-2 font-medium">2 italic</span>
         <span className="text-grade-1">1 plain</span>
       </div>
+
+      {support && (
+        <RemedySupportModal
+          remedyName={support.name}
+          rubrics={[support.rubric]}
+          onClose={() => setSupport(null)}
+        />
+      )}
     </div>
   );
 }
