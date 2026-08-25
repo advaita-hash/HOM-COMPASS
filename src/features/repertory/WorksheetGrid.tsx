@@ -18,7 +18,13 @@ function remedyBookLink(name: string) {
 }
 
 /** The repertorisation grid + remedy ranking for the current worksheet. */
-export function WorksheetGrid({ rep }: { rep: Repertory | undefined }) {
+export function WorksheetGrid({
+  rep,
+  onRemedy,
+}: {
+  rep: Repertory | undefined;
+  onRemedy?: (name: string) => void;
+}) {
   const items = useWorksheet((s) => s.items);
   const remove = useWorksheet((s) => s.remove);
   const setIntensity = useWorksheet((s) => s.setIntensity);
@@ -42,23 +48,37 @@ export function WorksheetGrid({ rep }: { rep: Repertory | undefined }) {
 
   return (
     <>
-      {/* Ranked remedies */}
+      {/* Ranked remedies — click for Materia Medica support */}
       <div className="mb-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-        {top.slice(0, 6).map((s, i) => (
-          <Link
-            key={s.name}
-            to={remedyBookLink(s.name)}
-            className="card flex items-center gap-3 p-3 hover:shadow-md"
-          >
-            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-50 text-sm font-semibold text-brand-700">
-              {i + 1}
-            </span>
-            <span className="flex-1 truncate text-sm font-medium text-slate-800">{s.name}</span>
-            <span className="text-xs text-slate-500">
-              {s.rubricsCovered}/{items.length} · {s.totalScore}
-            </span>
-          </Link>
-        ))}
+        {top.slice(0, 6).map((s, i) => {
+          const inner = (
+            <>
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-50 text-sm font-semibold text-brand-700">
+                {i + 1}
+              </span>
+              <span className="flex-1 truncate text-left text-sm font-medium text-slate-800">
+                {s.name}
+              </span>
+              <span className="text-xs text-slate-500">
+                {s.rubricsCovered}/{items.length} · {s.totalScore}
+              </span>
+            </>
+          );
+          return onRemedy ? (
+            <button
+              key={s.name}
+              onClick={() => onRemedy(s.name)}
+              className="card flex items-center gap-3 p-3 text-left hover:shadow-md"
+              title="Show Materia Medica support"
+            >
+              {inner}
+            </button>
+          ) : (
+            <Link key={s.name} to={remedyBookLink(s.name)} className="card flex items-center gap-3 p-3 hover:shadow-md">
+              {inner}
+            </Link>
+          );
+        })}
       </div>
 
       {/* Controls */}
@@ -95,14 +115,25 @@ export function WorksheetGrid({ rep }: { rep: Repertory | undefined }) {
               <th className="px-2 py-2 text-center font-medium text-slate-400">Int.</th>
               {top.map((s) => (
                 <th key={s.name} className="px-1 py-2 align-bottom">
-                  <Link
-                    to={remedyBookLink(s.name)}
-                    className="mx-auto block h-28 w-6 whitespace-nowrap text-left text-xs font-medium text-slate-600 hover:text-brand-600"
-                    style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
-                    title={s.name}
-                  >
-                    {s.name}
-                  </Link>
+                  {onRemedy ? (
+                    <button
+                      onClick={() => onRemedy(s.name)}
+                      className="mx-auto block h-28 w-6 whitespace-nowrap text-left text-xs font-medium text-slate-600 hover:text-brand-600"
+                      style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
+                      title={`${s.name} — show Materia Medica support`}
+                    >
+                      {s.name}
+                    </button>
+                  ) : (
+                    <Link
+                      to={remedyBookLink(s.name)}
+                      className="mx-auto block h-28 w-6 whitespace-nowrap text-left text-xs font-medium text-slate-600 hover:text-brand-600"
+                      style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
+                      title={s.name}
+                    >
+                      {s.name}
+                    </Link>
+                  )}
                 </th>
               ))}
               <th className="px-2 py-2" />

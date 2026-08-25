@@ -195,6 +195,31 @@ export function findRubricsForPhrase(
   return scored.slice(0, limit);
 }
 
+/**
+ * Find causation ("ailments from…") rubrics for a probable causative factor —
+ * e.g. "grief", "fright", "disappointed love", "getting wet", "injury".
+ * Prefers etiological rubrics (those containing "ailments" / in Generalities).
+ */
+export function findCausation(rep: Repertory, phrase: string, limit = 8): RubricMatch[] {
+  const tokens = expandTokens(phrase);
+  if (tokens.length === 0) return [];
+  const idx = indexOf(rep);
+  const scored: RubricMatch[] = [];
+  for (const { rubric, low } of idx) {
+    let score = 0;
+    for (const t of tokens) if (low.includes(t)) score += 1;
+    if (score === 0) continue;
+    const coverage = score / tokens.length;
+    const isEtiology = low.includes('ailments') || low.includes(', from') || low.includes(', after');
+    const etioBonus = isEtiology ? 1.5 : 0;
+    const genBonus = rubric.chapter.toLowerCase() === 'generalities' ? 0.4 : 0;
+    if (!isEtiology && genBonus === 0 && coverage < 0.75) continue; // keep it causation-focused
+    scored.push({ rubric, score: coverage * 2 + etioBonus + genBonus });
+  }
+  scored.sort((a, b) => b.score - a.score);
+  return scored.slice(0, limit);
+}
+
 /** Split free text into symptom phrases and match each. */
 export function translateSymptoms(rep: Repertory, text: string): PhraseResult[] {
   return text

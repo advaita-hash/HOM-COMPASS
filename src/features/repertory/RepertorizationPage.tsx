@@ -5,7 +5,9 @@ import { useRepertory } from './repertoryData';
 import { repertorize, useWorksheet } from './worksheetStore';
 import { RepertorySelect } from './RepertorySelect';
 import { SymptomTranslator } from './SymptomTranslator';
+import { CausativeFactor } from './CausativeFactor';
 import { WorksheetGrid } from './WorksheetGrid';
+import { RemedySupportModal } from './RemedySupportModal';
 import { usePatients } from '../patients/patientsStore';
 
 /**
@@ -28,6 +30,7 @@ export default function RepertorizationPage() {
   const [gender, setGender] = useState('');
   const [symptoms, setSymptoms] = useState('');
   const [saved, setSaved] = useState(false);
+  const [supportRemedy, setSupportRemedy] = useState<string | null>(null);
 
   const { scores, rubrics } = repertorize(rep, items);
 
@@ -128,6 +131,8 @@ export default function RepertorizationPage() {
             )}
           </div>
 
+          <CausativeFactor rep={rep} />
+
           <SymptomTranslator rep={rep} text={symptoms} onTextChange={setSymptoms} />
 
           <button
@@ -157,9 +162,17 @@ export default function RepertorizationPage() {
 
         {/* Right: repertorisation grid */}
         <div>
-          <WorksheetGrid rep={rep} />
+          <WorksheetGrid rep={rep} onRemedy={setSupportRemedy} />
         </div>
       </div>
+
+      {supportRemedy && (
+        <RemedySupportModal
+          remedyName={supportRemedy}
+          rubrics={rubrics}
+          onClose={() => setSupportRemedy(null)}
+        />
+      )}
     </div>
   );
 }
