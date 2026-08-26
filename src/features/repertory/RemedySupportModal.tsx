@@ -1,16 +1,8 @@
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { BookText, Loader2, X } from 'lucide-react';
-import { useBook } from '../books/booksIndex';
+import { findBookRemedy, useBook } from '../books/booksIndex';
 import type { Rubric } from './types';
-
-function slugify(name: string): string {
-  return name
-    .toLowerCase()
-    .normalize('NFKD')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-}
 
 const GENERIC = new Set(
   `agg amel from after before during when with general the and side sides region
@@ -76,11 +68,7 @@ function BookSupport({
 
   const result = useMemo(() => {
     if (!book) return null;
-    const slug = slugify(remedyName);
-    const remedy =
-      book.remedies.find((r) => r.slug === slug) ||
-      book.remedies.find((r) => slugify(r.name) === slug) ||
-      book.remedies.find((r) => r.name.toLowerCase() === remedyName.toLowerCase());
+    const remedy = findBookRemedy(book, remedyName);
     if (!remedy) return { remedy: null, lines: [] as { text: string; kws: string[]; rubrics: string[] }[] };
 
     const rubricKws = rubrics.map((r) => ({ rubric: r.rubric, kws: rubricKeywords(r.rubric) }));

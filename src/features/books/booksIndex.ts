@@ -1,5 +1,35 @@
 import { useQuery } from '@tanstack/react-query';
-import type { BookData, BookMeta } from './types';
+import type { BookData, BookMeta, BookRemedy } from './types';
+
+function normName(s: string): string {
+  return s
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
+const nameIndexCache = new WeakMap<BookData, Map<string, BookRemedy>>();
+
+/**
+ * Find a remedy in a book from a (possibly longer) repertory name, e.g.
+ * "Borax Veneta" → Borax, "Mercurius Solubilis" → Mercurius. Matches the
+ * longest exact word-prefix, so it never matches the wrong remedy.
+ */
+export function findBookRemedy(book: BookData, name: string): BookRemedy | undefined {
+  let idx = nameIndexCache.get(book);
+  if (!idx) {
+    idx = new Map();
+    for (const r of book.remedies) idx.set(normName(r.name).replace(/ /g, ''), r);
+    nameIndexCache.set(book, idx);
+  }
+  const words = normName(name).split(' ').filter(Boolean);
+  for (let k = words.length; k >= 1; k--) {
+    const hit = idx.get(words.slice(0, k).join(''));
+    if (hit) return hit;
+  }
+  return undefined;
+}
 
 /**
  * Bundled reference books. The heavy full-text payloads live as static JSON in
