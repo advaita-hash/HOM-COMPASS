@@ -1,29 +1,51 @@
 import { useQuery } from '@tanstack/react-query';
 import type { BookData, BookMeta, BookRemedy } from './types';
 
-function normName(s: string): string {
+// Cross-source spelling aliases (per word) so the same remedy matches across
+// Kent's Repertory, Boericke and Tyler. Non-destructive — the source data keeps
+// its own names; this only normalises names at lookup time.
+const WORD_ALIAS: Record<string, string> = {
+  kalium: 'kali', // Kent uses Kalium/Natrium; Boericke & Tyler use Kali/Natrum
+  natrium: 'natrum',
+  cinchona: 'china', // China = Cinchona
+  platinum: 'platina',
+  bromum: 'bromium',
+  mellifera: 'mellifica',
+  staphysagria: 'staphisagria',
+  hispanica: 'hispania',
+  sativus: 'sativa',
+  hippozaeninum: 'hippozaenium',
+  acidum: 'acid', // Tyler anglicises some acids
+};
+
+function canonWords(s: string): string[] {
   return s
     .toLowerCase()
     .normalize('NFKD')
     .replace(/[^a-z0-9]+/g, ' ')
-    .trim();
+    .trim()
+    .split(' ')
+    .filter(Boolean)
+    .map((w) => WORD_ALIAS[w] ?? w);
 }
 
 const nameIndexCache = new WeakMap<BookData, Map<string, BookRemedy>>();
 
 /**
- * Find a remedy in a book from a (possibly longer) repertory name, e.g.
- * "Borax Veneta" → Borax, "Mercurius Solubilis" → Mercurius. Matches the
- * longest exact word-prefix, so it never matches the wrong remedy.
+ * Find a remedy in a book from a (possibly longer / differently-spelled)
+ * repertory name — e.g. "Borax Veneta" → Borax, "Mercurius Solubilis" →
+ * Mercurius, "Kalium Bichromicum" → Kali Bichromicum, "Platinum Metallicum" →
+ * Platina. Applies cross-source aliases, then matches the longest exact
+ * word-prefix, so it never matches the wrong remedy.
  */
 export function findBookRemedy(book: BookData, name: string): BookRemedy | undefined {
   let idx = nameIndexCache.get(book);
   if (!idx) {
     idx = new Map();
-    for (const r of book.remedies) idx.set(normName(r.name).replace(/ /g, ''), r);
+    for (const r of book.remedies) idx.set(canonWords(r.name).join(''), r);
     nameIndexCache.set(book, idx);
   }
-  const words = normName(name).split(' ').filter(Boolean);
+  const words = canonWords(name);
   for (let k = words.length; k >= 1; k--) {
     const hit = idx.get(words.slice(0, k).join(''));
     if (hit) return hit;
