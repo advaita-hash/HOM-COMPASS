@@ -8,17 +8,16 @@ const GENERIC = new Set(
   `agg amel from after before during when with general the and side sides region
    extending sensation as if in on of to it a an worse better about into onto
    being cannot everything himself herself thinking feeling general kinds sort
-   things something someone which while very much some this that then than there`.split(
-    /\s+/,
-  ),
+   things something someone which while very much some this that then than there
+   generalities clinical`.split(/\s+/),
 );
 
-/** Significant keywords from a rubric path (drop the chapter + generic words). */
+/** Significant keywords from the whole rubric path, INCLUDING the chapter word
+ *  (e.g. "Abdomen, pain, cramping" → abdomen, pain, cramping). */
 function rubricKeywords(rubricText: string): string[] {
-  const afterChapter = rubricText.split(',').slice(1).join(' ');
   return [
     ...new Set(
-      afterChapter
+      rubricText
         .toLowerCase()
         .replace(/[^a-z ]/g, ' ')
         .split(/\s+/)
