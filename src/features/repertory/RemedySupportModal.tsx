@@ -37,7 +37,11 @@ function splitSentences(text: string): string[] {
 
 function Highlighted({ text, keywords }: { text: string; keywords: string[] }) {
   if (keywords.length === 0) return <>{text}</>;
-  const re = new RegExp(`(${keywords.map((k) => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})`, 'ig');
+  // whole-word match only (\b…\b) so we never highlight a fragment inside a word
+  const re = new RegExp(
+    `\\b(${keywords.map((k) => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})\\b`,
+    'ig',
+  );
   const parts = text.split(re);
   return (
     <>
@@ -74,12 +78,13 @@ function BookSupport({
     const rubricKws = rubrics.map((r) => ({ rubric: r.rubric, kws: rubricKeywords(r.rubric) }));
     const lines: { text: string; kws: string[]; rubrics: string[] }[] = [];
     for (const sentence of splitSentences(remedy.text)) {
-      const low = sentence.toLowerCase();
+      // whole words of the sentence — match keywords verbatim, never a fragment
+      const wordSet = new Set(sentence.toLowerCase().split(/[^a-z]+/).filter(Boolean));
       const hitKws = new Set<string>();
       const hitRubrics = new Set<string>();
       for (const { rubric, kws } of rubricKws) {
         for (const k of kws) {
-          if (low.includes(k)) {
+          if (wordSet.has(k)) {
             hitKws.add(k);
             hitRubrics.add(rubric);
           }

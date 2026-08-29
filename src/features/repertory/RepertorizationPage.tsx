@@ -8,6 +8,7 @@ import { SymptomTranslator } from './SymptomTranslator';
 import { CausativeFactor } from './CausativeFactor';
 import { WorksheetGrid } from './WorksheetGrid';
 import { RemedySupportModal } from './RemedySupportModal';
+import { cleanSymptoms, useCaseDraft } from './caseDraftStore';
 import { usePatients } from '../patients/patientsStore';
 
 /**
@@ -31,9 +32,12 @@ export default function RepertorizationPage() {
   const [name, setName] = useState('');
   const [age, setAge] = useState('');
   const [gender, setGender] = useState('');
-  const [symptoms, setSymptoms] = useState('');
+  const symptoms = useCaseDraft((s) => s.symptoms);
+  const setFromText = useCaseDraft((s) => s.setFromText);
+  const removeSymptom = useCaseDraft((s) => s.removeSymptom);
   const [saved, setSaved] = useState(false);
   const [supportRemedy, setSupportRemedy] = useState<string | null>(null);
+  const symptomList = cleanSymptoms(symptoms); // individual, non-empty symptoms
 
   const { scores, rubrics } = repertorize(rep, items);
 
@@ -50,7 +54,7 @@ export default function RepertorizationPage() {
       pid = p.id;
       setPatientId(pid);
     }
-    const symptomLines = symptoms.split('\n').map((s) => s.trim()).filter(Boolean);
+    const symptomLines = symptomList; // each symptom saved individually
     const topRemedies = scores.slice(0, 5).map((s) => `${s.name} (${s.totalScore})`);
     const notes =
       `Rubrics (${rubrics.length}): ${rubrics.map((r) => r.rubric).join('; ')}` +
@@ -149,7 +153,38 @@ export default function RepertorizationPage() {
 
           <CausativeFactor rep={rep} />
 
-          <SymptomTranslator rep={rep} text={symptoms} onTextChange={setSymptoms} />
+          <SymptomTranslator
+            rep={rep}
+            text={symptoms.join('\n')}
+            onTextChange={setFromText}
+          />
+
+          {symptomList.length > 0 && (
+            <div className="card p-3">
+              <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                Symptoms saved individually ({symptomList.length})
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {symptoms.map((s, i) =>
+                  s.trim() ? (
+                    <span
+                      key={i}
+                      className="inline-flex items-center gap-1 rounded-full bg-brand-50 px-2.5 py-0.5 text-xs text-brand-700"
+                    >
+                      {s.trim()}
+                      <button
+                        onClick={() => removeSymptom(i)}
+                        className="text-brand-400 hover:text-red-600"
+                        aria-label={`Remove "${s.trim()}"`}
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ) : null,
+                )}
+              </div>
+            </div>
+          )}
 
           <button
             onClick={saveCase}
