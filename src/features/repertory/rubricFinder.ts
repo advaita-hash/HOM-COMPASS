@@ -136,12 +136,26 @@ export interface PhraseResult {
   matches: RubricMatch[];
 }
 
-// cache lowercased rubric paths per repertory object
-const cache = new WeakMap<Repertory, { rubric: Rubric; low: string }[]>();
-function indexOf(rep: Repertory) {
+// cache lowercased rubric paths + their whole-word sets, per repertory object.
+// The word set lets us match a token as a COMPLETE word (never a fragment
+// hiding inside another word, e.g. "air" must not match "chair"/"despair").
+interface IndexedRubric {
+  rubric: Rubric;
+  low: string;
+  words: Set<string>;
+}
+const cache = new WeakMap<Repertory, IndexedRubric[]>();
+function indexOf(rep: Repertory): IndexedRubric[] {
   let idx = cache.get(rep);
   if (!idx) {
-    idx = rep.rubrics.map((r) => ({ rubric: r, low: r.rubric.toLowerCase() }));
+    idx = rep.rubrics.map((r) => {
+      const low = r.rubric.toLowerCase();
+      return {
+        rubric: r,
+        low,
+        words: new Set(low.split(/[^a-z]+/).filter(Boolean)),
+      };
+    });
     cache.set(rep, idx);
   }
   return idx;
@@ -176,9 +190,9 @@ export function findRubricsForPhrase(
 
   const idx = indexOf(rep);
   const scored: RubricMatch[] = [];
-  for (const { rubric, low } of idx) {
+  for (const { rubric, low, words } of idx) {
     let score = 0;
-    for (const t of tokens) if (low.includes(t)) score += 1;
+    for (const t of tokens) if (words.has(t)) score += 1; // whole-word match only
     if (score === 0) continue;
     const coverage = score / tokens.length;
     const specificity = 1 / (1 + low.length / 40);
@@ -205,9 +219,9 @@ export function findCausation(rep: Repertory, phrase: string, limit = 8): Rubric
   if (tokens.length === 0) return [];
   const idx = indexOf(rep);
   const scored: RubricMatch[] = [];
-  for (const { rubric, low } of idx) {
+  for (const { rubric, low, words } of idx) {
     let score = 0;
-    for (const t of tokens) if (low.includes(t)) score += 1;
+    for (const t of tokens) if (words.has(t)) score += 1; // whole-word match only
     if (score === 0) continue;
     const coverage = score / tokens.length;
     const isEtiology = low.includes('ailments') || low.includes(', from') || low.includes(', after');
