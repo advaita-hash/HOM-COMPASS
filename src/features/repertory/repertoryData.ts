@@ -54,15 +54,27 @@ interface CompactRepertory {
 }
 
 function expand(c: CompactRepertory): Repertory {
-  const rubrics = c.rubrics.map(([fullpath, rems], i) => ({
-    id: `k${i}`,
-    chapter: fullpath.split(',')[0].trim(),
-    rubric: fullpath,
-    remedies: rems.map(([idx, grade]) => ({
-      name: c.remedies[idx],
-      grade: grade as 1 | 2 | 3 | 4,
-    })),
-  }));
+  // Canonical chapter order (Mind, Vertigo, Head, …) so results follow the
+  // repertory schema — Chapter → Rubric → Sub-rubric — not alphabetically.
+  const chapterOrder = new Map(c.chapters.map((ch, i) => [ch.toLowerCase(), i]));
+  const rubrics = c.rubrics
+    .map(([fullpath, rems], i) => ({
+      id: `k${i}`, // stable id tied to source position (saved worksheets keep working)
+      ord: i, // source order = true rubric/sub-rubric sequence within a chapter
+      chapter: fullpath.split(',')[0].trim(),
+      rubric: fullpath,
+      remedies: rems.map(([idx, grade]) => ({
+        name: c.remedies[idx],
+        grade: grade as 1 | 2 | 3 | 4,
+      })),
+    }))
+    .sort((a, b) => {
+      const ca = chapterOrder.get(a.chapter.toLowerCase()) ?? Number.MAX_SAFE_INTEGER;
+      const cb = chapterOrder.get(b.chapter.toLowerCase()) ?? Number.MAX_SAFE_INTEGER;
+      // chapter first (schema order), then the source order inside the chapter
+      return ca - cb || a.ord - b.ord;
+    })
+    .map(({ ord: _ord, ...r }) => r);
   return {
     id: c.id,
     title: c.title,
