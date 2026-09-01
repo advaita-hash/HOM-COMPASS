@@ -95,7 +95,7 @@ export default function RepertoryPage() {
 
   return (
     <div className="mx-auto max-w-4xl p-6 md:p-8">
-      <header className="mb-4 flex items-center justify-between gap-3">
+      <header className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <BookOpen className="h-6 w-6 text-brand-600" />
           <div>

@@ -145,7 +145,7 @@ export function WorksheetGrid({
               if (!rubric) return null;
               return (
                 <tr key={rubricId} className="border-b border-slate-100 hover:bg-slate-50">
-                  <td className="sticky left-0 z-10 w-[360px] min-w-[240px] max-w-[360px] bg-white px-3 py-2 align-top">
+                  <td className="sticky left-0 z-10 w-[220px] min-w-[180px] max-w-[220px] bg-white px-3 py-2 align-top sm:w-[360px] sm:min-w-[240px] sm:max-w-[360px]">
                     <div className="break-words">
                       <span className="text-[10px] uppercase tracking-wide text-slate-400">
                         {rubric.chapter}
