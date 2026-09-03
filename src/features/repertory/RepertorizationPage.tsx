@@ -11,6 +11,15 @@ import { RemedySupportModal } from './RemedySupportModal';
 import { cleanSymptoms, useCaseDraft } from './caseDraftStore';
 import { usePatients } from '../patients/patientsStore';
 
+/** Phone/tablet tabs so each part of the case fits one screen (desktop shows
+ *  everything in two columns, unchanged). */
+type CaseTab = 'patient' | 'symptoms' | 'analysis';
+const TABS: { id: CaseTab; label: string }[] = [
+  { id: 'patient', label: 'Patient' },
+  { id: 'symptoms', label: 'Symptoms' },
+  { id: 'analysis', label: 'Analysis' },
+];
+
 /**
  * Case workspace: enter patient details, translate plain-language symptoms into
  * rubrics, repertorise live, and save the case to the patient's record.
@@ -37,7 +46,12 @@ export default function RepertorizationPage() {
   const removeSymptom = useCaseDraft((s) => s.removeSymptom);
   const [saved, setSaved] = useState(false);
   const [supportRemedy, setSupportRemedy] = useState<string | null>(null);
+  const [tab, setTab] = useState<CaseTab>('patient'); // phone/tablet only
   const symptomList = cleanSymptoms(symptoms); // individual, non-empty symptoms
+
+  // On phone/tablet a section is shown only when its tab is active; on desktop
+  // (lg+) every section is always visible in the two-column grid.
+  const panel = (id: CaseTab) => (tab === id ? '' : 'hidden lg:block');
 
   const { scores, rubrics } = repertorize(rep, items);
 
@@ -102,13 +116,40 @@ export default function RepertorizationPage() {
         </span>
       </div>
 
+      {/* Phone/tablet tab bar — each tab fits one screen. Hidden on desktop. */}
+      <div className="mb-4 flex gap-1 rounded-xl border border-slate-200 bg-white p-1 lg:hidden">
+        {TABS.map((t) => {
+          const active = tab === t.id;
+          return (
+            <button
+              key={t.id}
+              onClick={() => setTab(t.id)}
+              className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-sm font-medium transition-colors ${
+                active ? 'bg-brand-600 text-white' : 'text-slate-600 hover:bg-slate-100'
+              }`}
+            >
+              {t.label}
+              {t.id === 'analysis' && items.length > 0 && (
+                <span
+                  className={`rounded-full px-1.5 text-xs ${
+                    active ? 'bg-white/25' : 'bg-brand-100 text-brand-700'
+                  }`}
+                >
+                  {items.length}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
       <div className="grid gap-5 lg:grid-cols-[340px_1fr]">
         {/* Left: STEP 1 — patient's language → rubrics */}
         <div className="space-y-4">
-          <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+          <div className="hidden text-xs font-semibold uppercase tracking-wide text-slate-400 lg:block">
             Step 1 · Patient’s language → rubrics
           </div>
-          <div className="card p-4">
+          <div className={`card p-4 ${panel('patient')}`}>
             <h2 className="mb-2 text-sm font-semibold text-slate-700">Patient</h2>
             <select
               value={patientId}
@@ -151,6 +192,7 @@ export default function RepertorizationPage() {
             )}
           </div>
 
+          <div className={`space-y-4 ${panel('symptoms')}`}>
           <CausativeFactor rep={rep} />
 
           <SymptomTranslator
@@ -209,11 +251,12 @@ export default function RepertorizationPage() {
               View all patients &amp; cases →
             </Link>
           )}
+          </div>
         </div>
 
         {/* Right: STEP 2 & 3 — chosen rubrics graded & evaluated */}
-        <div>
-          <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
+        <div className={panel('analysis')}>
+          <div className="mb-2 hidden text-xs font-semibold uppercase tracking-wide text-slate-400 lg:block">
             Step 2 &amp; 3 · Chosen rubrics — graded &amp; evaluated
           </div>
           <WorksheetGrid rep={rep} onRemedy={setSupportRemedy} />
