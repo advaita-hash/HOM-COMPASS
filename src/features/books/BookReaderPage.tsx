@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
-import { ChevronLeft, Loader2, Search } from 'lucide-react';
+import { ChevronLeft, List, Loader2, Search } from 'lucide-react';
 import { getBookMeta, useBook } from './booksIndex';
 import { DrugPictureView } from './DrugPictureView';
 import type { BookRemedy } from './types';
@@ -32,6 +32,10 @@ export default function BookReaderPage() {
   const { data: book, isLoading, isError, error } = useBook(bookId);
   const [query, setQuery] = useState(searchParams.get('q') ?? '');
   const [view, setView] = useState<'portrait' | 'full'>('portrait');
+  // On phone/tablet the remedy index and the reader can't sit side by side, so
+  // the list collapses once a remedy is chosen (tap "All remedies" to reopen).
+  // Desktop (lg+) always shows both.
+  const [listOpen, setListOpen] = useState(!remedySlug);
 
   const q = query.trim().toLowerCase();
   const remedies = book?.remedies ?? [];
@@ -70,8 +74,12 @@ export default function BookReaderPage() {
       </div>
 
       <div className="flex min-h-0 flex-1">
-        {/* Remedy index */}
-        <div className="flex w-64 shrink-0 flex-col border-r border-slate-200 bg-slate-50">
+        {/* Remedy index — full-width on mobile, collapses once a remedy is picked */}
+        <div
+          className={`${
+            listOpen ? 'flex' : 'hidden'
+          } w-full shrink-0 flex-col border-r border-slate-200 bg-slate-50 lg:flex lg:w-64`}
+        >
           <div className="relative p-3">
             <Search className="pointer-events-none absolute left-6 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <input
@@ -93,6 +101,7 @@ export default function BookReaderPage() {
                 <Link
                   key={r.slug}
                   to={`/books/${bookId}/${r.slug}`}
+                  onClick={() => setListOpen(false)}
                   className={`block truncate rounded-md px-3 py-1.5 text-sm ${
                     active
                       ? 'bg-brand-100 font-medium text-brand-800'
@@ -114,8 +123,12 @@ export default function BookReaderPage() {
           )}
         </div>
 
-        {/* Reader */}
-        <div className="min-h-0 flex-1 overflow-auto bg-white px-6 py-6 md:px-10">
+        {/* Reader — hidden on mobile while the list is open */}
+        <div
+          className={`${
+            listOpen ? 'hidden' : 'block'
+          } min-h-0 flex-1 overflow-auto bg-white px-6 py-6 md:px-10 lg:block`}
+        >
           {isError && (
             <p className="text-sm text-red-600">
               {(error as Error)?.message ?? 'Failed to load this book.'}
@@ -123,6 +136,12 @@ export default function BookReaderPage() {
           )}
           {selected ? (
             <div className="mx-auto max-w-2xl">
+              <button
+                onClick={() => setListOpen(true)}
+                className="mb-4 inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100 lg:hidden"
+              >
+                <List className="h-4 w-4" /> All remedies
+              </button>
               <div className="mb-4 inline-flex rounded-lg border border-slate-200 p-0.5 text-sm">
                 {(['portrait', 'full'] as const).map((v) => (
                   <button
