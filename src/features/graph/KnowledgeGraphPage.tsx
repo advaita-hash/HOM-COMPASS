@@ -2,6 +2,12 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Loader2, Network, Search } from 'lucide-react';
 import { type GNode, type NodeLabel, useGraph } from './graphData';
+import { canonicalName } from '../../lib/remedyName';
+
+/** Remedy node names get the canonical spelling; rubric/chapter names don't. */
+function nodeLabel(n: GNode): string {
+  return n.label === 'REMEDY' ? canonicalName(n.name) : n.name;
+}
 
 const COLOR: Record<NodeLabel, string> = {
   REMEDY: '#26665c',
@@ -86,7 +92,7 @@ export default function KnowledgeGraphPage() {
                 className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm hover:bg-slate-50"
               >
                 <span className="h-2 w-2 rounded-full" style={{ background: COLOR[n.label] }} />
-                <span className="flex-1 truncate">{n.name}</span>
+                <span className="flex-1 truncate">{nodeLabel(n)}</span>
                 <span className="text-[10px] uppercase text-slate-400">{LABEL_TEXT[n.label]}</span>
               </button>
             ))}
@@ -126,7 +132,8 @@ export default function KnowledgeGraphPage() {
                 const a = (i / neighbors.length) * Math.PI * 2 - Math.PI / 2;
                 const x = cx + R * Math.cos(a);
                 const y = cy + R * Math.sin(a);
-                const label = nb.node.name.length > 16 ? nb.node.name.slice(0, 15) + '…' : nb.node.name;
+                const nm = nodeLabel(nb.node);
+                const label = nm.length > 16 ? nm.slice(0, 15) + '…' : nm;
                 return (
                   <g
                     key={nb.node.id}
@@ -155,7 +162,7 @@ export default function KnowledgeGraphPage() {
                 className="fill-slate-800"
                 style={{ fontSize: 13, fontWeight: 600 }}
               >
-                {current.name}
+                {nodeLabel(current)}
               </text>
             </svg>
           </div>
@@ -169,7 +176,7 @@ export default function KnowledgeGraphPage() {
                 </span>
               </div>
               <h2 className="mt-1 font-serif text-lg font-semibold text-slate-800">
-                {current.name}
+                {nodeLabel(current)}
               </h2>
               <p className="text-xs text-slate-500">{current.degree} connections</p>
               {current.label === 'REMEDY' && (
@@ -193,7 +200,7 @@ export default function KnowledgeGraphPage() {
                     className="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-sm hover:bg-slate-50"
                   >
                     <span className="h-2 w-2 rounded-full" style={{ background: COLOR[nb.node.label] }} />
-                    <span className="flex-1 truncate text-slate-700">{nb.node.name}</span>
+                    <span className="flex-1 truncate text-slate-700">{nodeLabel(nb.node)}</span>
                     {nb.relationship === 'HAS_RUBRIC' && (
                       <span className="text-[10px] text-slate-400">g{nb.weight}</span>
                     )}

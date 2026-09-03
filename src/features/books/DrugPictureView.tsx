@@ -8,6 +8,7 @@ import {
   UserRound,
 } from 'lucide-react';
 import { type DrugPicture, distill } from './drugPicture';
+import { canonicalName } from '../../lib/remedyName';
 import type { BookRemedy } from './types';
 
 function Section({
@@ -55,7 +56,7 @@ export function DrugPictureView({ remedy }: { remedy: BookRemedy }) {
 
   return (
     <article className="max-w-none">
-      <h2 className="font-serif text-2xl font-bold text-slate-800">{remedy.name}</h2>
+      <h2 className="font-serif text-2xl font-bold text-slate-800">{canonicalName(remedy.name)}</h2>
       {remedy.commonName && (
         <p className="mt-0.5 text-sm italic text-slate-500">{remedy.commonName}</p>
       )}

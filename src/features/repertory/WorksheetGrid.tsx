@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { X } from 'lucide-react';
 import type { Grade, Repertory } from './types';
 import { repertorize, useWorksheet } from './worksheetStore';
+import { canonicalName } from '../../lib/remedyName';
 
 const GRADE_CELL: Record<number, string> = {
   1: 'bg-slate-100 text-slate-500',
@@ -57,7 +58,7 @@ export function WorksheetGrid({
                 {i + 1}
               </span>
               <span className="flex-1 truncate text-left text-sm font-medium text-slate-800">
-                {s.name}
+                {canonicalName(s.name)}
               </span>
               <span className="text-xs text-slate-500">
                 {s.rubricsCovered}/{items.length} · {s.totalScore}
@@ -120,18 +121,18 @@ export function WorksheetGrid({
                       onClick={() => onRemedy(s.name)}
                       className="mx-auto block h-28 w-6 whitespace-nowrap text-left text-xs font-medium text-slate-600 hover:text-brand-600"
                       style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
-                      title={`${s.name} — show Materia Medica support`}
+                      title={`${canonicalName(s.name)} — show Materia Medica support`}
                     >
-                      {s.name}
+                      {canonicalName(s.name)}
                     </button>
                   ) : (
                     <Link
                       to={remedyBookLink(s.name)}
                       className="mx-auto block h-28 w-6 whitespace-nowrap text-left text-xs font-medium text-slate-600 hover:text-brand-600"
                       style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
-                      title={s.name}
+                      title={canonicalName(s.name)}
                     >
-                      {s.name}
+                      {canonicalName(s.name)}
                     </Link>
                   )}
                 </th>

@@ -4,6 +4,7 @@ import { BookText, FlaskConical, Loader2, Search } from 'lucide-react';
 import { REMEDIES } from '../../data/remedies';
 import { useBook } from '../books/booksIndex';
 import { useRepertory } from '../repertory/repertoryData';
+import { canonicalName } from '../../lib/remedyName';
 
 function snippet(text: string, q: string, len = 140): string {
   const i = text.toLowerCase().indexOf(q);
@@ -122,7 +123,7 @@ export default function GlobalSearchPage() {
                   <Link key={r.id} to={`/materia-medica/${r.id}`} className="card p-3 hover:shadow-md">
                     <div className="flex items-center gap-2 text-sm font-medium text-slate-800">
                       <FlaskConical className="h-4 w-4 text-brand-500" />
-                      <Highlight text={r.name} q={q} />
+                      <Highlight text={canonicalName(r.name)} q={q} />
                     </div>
                     <p className="mt-1 line-clamp-2 text-xs text-slate-500">{r.essence}</p>
                   </Link>
@@ -144,7 +145,7 @@ export default function GlobalSearchPage() {
                 >
                   <div className="flex items-center gap-2 text-sm font-medium text-slate-800">
                     <BookText className="h-4 w-4 text-brand-500" />
-                    {h.name}
+                    {canonicalName(h.name)}
                     <span className="text-[10px] uppercase tracking-wide text-slate-400">
                       {h.book}
                     </span>

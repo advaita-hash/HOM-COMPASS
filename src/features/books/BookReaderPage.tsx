@@ -3,6 +3,7 @@ import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { ChevronLeft, List, Loader2, Search } from 'lucide-react';
 import { getBookMeta, useBook } from './booksIndex';
 import { DrugPictureView } from './DrugPictureView';
+import { canonicalName } from '../../lib/remedyName';
 import type { BookRemedy } from './types';
 
 function RemedyText({ remedy }: { remedy: BookRemedy }) {
@@ -12,7 +13,7 @@ function RemedyText({ remedy }: { remedy: BookRemedy }) {
   );
   return (
     <article className="prose-sm max-w-none">
-      <h2 className="font-serif text-2xl font-bold text-slate-800">{remedy.name}</h2>
+      <h2 className="font-serif text-2xl font-bold text-slate-800">{canonicalName(remedy.name)}</h2>
       {remedy.commonName && (
         <p className="mt-0.5 text-sm italic text-slate-500">{remedy.commonName}</p>
       )}
@@ -108,7 +109,7 @@ export default function BookReaderPage() {
                       : 'text-slate-600 hover:bg-slate-100'
                   }`}
                 >
-                  {r.name}
+                  {canonicalName(r.name)}
                 </Link>
               );
             })}

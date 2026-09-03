@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { BookText, Loader2, X } from 'lucide-react';
 import { findBookRemedy, useBook } from '../books/booksIndex';
+import { canonicalName } from '../../lib/remedyName';
 import type { Rubric } from './types';
 
 const GENERIC = new Set(
@@ -111,7 +112,7 @@ function BookSupport({
       <div className="mb-2 flex items-center gap-2">
         <BookText className="h-4 w-4 text-brand-600" />
         <span className="text-sm font-semibold text-slate-700">
-          {label}: {result.remedy.name}
+          {label}: {canonicalName(result.remedy.name)}
         </span>
         <Link
           to={`/books/${bookId}/${result.remedy.slug}`}
@@ -165,7 +166,9 @@ export function RemedySupportModal({
       >
         <div className="flex items-center justify-between border-b border-slate-200 px-5 py-3">
           <div>
-            <h2 className="font-serif text-xl font-semibold text-slate-800">{remedyName}</h2>
+            <h2 className="font-serif text-xl font-semibold text-slate-800">
+            {canonicalName(remedyName)}
+          </h2>
             <p className="text-xs text-slate-500">
               Materia Medica support for {rubrics.length} selected rubric
               {rubrics.length === 1 ? '' : 's'}

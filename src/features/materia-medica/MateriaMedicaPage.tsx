@@ -5,6 +5,7 @@ import { REMEDIES, getRemedyById } from '../../data/remedies';
 import { RemedyDetail } from '../remedy/RemedyDetail';
 import { BookCrossLinks } from '../books/BookCrossLinks';
 import { useBook } from '../books/booksIndex';
+import { canonicalName } from '../../lib/remedyName';
 
 type Source = 'Curated' | 'Boericke' | 'Tyler';
 
@@ -130,7 +131,7 @@ function RemedyBrowser() {
           <Link key={e.key} to={e.to} className="card p-3 transition-shadow hover:shadow-md">
             <div className="flex items-center gap-2">
               <span className="min-w-0 flex-1 truncate font-serif text-base font-semibold text-slate-800">
-                {e.name}
+                {canonicalName(e.name)}
               </span>
               <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${SOURCE_BADGE[e.source]}`}>
                 {e.source}

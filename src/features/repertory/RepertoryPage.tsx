@@ -5,6 +5,7 @@ import { REPERTORIES, useRepertory, useRepertorySelection } from './repertoryDat
 import { RepertorySelect } from './RepertorySelect';
 import { RemedySupportModal } from './RemedySupportModal';
 import { useBindWorksheet, useWorksheet } from './worksheetStore';
+import { canonicalName } from '../../lib/remedyName';
 import type { Grade, Rubric } from './types';
 
 const GRADE_CLASS: Record<Grade, string> = {
@@ -30,7 +31,7 @@ function RemedyChips({
           className={`${GRADE_CLASS[r.grade as Grade]} hover:underline`}
           title={`grade ${r.grade} — Materia Medica support`}
         >
-          {r.name}
+          {canonicalName(r.name)}
         </button>
       ))}
     </div>
