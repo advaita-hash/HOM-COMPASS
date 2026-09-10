@@ -9,9 +9,16 @@ method and the re-runnable cleanup step.
 1. **Text extraction**
    - _Tyler — Homœopathic Drug Pictures_ is a text PDF: extracted directly with
      [`pypdfium2`](https://pypi.org/project/pypdfium2/) (`get_textpage().get_text_range()`).
-   - _Boericke — Pocket Manual_ is a **scanned image PDF** (no embedded text):
-     each page was rasterised with `pypdfium2` at ~200 DPI and OCR'd with
-     **Tesseract 5** via `pytesseract`.
+   - _Boericke — Pocket Manual_ **remedy text** now comes from the clean
+     public-domain **Médi-T transcription** (`homeoint.org/books/boericmm/`),
+     not OCR. The earlier build OCR'd a scanned image PDF with **Tesseract 5**;
+     that text carried pervasive OCR errors (e.g. `setsations`→sensations,
+     `fiver`→liver), so the monograph bodies were replaced with the transcription
+     (matched to our 638 remedy entries by name — exact/prefix, then a guarded
+     fuzzy pass and a hand-verified override table for synonyms such as
+     Jequirity = Abrus precatorius). 611/638 entries were re-sourced; 27 obscure
+     remedies absent from the transcription keep their prior (cleaned) text.
+     Remedy names, slugs and the compact structure are unchanged.
 
 2. **Parsing into remedies**
    - Detect monograph titles (all-caps chapter headings), skip front matter and
