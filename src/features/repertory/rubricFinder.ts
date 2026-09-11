@@ -63,7 +63,48 @@ const SYNONYMS: Record<string, string[]> = {
   menses: ['menses'], period: ['menses'], periods: ['menses'], pregnancy: ['pregnancy'],
   right: ['right'], left: ['left'], side: ['side'], seaside: ['seashore'],
   sun: ['sun'], sunlight: ['sun'], jar: ['jar'], jarring: ['jar'], bathing: ['bathing'],
+  // everyday / lay language → repertory terms (so plain speech maps correctly)
+  tummy: ['abdomen'], gut: ['abdomen'], guts: ['abdomen'], stomachache: ['abdomen', 'pain'],
+  ache: ['pain'], aches: ['pain'], aching: ['pain'], achy: ['pain'],
+  hurts: ['pain'], hurting: ['pain'], sore: ['pain'], soreness: ['pain'],
+  pee: ['urination'], peeing: ['urination'], wee: ['urination'], urinate: ['urination'],
+  poop: ['stool'], poo: ['stool'], stools: ['stool'],
+  puke: ['vomiting'], puking: ['vomiting'], vomit: ['vomiting'], queasy: ['nausea'],
+  lightheaded: ['vertigo'], woozy: ['vertigo'], giddy: ['vertigo'],
+  snot: ['coryza'], snotty: ['coryza'], sneezy: ['sneezing'],
+  breathless: ['respiration'], wheezy: ['asthma', 'respiration'],
+  rash: ['eruptions'], rashes: ['eruptions'], spots: ['eruptions'],
+  constipated: ['constipation'], wind: ['flatulence'], windy: ['flatulence'],
+  burp: ['eructations'], burping: ['eructations'], belching: ['eructations'], belch: ['eructations'],
+  cramps: ['cramp'], crampy: ['cramp'], feverish: ['fever'],
+  knackered: ['weakness'], drained: ['weakness'], poorly: ['prostration'],
+  jittery: ['restlessness'], antsy: ['restlessness'],
+  down: ['sadness'], low: ['sadness'], grumpy: ['irritability'], moody: ['irritability'],
+  cross: ['irritability'], itch: ['itching'],
 };
+
+/**
+ * Multi-word everyday expressions → repertory terms. Applied to the whole
+ * phrase before tokenising, so "tummy ache" becomes "abdomen pain", not two
+ * separate (and easily mis-matched) words.
+ */
+const LAY_PHRASES: [RegExp, string][] = [
+  [/tummy ache|belly ache|stomach ?ache|upset stomach/, 'abdomen pain'],
+  [/ear ?ache/, 'ear pain'],
+  [/tooth ?ache/, 'teeth pain'],
+  [/head ?ache/, 'head pain'],
+  [/back ?ache/, 'back pain'],
+  [/sore throat/, 'throat pain'],
+  [/throw(?:ing)? up/, 'vomiting'],
+  [/feel(?:ing)? sick/, 'nausea'],
+  [/can'?t sleep|cannot sleep|trouble sleeping/, 'sleeplessness'],
+  [/out of breath|short of breath/, 'respiration difficult'],
+  [/runny nose/, 'coryza'],
+  [/stuffy nose|blocked nose|bunged up/, 'nose obstruction'],
+  [/pins and needles/, 'tingling numbness'],
+  [/hot flush(?:es)?|hot flash(?:es)?/, 'heat flushes'],
+  [/the runs|loose motions?/, 'diarrhoea'],
+];
 
 const STOPWORDS = new Set(
   `the a an of to in on and or is am are be been being have has had i me my he she
@@ -125,6 +166,12 @@ mapBody('fever feverish', ['fever']);
 mapBody('perspiration sweat sweating', ['perspiration']);
 mapBody('genitals sexual libido erection', ['genitalia male', 'genitalia female']);
 mapBody('menses menstrual leucorrhoea vagina uterus ovary', ['genitalia female']);
+// lay body words
+mapBody('tummy gut guts', ['abdomen']);
+mapBody('pee wee urinate peeing', ['urine', 'bladder']);
+mapBody('poop poo', ['stool', 'rectum']);
+mapBody('snot snotty', ['nose']);
+mapBody('rash rashes spots', ['skin']);
 
 export interface RubricMatch {
   rubric: Rubric;
@@ -162,8 +209,11 @@ function indexOf(rep: Repertory): IndexedRubric[] {
 }
 
 function expandTokens(phrase: string): string[] {
-  const words = phrase
-    .toLowerCase()
+  const lc = phrase.toLowerCase();
+  // expand multi-word everyday expressions first ("tummy ache" → "abdomen pain")
+  let extra = '';
+  for (const [re, term] of LAY_PHRASES) if (re.test(lc)) extra += ' ' + term;
+  const words = `${lc} ${extra}`
     .replace(/[^a-z\s]/g, ' ')
     .split(/\s+/)
     .filter((w) => w.length >= 3 && !STOPWORDS.has(w));
@@ -173,6 +223,13 @@ function expandTokens(phrase: string): string[] {
     for (const s of SYNONYMS[w] ?? []) out.add(s);
   }
   return [...out];
+}
+
+/** True when a word already has a built-in repertory sense (synonym or body
+ *  map) — used to stop the AI layer from re-translating known words. */
+export function hasCuratedSense(word: string): boolean {
+  const w = word.toLowerCase();
+  return w in SYNONYMS || w in BODY_TO_CHAPTER;
 }
 
 /** Find candidate rubrics for one plain-language phrase. */

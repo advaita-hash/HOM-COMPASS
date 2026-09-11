@@ -12,7 +12,7 @@ export interface WordTranslation {
   to: string[];
 }
 
-const SIM_THRESHOLD = 0.45; // how close a common word must be to a repertory word
+const SIM_THRESHOLD = 0.52; // strict: a lay word must be clearly close to a repertory word
 const TOP_PER_WORD = 2;
 
 export interface Semantic {

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ArrowRight, Check, Loader2, Plus, Sparkles, Wand2 } from 'lucide-react';
 import type { Repertory, Rubric } from './types';
-import { findRubricsForPhrase } from './rubricFinder';
+import { findRubricsForPhrase, hasCuratedSense } from './rubricFinder';
 import { useWorksheet } from './worksheetStore';
 import { useSemantic, type WordTranslation } from './semantic/useSemantic';
 
@@ -41,9 +41,14 @@ export function SymptomTranslator({
         .map((p) => p.trim())
         .filter(Boolean);
 
-      // translate every common word once (into repertory words)
+      // the AI layer only handles words with NO built-in sense — the curated
+      // common-language map already covers the rest reliably, and letting the
+      // model re-translate known words caused mis-maps ("tummy ache" → ear).
       const allWords = phrases.flatMap((p) =>
-        p.toLowerCase().split(/[^a-z]+/).filter((w) => w.length >= 3),
+        p
+          .toLowerCase()
+          .split(/[^a-z]+/)
+          .filter((w) => w.length >= 3 && !hasCuratedSense(w)),
       );
       const trans = sem.status === 'ready' ? await sem.translate(allWords) : [];
       const transByWord = new Map(trans.map((t) => [t.word, t.to]));
