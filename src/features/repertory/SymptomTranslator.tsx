@@ -1,27 +1,21 @@
-import { useMemo, useState } from 'react';
-import { Check, Loader2, Plus, Sparkles, Wand2 } from 'lucide-react';
+import { useState } from 'react';
+import { ArrowRight, Check, Loader2, Plus, Sparkles, Wand2 } from 'lucide-react';
 import type { Repertory, Rubric } from './types';
 import { findRubricsForPhrase } from './rubricFinder';
 import { useWorksheet } from './worksheetStore';
-import { useSemantic } from './semantic/useSemantic';
+import { useSemantic, type WordTranslation } from './semantic/useSemantic';
 
-/** A rubric suggestion, tagged when it came from semantic understanding. */
-interface Match {
-  rubric: Rubric;
-  score: number;
-  ai?: boolean;
-}
 interface PhraseBlock {
   phrase: string;
-  matches: Match[];
+  translations: WordTranslation[];
+  matches: { rubric: Rubric; score: number }[];
 }
 
-const SEM_THRESHOLD = 0.35; // cosine cutoff for "related enough" to show
-
 /**
- * Everyday language → repertory rubrics. Keyword/chapter matching runs always;
- * when on-device understanding is enabled, semantic matches are blended in so
- * paraphrases ("tummy ache" → Abdomen/Stomach, pain) are found too.
+ * Everyday language → repertory rubrics. The keyword/chapter matcher always
+ * runs; when on-device understanding is on, each common word is first translated
+ * to its nearest repertory word ("tummy" → abdomen) and those words are fed into
+ * the matcher so plain wording still lands on the right rubrics.
  */
 export function SymptomTranslator({
   rep,
@@ -38,8 +32,6 @@ export function SymptomTranslator({
   const add = useWorksheet((s) => s.add);
   const sem = useSemantic(rep);
 
-  const byId = useMemo(() => new Map((rep?.rubrics ?? []).map((r) => [r.id, r])), [rep]);
-
   async function run() {
     if (!rep) return;
     setBusy(true);
@@ -48,31 +40,27 @@ export function SymptomTranslator({
         .split(/[\n;]+/)
         .map((p) => p.trim())
         .filter(Boolean);
-      const blocks: PhraseBlock[] = [];
-      for (const phrase of phrases) {
-        // keyword layer (always)
-        const kw = findRubricsForPhrase(rep, phrase, 8);
-        const merged = new Map<string, Match>();
-        for (const m of kw) merged.set(m.rubric.id, { rubric: m.rubric, score: m.score });
-        // semantic layer (when ready)
-        if (sem.status === 'ready') {
-          const hits = await sem.search(phrase, 8);
-          for (const h of hits) {
-            if (h.score < SEM_THRESHOLD) continue;
-            const rubric = byId.get(h.id);
-            if (!rubric) continue;
-            const existing = merged.get(h.id);
-            if (existing) {
-              existing.ai = true;
-              existing.score += 2 + h.score; // agreement boost
-            } else {
-              merged.set(h.id, { rubric, score: 2 + h.score, ai: true });
-            }
-          }
+
+      // translate every common word once (into repertory words)
+      const allWords = phrases.flatMap((p) =>
+        p.toLowerCase().split(/[^a-z]+/).filter((w) => w.length >= 3),
+      );
+      const trans = sem.status === 'ready' ? await sem.translate(allWords) : [];
+      const transByWord = new Map(trans.map((t) => [t.word, t.to]));
+
+      const blocks: PhraseBlock[] = phrases.map((phrase) => {
+        const words = [...new Set(phrase.toLowerCase().split(/[^a-z]+/).filter(Boolean))];
+        const translations: WordTranslation[] = [];
+        for (const w of words) {
+          const to = transByWord.get(w);
+          if (to) translations.push({ word: w, to });
         }
-        const matches = [...merged.values()].sort((a, b) => b.score - a.score).slice(0, 8);
-        blocks.push({ phrase, matches });
-      }
+        // feed the translated repertory words into the keyword matcher
+        const extra = translations.flatMap((t) => t.to).join(' ');
+        const augmented = extra ? `${phrase} ${extra}` : phrase;
+        const matches = findRubricsForPhrase(rep, augmented, 8);
+        return { phrase, translations, matches };
+      });
       setResults(blocks);
     } finally {
       setBusy(false);
@@ -99,11 +87,7 @@ export function SymptomTranslator({
         placeholder={'anxious about health\nworse in warm rooms\ncraves salt\nweeps when consoled'}
         className="mt-3 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-brand-400 focus:outline-none"
       />
-      <button
-        onClick={run}
-        disabled={!rep || !text.trim() || busy}
-        className="btn-primary mt-2"
-      >
+      <button onClick={run} disabled={!rep || !text.trim() || busy} className="btn-primary mt-2">
         {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
         Find rubrics
       </button>
@@ -113,6 +97,25 @@ export function SymptomTranslator({
           {results.map((r, i) => (
             <div key={i}>
               <div className="mb-1 text-xs font-medium text-slate-500">“{r.phrase}”</div>
+
+              {r.translations.length > 0 && (
+                <div className="mb-1.5 flex flex-wrap items-center gap-1.5">
+                  <span className="text-[10px] uppercase tracking-wide text-violet-500">
+                    repertory language
+                  </span>
+                  {r.translations.map((t) => (
+                    <span
+                      key={t.word}
+                      className="inline-flex items-center gap-1 rounded-full bg-violet-50 px-2 py-0.5 text-[11px] text-violet-700"
+                    >
+                      {t.word}
+                      <ArrowRight className="h-3 w-3" />
+                      {t.to.join(', ')}
+                    </span>
+                  ))}
+                </div>
+              )}
+
               {r.matches.length === 0 ? (
                 <p className="text-xs text-slate-400">No rubric match — try different wording.</p>
               ) : (
@@ -136,11 +139,6 @@ export function SymptomTranslator({
                           <Plus className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
                         )}
                         <span className="min-w-0 flex-1 break-words">{m.rubric.rubric}</span>
-                        {m.ai && (
-                          <span className="mt-0.5 shrink-0 rounded bg-violet-100 px-1.5 text-[10px] font-medium uppercase text-violet-700">
-                            AI
-                          </span>
-                        )}
                         <span className="mt-0.5 shrink-0 text-[10px] uppercase text-slate-400">
                           {m.rubric.remedies.length}
                         </span>
@@ -165,8 +163,8 @@ function SemanticToggle({ sem }: { sem: ReturnType<typeof useSemantic> }) {
   const line: Record<string, string> = {
     off: 'Off — matches keywords only.',
     loading: 'Loading the language model…',
-    building: `Learning the repertory… ${pct}%`,
-    ready: 'On — understands everyday wording.',
+    building: `Learning the repertory’s words… ${pct}%`,
+    ready: 'On — translates everyday words into repertory language.',
     unsupported: 'Not supported on this browser — using keyword match.',
     error: 'Couldn’t load the model — using keyword match.',
   };
@@ -188,7 +186,9 @@ function SemanticToggle({ sem }: { sem: ReturnType<typeof useSemantic> }) {
           className="h-4 w-4 accent-brand-600"
         />
         <Sparkles className="h-4 w-4 text-violet-500" />
-        <span className="text-sm font-medium text-slate-700">Understand meaning (on-device AI)</span>
+        <span className="text-sm font-medium text-slate-700">
+          Translate everyday words (on-device AI)
+        </span>
         {(sem.status === 'loading' || sem.status === 'building') && (
           <Loader2 className="h-3.5 w-3.5 animate-spin text-brand-500" />
         )}

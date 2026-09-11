@@ -1,38 +1,43 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Repertory } from '../types';
-import { embedOne, embeddingsSupported } from './embedder';
-import { buildIndex, loadIndex, searchIndex, type RubricIndex, type SemHit } from './rubricIndex';
+import { embedMany, embeddingsSupported } from './embedder';
+import { buildLexicon, lexiconSet, loadLexicon, nearest, type VectorIndex } from './lexicon';
 import { useSemanticEnabled } from './semanticStore';
 
-export type SemStatus =
-  | 'off'
-  | 'unsupported'
-  | 'loading' // fetching model
-  | 'building' // embedding rubrics
-  | 'ready'
-  | 'error';
+export type SemStatus = 'off' | 'unsupported' | 'loading' | 'building' | 'ready' | 'error';
+
+/** A common word and the repertory word(s) it was translated to. */
+export interface WordTranslation {
+  word: string;
+  to: string[];
+}
+
+const SIM_THRESHOLD = 0.45; // how close a common word must be to a repertory word
+const TOP_PER_WORD = 2;
 
 export interface Semantic {
   status: SemStatus;
   progress: { done: number; total: number } | null;
   enabled: boolean;
   setEnabled: (v: boolean) => void;
-  /** Semantic matches for a phrase (empty unless status === 'ready'). */
-  search: (phrase: string, k?: number) => Promise<SemHit[]>;
+  /** Translate common words → repertory words (empty unless ready). */
+  translate: (words: string[]) => Promise<WordTranslation[]>;
 }
 
 /**
- * Manages the on-device semantic layer for the active repertory: loads the
- * model, builds/loads the rubric index, and exposes a phrase search. All
- * failures degrade to status 'error' (the caller then falls back to keyword
- * matching), so the app never breaks if the model can't load.
+ * Manages the on-device repertory-lexicon so common words can be translated to
+ * repertory words. Loads the model, builds/loads the lexicon embedding index,
+ * and exposes `translate`. Any failure degrades to status 'error' and the
+ * caller falls back to keyword matching, so the app never breaks.
  */
 export function useSemantic(rep: Repertory | undefined): Semantic {
   const enabled = useSemanticEnabled((s) => s.enabled);
   const setEnabled = useSemanticEnabled((s) => s.setEnabled);
   const [status, setStatus] = useState<SemStatus>('off');
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
-  const indexRef = useRef<RubricIndex | null>(null);
+  const indexRef = useRef<VectorIndex | null>(null);
+
+  const skip = useMemo(() => (rep ? lexiconSet(rep) : new Set<string>()), [rep]);
 
   useEffect(() => {
     if (!enabled) {
@@ -48,13 +53,12 @@ export function useSemantic(rep: Repertory | undefined): Semantic {
     (async () => {
       try {
         if (!rep) return;
-        // reuse an index already in memory for this repertory
-        if (indexRef.current?.repId === rep.id) {
+        if (indexRef.current?.key.startsWith(`${rep.id}:`)) {
           setStatus('ready');
           return;
         }
         setStatus('loading');
-        const cached = await loadIndex(rep);
+        const cached = await loadLexicon(rep);
         if (cancelled) return;
         if (cached) {
           indexRef.current = cached;
@@ -63,7 +67,7 @@ export function useSemantic(rep: Repertory | undefined): Semantic {
         }
         setStatus('building');
         setProgress({ done: 0, total: 1 });
-        const built = await buildIndex(rep, {
+        const built = await buildLexicon(rep, {
           signal: ac.signal,
           onProgress: (done, total) => !cancelled && setProgress({ done, total }),
         });
@@ -80,19 +84,31 @@ export function useSemantic(rep: Repertory | undefined): Semantic {
     };
   }, [enabled, rep]);
 
-  const search = useCallback(
-    async (phrase: string, k = 8): Promise<SemHit[]> => {
+  const translate = useCallback(
+    async (words: string[]): Promise<WordTranslation[]> => {
       const index = indexRef.current;
-      if (status !== 'ready' || !index || !phrase.trim()) return [];
+      if (status !== 'ready' || !index) return [];
+      // only translate words that aren't already repertory words
+      const need = [...new Set(words.map((w) => w.toLowerCase()))].filter(
+        (w) => w.length >= 3 && !skip.has(w),
+      );
+      if (need.length === 0) return [];
       try {
-        const q = await embedOne(phrase);
-        return searchIndex(index, q, k);
+        const vecs = await embedMany(need);
+        const out: WordTranslation[] = [];
+        for (let i = 0; i < need.length; i++) {
+          const hits = nearest(index, vecs[i], TOP_PER_WORD + 1)
+            .filter((h) => h.score >= SIM_THRESHOLD && h.id !== need[i])
+            .slice(0, TOP_PER_WORD);
+          if (hits.length) out.push({ word: need[i], to: hits.map((h) => h.id) });
+        }
+        return out;
       } catch {
         return [];
       }
     },
-    [status],
+    [status, skip],
   );
 
-  return { status, progress, enabled, setEnabled, search };
+  return { status, progress, enabled, setEnabled, translate };
 }
