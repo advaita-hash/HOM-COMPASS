@@ -39,9 +39,50 @@ const INDEX = (() => {
   return m;
 })();
 
+/** Everyday short names whose prefix match would otherwise be a toss-up. */
+const COMMON: Record<string, string> = {
+  nux: 'Nux Vomica',
+  merc: 'Mercurius Solubilis',
+  mercurius: 'Mercurius Solubilis',
+};
+
+/** Every spelling of each remedy as word lists, for word-prefix matching. */
+const SPELLINGS = Object.entries(TABLE).flatMap(([name, [abbr, alts = []]]) =>
+  [name, ...alts].map((s) => ({ name, abbr, words: key(s).split(' ') })),
+);
+
+/**
+ * Common names: "Pulsatilla", "Arsenicum", "Nat mur", "Calc carb", "Rhus tox".
+ * Each typed word must start the matching word of a full name, in order. When
+ * several remedies fit, the classic polychrest wins — the one with the plain
+ * Kentian abbreviation ("Puls." over "Puls-n.", "Ars." over "Ars-i.").
+ */
+function resolveCommon(k: string): string | undefined {
+  if (COMMON[k] && TABLE[COMMON[k]]) return COMMON[k];
+  const typed = k.split(' ').filter(Boolean);
+  if (!typed.length) return undefined;
+  const hits = SPELLINGS.filter(
+    (s) => s.words.length >= typed.length && typed.every((w, i) => s.words[i].startsWith(w)),
+  );
+  if (!hits.length) return undefined;
+  hits.sort(
+    (a, b) =>
+      Number(a.abbr.includes('-')) - Number(b.abbr.includes('-')) ||
+      a.words.length - b.words.length ||
+      a.abbr.length - b.abbr.length ||
+      a.name.localeCompare(b.name),
+  );
+  return hits[0].name;
+}
+
 export function resolveRemedy(param: string): string | undefined {
   const k = key(param);
-  return INDEX.get(k) ?? INDEX.get(key(param.replace(/\./g, '')));
+  return (
+    INDEX.get(k) ??
+    INDEX.get(key(param.replace(/\./g, ''))) ??
+    resolveCommon(k) ??
+    resolveCommon(key(param.replace(/\./g, '')))
+  );
 }
 
 const GRADE_CLASS: Record<Grade, string> = {
