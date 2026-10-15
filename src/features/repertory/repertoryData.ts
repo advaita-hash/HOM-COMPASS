@@ -103,3 +103,13 @@ export function useRepertory() {
     gcTime: 30 * 60_000,
   });
 }
+
+/** A specific repertory regardless of the user's selection (e.g. the full Kentian one for remedy profiles). */
+export function useRepertoryById(id: string) {
+  return useQuery({
+    queryKey: ['repertory', id],
+    queryFn: () => fetchRepertory(id),
+    staleTime: Infinity,
+    gcTime: 30 * 60_000,
+  });
+}

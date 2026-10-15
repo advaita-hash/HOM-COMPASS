@@ -28,6 +28,7 @@ import GlobalSearchPage from './features/search/GlobalSearchPage';
 import PatientsPage from './features/patients/PatientsPage';
 import PatientDetailPage from './features/patients/PatientDetailPage';
 import KnowledgeGraphPage from './features/graph/KnowledgeGraphPage';
+import RemedyProfilePage from './features/remedy/RemedyProfilePage';
 
 // ---------------------------------------------------------------------------
 // Application shell — responsive navigation + routed module outlet.
@@ -147,6 +148,7 @@ export default function App() {
           <Route path="/analysis" element={<RepertorizationPage />} />
           <Route path="/materia-medica" element={<MateriaMedicaPage />} />
           <Route path="/materia-medica/:remedyId" element={<MateriaMedicaPage />} />
+          <Route path="/remedy/:name" element={<RemedyProfilePage />} />
           <Route path="/books" element={<BooksPage />} />
           <Route path="/books/:bookId" element={<BookReaderPage />} />
           <Route path="/books/:bookId/:remedySlug" element={<BookReaderPage />} />
