@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, BookText, FlaskConical, Loader2 } from 'lucide-react';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { ArrowLeft, BookText, FlaskConical, Loader2, NotebookPen } from 'lucide-react';
+import MyRemedyNotes from '../notes/MyRemedyNotes';
 import { canonicalName } from '../../lib/remedyName';
 import { REMEDIES } from '../../data/remedies';
 import ABBREV from '../../data/remedyAbbrev.json';
@@ -95,6 +96,9 @@ const PAGE = 300;
 
 export default function RemedyProfilePage() {
   const { name: param = '' } = useParams();
+  const [search, setSearch] = useSearchParams();
+  const tab = search.get('tab') === 'notes' ? 'notes' : 'repertory';
+  const setTab = (t: 'repertory' | 'notes') => setSearch(t === 'notes' ? { tab: 'notes' } : {}, { replace: true });
   const name = resolveRemedy(decodeURIComponent(param));
   const { data: rep, isLoading, error } = useRepertoryById('kent');
   const boericke = useBook('boericke');
@@ -183,6 +187,31 @@ export default function RemedyProfilePage() {
         </div>
       </header>
 
+      <div className="flex gap-1 border-b border-slate-200" role="tablist">
+        {(
+          [
+            ['repertory', 'Repertory', BookText],
+            ['notes', 'My notes', NotebookPen],
+          ] as const
+        ).map(([t, label, Icon]) => (
+          <button
+            key={t}
+            role="tab"
+            aria-selected={tab === t}
+            onClick={() => setTab(t)}
+            className={`-mb-px flex items-center gap-1.5 border-b-2 px-4 py-2 text-sm ${tab === t ? 'border-brand-600 font-semibold text-brand-700' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
+          >
+            <Icon className="h-4 w-4" /> {label}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'notes' ? (
+        <section className="card p-5">
+          <h2 className="mb-3 text-lg font-semibold">My notes on {abbr}</h2>
+          <MyRemedyNotes remedy={name} abbr={abbr} />
+        </section>
+      ) : (
       <section className="card p-5">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h2 className="text-lg font-semibold">Repertory</h2>
@@ -275,6 +304,7 @@ export default function RemedyProfilePage() {
           </>
         )}
       </section>
+      )}
     </div>
   );
 }

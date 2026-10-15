@@ -14,6 +14,7 @@ import {
   Search,
   Users,
   X,
+  NotebookPen,
 } from 'lucide-react';
 import { isSupabaseConfigured } from './lib/supabase';
 import DashboardPage from './features/dashboard/DashboardPage';
@@ -29,6 +30,7 @@ import PatientsPage from './features/patients/PatientsPage';
 import PatientDetailPage from './features/patients/PatientDetailPage';
 import KnowledgeGraphPage from './features/graph/KnowledgeGraphPage';
 import RemedyProfilePage from './features/remedy/RemedyProfilePage';
+import MyNotesPage from './features/notes/MyNotesPage';
 
 // ---------------------------------------------------------------------------
 // Application shell — responsive navigation + routed module outlet.
@@ -43,6 +45,7 @@ const NAV = [
   { to: '/repertory', label: 'Repertory', icon: BookOpen },
   { to: '/analysis', label: 'Cases', icon: Activity },
   { to: '/materia-medica', label: 'Materia Medica', icon: FlaskConical },
+  { to: '/my-notes', label: 'My remedy notes', icon: NotebookPen },
   { to: '/books', label: 'Reference Books', icon: BookText },
   { to: '/library', label: 'Library', icon: Library },
   { to: '/graph', label: 'Knowledge Graph', icon: Network },
@@ -149,6 +152,7 @@ export default function App() {
           <Route path="/materia-medica" element={<MateriaMedicaPage />} />
           <Route path="/materia-medica/:remedyId" element={<MateriaMedicaPage />} />
           <Route path="/remedy/:name" element={<RemedyProfilePage />} />
+          <Route path="/my-notes" element={<MyNotesPage />} />
           <Route path="/books" element={<BooksPage />} />
           <Route path="/books/:bookId" element={<BookReaderPage />} />
           <Route path="/books/:bookId/:remedySlug" element={<BookReaderPage />} />
