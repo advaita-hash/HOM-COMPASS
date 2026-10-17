@@ -1,0 +1,201 @@
+import { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { BookOpen, Check, Loader2, Plus, Search } from 'lucide-react';
+import { REPERTORIES, useRepertory, useRepertorySelection } from './repertoryData';
+import { RepertorySelect } from './RepertorySelect';
+import { RemedySupportModal } from './RemedySupportModal';
+import { useBindWorksheet, useWorksheet } from './worksheetStore';
+import { canonicalName } from '../../lib/remedyName';
+import type { Grade, Rubric } from './types';
+
+const GRADE_CLASS: Record<Grade, string> = {
+  1: 'text-grade-1',
+  2: 'text-grade-2 font-medium',
+  3: 'text-grade-3 font-semibold',
+  4: 'text-grade-4 font-bold',
+};
+
+function RemedyChips({
+  rubric,
+  onRemedy,
+}: {
+  rubric: Rubric;
+  onRemedy: (name: string) => void;
+}) {
+  return (
+    <div className="mt-1 flex flex-wrap gap-x-2 gap-y-0.5 text-sm">
+      {rubric.remedies.map((r) => (
+        <button
+          key={r.name}
+          onClick={() => onRemedy(r.name)}
+          className={`${GRADE_CLASS[r.grade as Grade]} hover:underline`}
+          title={`grade ${r.grade} — Materia Medica support`}
+        >
+          {canonicalName(r.name)}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function RubricRow({ rubric, onRemedy }: { rubric: Rubric; onRemedy: (name: string) => void }) {
+  const has = useWorksheet((s) => s.has(rubric.id));
+  const toggle = useWorksheet((s) => s.toggle);
+  return (
+    <div className="flex items-start gap-3 border-b border-slate-100 px-4 py-3 last:border-0">
+      <button
+        onClick={() => toggle(rubric.id)}
+        className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md border transition-colors ${
+          has
+            ? 'border-brand-600 bg-brand-600 text-white'
+            : 'border-slate-300 text-slate-400 hover:border-brand-400 hover:text-brand-500'
+        }`}
+        aria-label={has ? 'Remove from worksheet' : 'Add to worksheet'}
+        title={has ? 'On worksheet' : 'Add to worksheet'}
+      >
+        {has ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+      </button>
+      <div className="min-w-0 flex-1">
+        <div className="text-sm">
+          <span className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
+            {rubric.chapter}
+          </span>{' '}
+          <span className="font-medium text-slate-800">{rubric.rubric}</span>
+          <span className="ml-2 text-xs text-slate-400">
+            {rubric.remedies.length} remedies
+          </span>
+        </div>
+        <RemedyChips rubric={rubric} onRemedy={onRemedy} />
+      </div>
+    </div>
+  );
+}
+
+export default function RepertoryPage() {
+  const { data: rep, isLoading, isError } = useRepertory();
+  const repId = useRepertorySelection((s) => s.id);
+  const repMeta = REPERTORIES.find((r) => r.id === repId);
+  useBindWorksheet(repId); // rubrics only ever from the chosen repertory
+  const [query, setQuery] = useState('');
+  const [chapter, setChapter] = useState<string>('All');
+  const [support, setSupport] = useState<{ name: string; rubric: Rubric } | null>(null);
+  const count = useWorksheet((s) => s.items.length);
+
+  const LIMIT = 200;
+  const q = query.trim().toLowerCase();
+  const { shown, total } = useMemo(() => {
+    let rs = rep?.rubrics ?? [];
+    if (chapter !== 'All') rs = rs.filter((r) => r.chapter === chapter);
+    // rubric-text search only (fast over tens of thousands of rubrics)
+    if (q) rs = rs.filter((r) => r.rubric.toLowerCase().includes(q));
+    return { shown: rs.slice(0, LIMIT), total: rs.length };
+  }, [rep, chapter, q]);
+  const filtered = shown;
+  // With tens of thousands of rubrics, require a search or chapter first.
+  const needsFilter = !q && chapter === 'All' && (rep?.rubrics.length ?? 0) > LIMIT;
+
+  return (
+    <div className="mx-auto max-w-4xl p-6 md:p-8">
+      <header className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <BookOpen className="h-6 w-6 text-brand-600" />
+          <div>
+            <h1 className="text-2xl font-semibold text-slate-800">Repertory</h1>
+            <p className="text-sm text-slate-500">
+              {rep ? `${rep.rubricCount} rubrics · ${rep.title}` : 'Loading…'}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <RepertorySelect />
+          <Link to="/analysis" className="btn-primary">
+            Worksheet
+            {count > 0 && (
+              <span className="ml-1 rounded-full bg-white/25 px-1.5 text-xs">{count}</span>
+            )}
+          </Link>
+        </div>
+      </header>
+
+      {repMeta && (
+        <p className="mb-3 rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-500">
+          {repMeta.blurb}
+        </p>
+      )}
+
+      <div className="mb-4 flex flex-col gap-2 sm:flex-row">
+        <div className="relative flex-1">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search rubrics or remedies…"
+            className="w-full rounded-lg border border-slate-200 bg-white py-2.5 pl-10 pr-3 text-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-100"
+          />
+        </div>
+        <select
+          value={chapter}
+          onChange={(e) => setChapter(e.target.value)}
+          className="rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-600"
+        >
+          <option>All</option>
+          {rep?.chapters.map((c) => (
+            <option key={c}>{c}</option>
+          ))}
+        </select>
+      </div>
+
+      {isLoading && (
+        <div className="flex items-center gap-2 p-8 text-sm text-slate-400">
+          <Loader2 className="h-4 w-4 animate-spin" /> Loading repertory…
+        </div>
+      )}
+      {isError && <p className="p-8 text-sm text-red-600">Failed to load repertory.</p>}
+
+      {rep && needsFilter && (
+        <div className="card p-10 text-center text-sm text-slate-400">
+          {rep.rubricCount.toLocaleString()} rubrics — type a search above or pick a
+          chapter to browse.
+        </div>
+      )}
+
+      {rep && !needsFilter && (
+        <>
+          {total > filtered.length && (
+            <p className="mb-2 text-xs text-slate-400">
+              Showing {filtered.length} of {total.toLocaleString()} matches — refine your
+              search to narrow.
+            </p>
+          )}
+          <div className="card overflow-hidden">
+            {filtered.map((r) => (
+              <RubricRow
+                key={r.id}
+                rubric={r}
+                onRemedy={(name) => setSupport({ name, rubric: r })}
+              />
+            ))}
+            {filtered.length === 0 && (
+              <p className="p-8 text-center text-sm text-slate-400">No rubrics match.</p>
+            )}
+          </div>
+        </>
+      )}
+
+      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-400">
+        <span>Grade:</span>
+        <span className="text-grade-3 font-semibold">3 bold</span>
+        <span className="text-grade-2 font-medium">2 italic</span>
+        <span className="text-grade-1">1 plain</span>
+      </div>
+
+      {support && (
+        <RemedySupportModal
+          remedyName={support.name}
+          rubrics={[support.rubric]}
+          onClose={() => setSupport(null)}
+        />
+      )}
+    </div>
+  );
+}
