@@ -31,6 +31,7 @@ import PatientDetailPage from './features/patients/PatientDetailPage';
 import KnowledgeGraphPage from './features/graph/KnowledgeGraphPage';
 import RemedyProfilePage from './features/remedy/RemedyProfilePage';
 import MyNotesPage from './features/notes/MyNotesPage';
+import SharedNotePage from './features/notes/SharedNotePage';
 
 // ---------------------------------------------------------------------------
 // Application shell — responsive navigation + routed module outlet.
@@ -115,6 +116,9 @@ export default function App() {
 
   // Close the drawer on navigation.
   useEffect(() => setMenuOpen(false), [location.pathname]);
+
+  // Shared-note links are a clean public page — no sidebar/app shell.
+  if (location.pathname === '/shared/note') return <SharedNotePage />;
 
   return (
     <div className="flex h-full">
