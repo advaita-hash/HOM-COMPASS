@@ -153,7 +153,7 @@ export default function MyRemedyNotes({ remedy, abbr }: { remedy: string; abbr: 
       <a
         className="text-xs text-slate-500 underline"
         href={COMMON_ROOM_URL}
-        target="_blank"
+        target="common-room"
         rel="noopener noreferrer"
       >
         Write notes in Common Room

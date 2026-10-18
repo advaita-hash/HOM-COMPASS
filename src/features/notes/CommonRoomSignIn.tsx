@@ -55,7 +55,7 @@ export default function CommonRoomSignIn() {
       </button>
       <p className="text-xs text-slate-500">
         No password yet? Set one in{' '}
-        <a className="underline" href={COMMON_ROOM_URL} target="_blank" rel="noopener noreferrer">
+        <a className="underline" href={COMMON_ROOM_URL} target="common-room" rel="noopener noreferrer">
           Common Room
         </a>{' '}
         under Edit profile.
