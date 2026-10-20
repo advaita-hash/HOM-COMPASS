@@ -43,14 +43,14 @@ export function CausativeFactor({ rep }: { rep: Repertory | undefined }) {
         value={text}
         onChange={(e) => run(e.target.value)}
         placeholder="e.g. grief, fright, getting wet…"
-        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-brand-400 focus:outline-none"
+        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none"
       />
-      <div className="mt-2 flex flex-wrap gap-1.5">
+      <div className="mt-2 flex flex-wrap gap-2">
         {COMMON.map((c) => (
           <button
             key={c}
             onClick={() => run(c)}
-            className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs text-slate-600 hover:bg-slate-200"
+            className="tap rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-600 transition-colors hover:bg-slate-200 active:opacity-80"
           >
             {c}
           </button>
@@ -66,16 +66,16 @@ export function CausativeFactor({ rep }: { rep: Repertory | undefined }) {
                 key={m.rubric.id}
                 onClick={() => addCausation(m.rubric.id)}
                 disabled={on}
-                className={`flex w-full items-start gap-2 rounded-md border px-3 py-1.5 text-left text-sm ${
+                className={`flex w-full items-start gap-2 min-h-[44px] rounded-lg border px-3 py-2 text-left text-sm transition-[background-color,border-color,transform,opacity] duration-300 ease-spring active:scale-[0.96] active:opacity-80 ${
                   on
                     ? 'border-amber-200 bg-amber-50 text-amber-700'
                     : 'border-slate-200 hover:border-amber-400 hover:bg-slate-50'
                 }`}
               >
                 {on ? (
-                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+                  <Check className="mt-1 h-4 w-4 shrink-0 text-amber-600" />
                 ) : (
-                  <Plus className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
+                  <Plus className="mt-1 h-4 w-4 shrink-0 text-slate-400" />
                 )}
                 <span className="min-w-0 flex-1 break-words">{m.rubric.rubric}</span>
               </button>

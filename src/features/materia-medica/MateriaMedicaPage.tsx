@@ -1,11 +1,14 @@
 import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ChevronLeft, FlaskConical, Loader2, Search } from 'lucide-react';
+import { SearchX } from 'lucide-react';
+import { EmptyState } from '../../components/ui/EmptyState';
 import { REMEDIES, getRemedyById } from '../../data/remedies';
 import { RemedyDetail } from '../remedy/RemedyDetail';
 import { BookCrossLinks } from '../books/BookCrossLinks';
 import { useBook } from '../books/booksIndex';
 import { canonicalName } from '../../lib/remedyName';
+import { SegmentedControl } from '../../components/ui/SegmentedControl';
 
 type Source = 'Curated' | 'Boericke' | 'Tyler';
 
@@ -91,24 +94,17 @@ function RemedyBrowser() {
       </header>
 
       {/* Source segregation */}
-      <div className="mb-3 flex flex-wrap gap-2">
-        {tabs.map((t) => (
-          <button
-            key={t}
-            onClick={() => setSource(t)}
-            className={`rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
-              source === t
-                ? 'bg-brand-600 text-white'
-                : 'bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50'
-            }`}
-          >
-            {t}
-            <span className={`ml-1.5 text-xs ${source === t ? 'text-brand-100' : 'text-slate-400'}`}>
-              {counts[t] ?? 0}
-            </span>
-          </button>
-        ))}
-      </div>
+      <SegmentedControl
+        className="mb-4"
+        ariaLabel="Source"
+        value={source}
+        onChange={setSource}
+        options={tabs.map((t) => ({
+          value: t,
+          label: t,
+          badge: <span className="text-2xs tabular-nums text-ink/60">{counts[t] ?? 0}</span>,
+        }))}
+      />
 
       <div className="relative mb-4">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -116,7 +112,7 @@ function RemedyBrowser() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search remedies…"
-          className="w-full rounded-lg border border-slate-200 bg-white py-2.5 pl-10 pr-3 text-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-100"
+          className="w-full rounded-lg border border-slate-200 bg-surface py-3 pl-10 pr-3 text-sm focus:outline-none"
         />
       </div>
 
@@ -128,21 +124,36 @@ function RemedyBrowser() {
 
       <div className="grid gap-2 sm:grid-cols-2">
         {filtered.map((e) => (
-          <Link key={e.key} to={e.to} className="card p-3 transition-shadow hover:shadow-md">
+          <Link key={e.key} to={e.to} className="card p-3 pressable">
             <div className="flex items-center gap-2">
               <span className="min-w-0 flex-1 truncate font-serif text-base font-semibold text-slate-800">
                 {canonicalName(e.name)}
               </span>
-              <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${SOURCE_BADGE[e.source]}`}>
+              <span className={`shrink-0 rounded-full px-2 py-1 text-2xs font-medium ${SOURCE_BADGE[e.source]}`}>
                 {e.source}
               </span>
             </div>
-            {e.sub && <p className="mt-0.5 line-clamp-2 text-xs text-slate-500">{e.sub}</p>}
+            {e.sub && <p className="mt-1 line-clamp-2 text-xs text-slate-500">{e.sub}</p>}
           </Link>
         ))}
       </div>
       {filtered.length === 0 && !loading && (
-        <p className="py-8 text-center text-sm text-slate-400">No remedies match “{query}”.</p>
+        <EmptyState
+          icon={SearchX}
+          title="No remedies match"
+          description={<>Nothing in {source === 'All' ? 'any source' : source} matches “{query.trim()}”.</>}
+          action={
+            <button
+              className="btn-secondary"
+              onClick={() => {
+                setQuery('');
+                setSource('All');
+              }}
+            >
+              Clear search
+            </button>
+          }
+        />
       )}
       {filtered.length === 400 && (
         <p className="mt-2 text-center text-xs text-slate-400">

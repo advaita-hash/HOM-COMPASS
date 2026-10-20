@@ -28,10 +28,10 @@ function Section({
           {title}
         </h3>
       </div>
-      <ul className="space-y-1.5">
+      <ul className="space-y-2">
         {items.map((item, i) => (
           <li key={i} className="flex gap-2 text-sm text-slate-700">
-            <span className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${accent.replace('text-', 'bg-')}`} />
+            <span className={`mt-2 h-1.5 w-1.5 shrink-0 rounded-full ${accent.replace('text-', 'bg-')}`} />
             <span>{item}</span>
           </li>
         ))}
@@ -46,17 +46,17 @@ export function RemedyDetail({ remedy }: { remedy: Remedy }) {
     <div className="space-y-5">
       {/* Header */}
       <div className="card overflow-hidden">
-        <div className="bg-gradient-to-r from-brand-600 to-brand-500 px-6 py-6 text-white">
+        <div className="bg-gradient-to-r from-art-pine to-art-sea px-6 py-6 text-white">
           <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
             <h1 className="font-serif text-3xl font-bold">{remedy.name}</h1>
-            <span className="rounded-md bg-white/20 px-2 py-0.5 text-sm font-medium">
+            <span className="rounded-md bg-white/20 px-2 py-1 text-sm font-medium">
               {remedy.abbr}
             </span>
           </div>
-          <p className="mt-1 text-sm text-brand-50">
+          <p className="mt-1 text-sm text-white/80">
             {remedy.commonName} · {remedy.source}
           </p>
-          <p className="mt-3 max-w-2xl font-serif text-[15px] italic leading-relaxed text-white/95">
+          <p className="mt-3 max-w-2xl font-serif text-subhead italic leading-relaxed text-white/95">
             “{remedy.essence}”
           </p>
         </div>
@@ -73,7 +73,7 @@ export function RemedyDetail({ remedy }: { remedy: Remedy }) {
         <ul className="grid gap-2 sm:grid-cols-2">
           {remedy.keynotes.map((k, i) => (
             <li key={i} className="flex gap-2 text-sm text-slate-800">
-              <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-brand-500" />
+              <Sparkles className="mt-1 h-4 w-4 shrink-0 text-brand-500" />
               <span>{k}</span>
             </li>
           ))}

@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { BookOpen, Check, Loader2, Plus, Search } from 'lucide-react';
+import { SearchX, TextSearch } from 'lucide-react';
+import { EmptyState } from '../../components/ui/EmptyState';
 import { REPERTORIES, useRepertory, useRepertorySelection } from './repertoryData';
 import { RepertorySelect } from './RepertorySelect';
 import { RemedySupportModal } from './RemedySupportModal';
@@ -23,7 +25,7 @@ function RemedyChips({
   onRemedy: (name: string) => void;
 }) {
   return (
-    <div className="mt-1 flex flex-wrap gap-x-2 gap-y-0.5 text-sm">
+    <div className="mt-1 flex flex-wrap gap-x-2 gap-y-1 text-sm">
       {rubric.remedies.map((r) => (
         <button
           key={r.name}
@@ -45,10 +47,10 @@ function RubricRow({ rubric, onRemedy }: { rubric: Rubric; onRemedy: (name: stri
     <div className="flex items-start gap-3 border-b border-slate-100 px-4 py-3 last:border-0">
       <button
         onClick={() => toggle(rubric.id)}
-        className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md border transition-colors ${
+        className={`tap mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-md border transition-[background-color,border-color,color,transform] duration-300 ease-spring active:scale-[0.96] ${
           has
-            ? 'border-brand-600 bg-brand-600 text-white'
-            : 'border-slate-300 text-slate-400 hover:border-brand-400 hover:text-brand-500'
+            ? 'border-accent bg-accent text-on-accent'
+            : 'border-ink/30 text-ink/45 hover:border-accent hover:text-brand-600'
         }`}
         aria-label={has ? 'Remove from worksheet' : 'Add to worksheet'}
         title={has ? 'On worksheet' : 'Add to worksheet'}
@@ -57,7 +59,7 @@ function RubricRow({ rubric, onRemedy }: { rubric: Rubric; onRemedy: (name: stri
       </button>
       <div className="min-w-0 flex-1">
         <div className="text-sm">
-          <span className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
+          <span className="text-2xs font-medium uppercase tracking-wide text-slate-400">
             {rubric.chapter}
           </span>{' '}
           <span className="font-medium text-slate-800">{rubric.rubric}</span>
@@ -111,7 +113,7 @@ export default function RepertoryPage() {
           <Link to="/analysis" className="btn-primary">
             Worksheet
             {count > 0 && (
-              <span className="ml-1 rounded-full bg-white/25 px-1.5 text-xs">{count}</span>
+              <span className="ml-1 rounded-full bg-white/25 px-2 text-xs">{count}</span>
             )}
           </Link>
         </div>
@@ -130,13 +132,13 @@ export default function RepertoryPage() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search rubrics or remedies…"
-            className="w-full rounded-lg border border-slate-200 bg-white py-2.5 pl-10 pr-3 text-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-100"
+            className="w-full rounded-lg border border-slate-200 bg-surface py-3 pl-10 pr-3 text-sm focus:outline-none"
           />
         </div>
         <select
           value={chapter}
           onChange={(e) => setChapter(e.target.value)}
-          className="rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-600"
+          className="rounded-lg border border-slate-200 bg-surface px-3 py-3 text-sm text-slate-600"
         >
           <option>All</option>
           {rep?.chapters.map((c) => (
@@ -153,9 +155,17 @@ export default function RepertoryPage() {
       {isError && <p className="p-8 text-sm text-red-600">Failed to load repertory.</p>}
 
       {rep && needsFilter && (
-        <div className="card p-10 text-center text-sm text-slate-400">
-          {rep.rubricCount.toLocaleString()} rubrics — type a search above or pick a
-          chapter to browse.
+        <div className="card">
+          <EmptyState
+            icon={TextSearch}
+            title={`Search ${rep.rubricCount.toLocaleString()} rubrics`}
+            description="Type a symptom above or pick a chapter to browse the repertory in Chapter → Rubric → Sub-rubric order."
+            action={
+              <button className="btn-primary" onClick={() => setChapter(rep.chapters[0])}>
+                Browse {rep.chapters[0]}
+              </button>
+            }
+          />
         </div>
       )}
 
@@ -176,7 +186,20 @@ export default function RepertoryPage() {
               />
             ))}
             {filtered.length === 0 && (
-              <p className="p-8 text-center text-sm text-slate-400">No rubrics match.</p>
+              <EmptyState
+                icon={SearchX}
+                title="No rubrics match"
+                description={
+                  <>
+                    Nothing in {chapter === 'All' ? 'the repertory' : chapter} contains “{query.trim()}”.
+                  </>
+                }
+                action={
+                  <button className="btn-secondary" onClick={() => setQuery('')}>
+                    Clear search
+                  </button>
+                }
+              />
             )}
           </div>
         </>

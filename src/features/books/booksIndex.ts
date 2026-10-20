@@ -65,7 +65,7 @@ export const BOOKS: BookMeta[] = [
     author: 'William Boericke',
     blurb:
       'The classic bedside repertory-materia medica — concise, system-by-system remedy pictures with modalities and relationships.',
-    cover: 'from-teal-600 to-emerald-500',
+    cover: 'from-art-teal to-art-emerald',
     approxRemedies: 632,
   },
   {
@@ -74,7 +74,7 @@ export const BOOKS: BookMeta[] = [
     author: 'Margaret L. Tyler',
     blurb:
       'Vivid, narrative remedy portraits that bring the constitutional picture of each medicine to life for the practitioner.',
-    cover: 'from-indigo-600 to-violet-500',
+    cover: 'from-art-indigo to-art-violet',
     approxRemedies: 120,
   },
 ];

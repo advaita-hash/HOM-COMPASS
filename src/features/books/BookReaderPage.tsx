@@ -5,6 +5,7 @@ import { getBookMeta, useBook } from './booksIndex';
 import { DrugPictureView } from './DrugPictureView';
 import { canonicalName } from '../../lib/remedyName';
 import type { BookRemedy } from './types';
+import { SegmentedControl } from '../../components/ui/SegmentedControl';
 
 function RemedyText({ remedy }: { remedy: BookRemedy }) {
   const paragraphs = useMemo(
@@ -15,9 +16,9 @@ function RemedyText({ remedy }: { remedy: BookRemedy }) {
     <article className="prose-sm max-w-none">
       <h2 className="font-serif text-2xl font-bold text-slate-800">{canonicalName(remedy.name)}</h2>
       {remedy.commonName && (
-        <p className="mt-0.5 text-sm italic text-slate-500">{remedy.commonName}</p>
+        <p className="mt-1 text-sm italic text-slate-500">{remedy.commonName}</p>
       )}
-      <div className="mt-4 space-y-3 font-serif text-[15px] leading-relaxed text-slate-700">
+      <div className="mt-4 space-y-3 font-serif text-subhead leading-relaxed text-slate-700">
         {paragraphs.map((p, i) => (
           <p key={i}>{p}</p>
         ))}
@@ -66,7 +67,7 @@ export default function BookReaderPage() {
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <div className="border-b border-slate-200 bg-white px-6 py-4">
+      <div className="border-b border-slate-200 bg-surface px-6 py-4">
         <Link to="/books" className="mb-1 inline-flex items-center gap-1 text-xs text-slate-500 hover:text-brand-600">
           <ChevronLeft className="h-3.5 w-3.5" /> Reference Books
         </Link>
@@ -87,7 +88,7 @@ export default function BookReaderPage() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search remedies…"
-              className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm focus:border-brand-400 focus:outline-none"
+              className="w-full rounded-lg border border-slate-200 bg-surface py-2 pl-9 pr-3 text-sm focus:outline-none"
             />
           </div>
           <div className="min-h-0 flex-1 overflow-auto px-2 pb-2">
@@ -103,7 +104,7 @@ export default function BookReaderPage() {
                   key={r.slug}
                   to={`/books/${bookId}/${r.slug}`}
                   onClick={() => setListOpen(false)}
-                  className={`block truncate rounded-md px-3 py-1.5 text-sm ${
+                  className={`block truncate rounded-md px-3 py-2 text-sm ${
                     active
                       ? 'bg-brand-100 font-medium text-brand-800'
                       : 'text-slate-600 hover:bg-slate-100'
@@ -118,7 +119,7 @@ export default function BookReaderPage() {
             )}
           </div>
           {book && (
-            <div className="border-t border-slate-200 px-3 py-2 text-[11px] text-slate-400">
+            <div className="border-t border-slate-200 px-3 py-2 text-2xs text-slate-400">
               {book.remedyCount} remedies
             </div>
           )}
@@ -128,7 +129,7 @@ export default function BookReaderPage() {
         <div
           className={`${
             listOpen ? 'hidden' : 'block'
-          } min-h-0 flex-1 overflow-auto bg-white px-6 py-6 md:px-10 lg:block`}
+          } min-h-0 flex-1 overflow-auto bg-surface px-6 py-6 md:px-10 lg:block`}
         >
           {isError && (
             <p className="text-sm text-red-600">
@@ -137,24 +138,19 @@ export default function BookReaderPage() {
           )}
           {selected ? (
             <div className="mx-auto max-w-2xl">
-              <button
-                onClick={() => setListOpen(true)}
-                className="mb-4 inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100 lg:hidden"
-              >
+              <div className="mb-4 flex flex-wrap items-center gap-3">
+              <button onClick={() => setListOpen(true)} className="btn-secondary lg:hidden">
                 <List className="h-4 w-4" /> All remedies
               </button>
-              <div className="mb-4 inline-flex rounded-lg border border-slate-200 p-0.5 text-sm">
-                {(['portrait', 'full'] as const).map((v) => (
-                  <button
-                    key={v}
-                    onClick={() => setView(v)}
-                    className={`rounded-md px-3 py-1 font-medium transition-colors ${
-                      view === v ? 'bg-brand-600 text-white' : 'text-slate-600 hover:bg-slate-100'
-                    }`}
-                  >
-                    {v === 'portrait' ? 'Drug picture' : 'Full text'}
-                  </button>
-                ))}
+              <SegmentedControl
+                ariaLabel="Reading view"
+                value={view}
+                onChange={setView}
+                options={[
+                  { value: 'portrait', label: 'Drug picture' },
+                  { value: 'full', label: 'Full text' },
+                ]}
+              />
               </div>
               {view === 'portrait' ? (
                 <DrugPictureView remedy={selected} />

@@ -10,6 +10,7 @@ import { WorksheetGrid } from './WorksheetGrid';
 import { RemedySupportModal } from './RemedySupportModal';
 import { cleanSymptoms, useCaseDraft } from './caseDraftStore';
 import { usePatients } from '../patients/patientsStore';
+import { SegmentedControl } from '../../components/ui/SegmentedControl';
 
 /** Phone/tablet tabs so each part of the case fits one screen (desktop shows
  *  everything in two columns, unchanged). */
@@ -95,7 +96,7 @@ export default function RepertorizationPage() {
         </div>
         <div className="flex items-center gap-2">
           <RepertorySelect />
-          <Link to="/repertory" className="btn-ghost border border-slate-200">
+          <Link to="/repertory" className="btn-secondary">
             <BookOpen className="h-4 w-4" /> Repertory
           </Link>
           {items.length > 0 && (
@@ -116,32 +117,24 @@ export default function RepertorizationPage() {
         </span>
       </div>
 
-      {/* Phone/tablet tab bar — each tab fits one screen. Hidden on desktop. */}
-      <div className="mb-4 flex gap-1 rounded-xl border border-slate-200 bg-white p-1 lg:hidden">
-        {TABS.map((t) => {
-          const active = tab === t.id;
-          return (
-            <button
-              key={t.id}
-              onClick={() => setTab(t.id)}
-              className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-sm font-medium transition-colors ${
-                active ? 'bg-brand-600 text-white' : 'text-slate-600 hover:bg-slate-100'
-              }`}
-            >
-              {t.label}
-              {t.id === 'analysis' && items.length > 0 && (
-                <span
-                  className={`rounded-full px-1.5 text-xs ${
-                    active ? 'bg-white/25' : 'bg-brand-100 text-brand-700'
-                  }`}
-                >
-                  {items.length}
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </div>
+      {/* Phone/tablet: segmented control — each segment fits one screen. Hidden on desktop. */}
+      <SegmentedControl
+        className="mb-4 lg:hidden"
+        fullWidth
+        ariaLabel="Case section"
+        value={tab}
+        onChange={setTab}
+        options={TABS.map((t) => ({
+          value: t.id,
+          label: t.label,
+          badge:
+            t.id === 'analysis' && items.length > 0 ? (
+              <span className="min-w-[20px] rounded-full bg-accent px-2 text-center text-2xs font-semibold leading-5 text-on-accent">
+                {items.length}
+              </span>
+            ) : undefined,
+        }))}
+      />
 
       <div className="grid gap-5 lg:grid-cols-[340px_1fr]">
         {/* Left: STEP 1 — patient's language → rubrics */}
@@ -154,7 +147,7 @@ export default function RepertorizationPage() {
             <select
               value={patientId}
               onChange={(e) => setPatientId(e.target.value)}
-              className="mb-2 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
+              className="mb-2 w-full rounded-lg border border-slate-200 bg-surface px-3 py-2 text-sm"
             >
               <option value="">New patient…</option>
               {patients.map((p) => (
@@ -170,18 +163,18 @@ export default function RepertorizationPage() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Name"
-                  className="min-w-0 flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-brand-400 focus:outline-none"
+                  className="min-w-0 flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none"
                 />
                 <input
                   value={age}
                   onChange={(e) => setAge(e.target.value.replace(/\D/g, ''))}
                   placeholder="Age"
-                  className="w-16 rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-brand-400 focus:outline-none"
+                  className="w-16 rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none"
                 />
                 <select
                   value={gender}
                   onChange={(e) => setGender(e.target.value)}
-                  className="w-24 rounded-lg border border-slate-200 bg-white px-2 py-2 text-sm"
+                  className="w-24 rounded-lg border border-slate-200 bg-surface px-2 py-2 text-sm"
                 >
                   <option value="">Sex</option>
                   <option>Female</option>
@@ -203,20 +196,20 @@ export default function RepertorizationPage() {
 
           {symptomList.length > 0 && (
             <div className="card p-3">
-              <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+              <div className="mb-2 text-2xs font-semibold uppercase tracking-wide text-slate-400">
                 Symptoms saved individually ({symptomList.length})
               </div>
-              <div className="flex flex-wrap gap-1.5">
+              <div className="flex flex-wrap gap-2">
                 {symptoms.map((s, i) =>
                   s.trim() ? (
                     <span
                       key={i}
-                      className="inline-flex items-center gap-1 rounded-full bg-brand-50 px-2.5 py-0.5 text-xs text-brand-700"
+                      className="inline-flex items-center gap-1 rounded-full bg-brand-50 px-3 py-1 text-xs text-brand-700"
                     >
                       {s.trim()}
                       <button
                         onClick={() => removeSymptom(i)}
-                        className="text-brand-400 hover:text-red-600"
+                        className="tap px-1 text-brand-600 transition-colors hover:text-red-600"
                         aria-label={`Remove "${s.trim()}"`}
                       >
                         ×

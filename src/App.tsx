@@ -56,24 +56,29 @@ const NAV = [
 function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
   return (
     <aside
-      className={`fixed inset-y-0 left-0 z-50 flex w-64 max-w-[80vw] shrink-0 transform flex-col border-r border-slate-200 bg-white transition-transform duration-200 lg:static lg:z-auto lg:w-60 lg:max-w-none lg:translate-x-0 ${
-        open ? 'translate-x-0 shadow-xl' : '-translate-x-full lg:shadow-none'
+      className={`material fixed inset-y-0 left-0 z-50 flex w-64 max-w-[80vw] shrink-0 transform flex-col border-r border-ink/10 transition-transform duration-500 ease-smooth lg:static lg:z-auto lg:w-60 lg:max-w-none lg:translate-x-0 ${
+        open ? 'translate-x-0 shadow-elevated' : '-translate-x-full lg:shadow-none'
       }`}
+      style={{
+        paddingTop: 'env(safe-area-inset-top)',
+        paddingLeft: 'env(safe-area-inset-left)',
+        paddingBottom: 'env(safe-area-inset-bottom)',
+      }}
     >
-      <div className="flex items-center gap-2 px-5 py-5">
+      <div className="flex items-center gap-3 px-5 py-5">
         <Compass className="h-7 w-7 shrink-0 text-brand-600" />
         <div className="min-w-0">
-          <div className="text-lg font-bold leading-none text-slate-800">HOM-COMPASS</div>
-          <div className="text-[11px] uppercase tracking-wide text-slate-400">
+          <div className="text-lg font-bold leading-none text-ink/90">HOM-COMPASS</div>
+          <div className="mt-1 text-2xs uppercase tracking-wide text-ink/60">
             Repertory &amp; Materia Medica
           </div>
         </div>
         <button
           onClick={onClose}
-          className="ml-auto rounded-md p-1.5 text-slate-400 hover:bg-slate-100 lg:hidden"
+          className="tap ml-auto flex h-8 w-8 items-center justify-center rounded-full bg-ink/[0.06] text-ink/60 transition-colors hover:bg-ink/10 lg:hidden"
           aria-label="Close menu"
         >
-          <X className="h-5 w-5" />
+          <X className="h-4 w-4" strokeWidth={2.5} />
         </button>
       </div>
 
@@ -84,24 +89,27 @@ function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
             to={to}
             onClick={onClose}
             className={({ isActive }) =>
-              `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-                isActive ? 'bg-brand-50 text-brand-700' : 'text-slate-600 hover:bg-slate-100'
+              `flex min-h-[44px] items-center gap-3 rounded-lg px-3 py-2 text-sm transition-[background-color,color,transform,opacity] duration-300 ease-spring active:scale-[0.96] active:opacity-80 ${
+                isActive
+                  ? 'bg-accent/[0.12] font-semibold text-brand-700'
+                  : 'font-medium text-ink/80 hover:bg-ink/[0.05]'
               }`
             }
           >
-            <Icon className="h-[18px] w-[18px] shrink-0" />
+            {/* SF-Symbols-style: glyphs carry the accent, labels stay neutral */}
+            <Icon className="h-[18px] w-[18px] shrink-0 text-brand-600" />
             {label}
           </NavLink>
         ))}
       </nav>
 
-      <div className="px-5 py-4 text-[11px] text-slate-400">
+      <div className="px-5 py-4 text-2xs text-ink/60">
         {isSupabaseConfigured ? (
-          <span className="inline-flex items-center gap-1.5">
+          <span className="inline-flex items-center gap-2">
             <span className="h-2 w-2 rounded-full bg-emerald-500" /> Connected
           </span>
         ) : (
-          <span className="inline-flex items-center gap-1.5">
+          <span className="inline-flex items-center gap-2">
             <span className="h-2 w-2 rounded-full bg-amber-500" /> Demo mode
           </span>
         )}
@@ -123,30 +131,36 @@ export default function App() {
   return (
     <div className="flex h-full">
       {/* Mobile / tablet top bar */}
-      <header className="fixed inset-x-0 top-0 z-30 flex h-14 items-center gap-3 border-b border-slate-200 bg-white/95 px-4 backdrop-blur lg:hidden">
-        <button
-          onClick={() => setMenuOpen(true)}
-          className="rounded-md p-1.5 text-slate-600 hover:bg-slate-100"
-          aria-label="Open menu"
-        >
-          <Menu className="h-6 w-6" />
-        </button>
-        <Compass className="h-6 w-6 text-brand-600" />
-        <span className="font-bold text-slate-800">HOM-COMPASS</span>
+      <header
+        className="material fixed inset-x-0 top-0 z-30 border-b border-ink/10 lg:hidden"
+        style={{ paddingTop: 'env(safe-area-inset-top)' }}
+      >
+        <div className="flex h-14 items-center gap-2 px-2">
+          <button
+            onClick={() => setMenuOpen(true)}
+            className="tap flex h-10 w-10 items-center justify-center rounded-full text-brand-600 transition-colors hover:bg-ink/[0.06] active:opacity-60"
+            aria-label="Open menu"
+          >
+            <Menu className="h-6 w-6" />
+          </button>
+          <Compass className="h-6 w-6 text-brand-600" />
+          <span className="text-base font-semibold text-ink/90">HOM-COMPASS</span>
+        </div>
       </header>
 
-      {/* Backdrop when the drawer is open (mobile/tablet only) */}
-      {menuOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-slate-900/40 lg:hidden"
-          onClick={() => setMenuOpen(false)}
-          aria-hidden
-        />
-      )}
+      {/* Dimmed backdrop behind the drawer (fades instead of popping) */}
+      <div
+        className={`fixed inset-0 z-40 transition-opacity duration-500 ease-smooth lg:hidden ${
+          menuOpen ? 'opacity-100' : 'pointer-events-none opacity-0'
+        }`}
+        style={{ background: 'var(--dim)' }}
+        onClick={() => setMenuOpen(false)}
+        aria-hidden
+      />
 
       <Sidebar open={menuOpen} onClose={() => setMenuOpen(false)} />
 
-      <main className="min-w-0 flex-1 overflow-auto pt-14 lg:pt-0">
+      <main className="min-w-0 flex-1 overflow-auto pt-[calc(3.5rem+env(safe-area-inset-top))] lg:pt-0">
         <Routes>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<DashboardPage />} />

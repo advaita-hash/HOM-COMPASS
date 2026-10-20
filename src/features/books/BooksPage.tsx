@@ -21,7 +21,7 @@ export default function BooksPage() {
           <Link
             key={book.id}
             to={`/books/${book.id}`}
-            className="group card overflow-hidden transition-shadow hover:shadow-md"
+            className="group card overflow-hidden pressable"
           >
             <div
               className={`flex h-28 items-end bg-gradient-to-br ${book.cover} p-4 text-white`}

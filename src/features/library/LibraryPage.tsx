@@ -8,6 +8,7 @@ import {
   UploadCloud,
 } from 'lucide-react';
 import { isSupabaseConfigured } from '../../lib/supabase';
+import { EmptyState } from '../../components/ui/EmptyState';
 import {
   type Book,
   type BookCategory,
@@ -76,7 +77,7 @@ function BookRow({ book }: { book: Book }) {
       <select
         value={book.category}
         onChange={(e) => updateBook(book.id, { category: e.target.value as BookCategory })}
-        className="hidden rounded-md border border-slate-200 bg-white px-2 py-1 text-xs text-slate-600 sm:block"
+        className="hidden rounded-md border border-slate-200 bg-surface px-2 py-1 text-xs text-slate-600 sm:block"
         aria-label="Category"
       >
         {(Object.keys(CATEGORY_LABELS) as BookCategory[]).map((c) => (
@@ -87,14 +88,14 @@ function BookRow({ book }: { book: Book }) {
       </select>
 
       <span
-        className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-medium ${STATUS_STYLES[book.status]}`}
+        className={`shrink-0 rounded-full px-3 py-1 text-2xs font-medium ${STATUS_STYLES[book.status]}`}
       >
         {STATUS_LABELS[book.status]}
       </span>
 
       <button
         onClick={() => removeBook(book.id)}
-        className="shrink-0 rounded-md p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600"
+        className="shrink-0 rounded-md p-2 text-slate-400 hover:bg-red-50 hover:text-red-600"
         aria-label={`Remove ${book.title}`}
       >
         <Trash2 className="h-4 w-4" />
@@ -151,7 +152,7 @@ export default function LibraryPage() {
         className={`flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-6 py-12 text-center transition-colors ${
           dragging
             ? 'border-brand-500 bg-brand-50'
-            : 'border-slate-300 bg-white hover:border-brand-400 hover:bg-slate-50'
+            : 'border-slate-300 bg-surface hover:border-brand-400 hover:bg-slate-50'
         }`}
       >
         <UploadCloud className="h-10 w-10 text-brand-500" />
@@ -174,7 +175,7 @@ export default function LibraryPage() {
 
       {/* Mode notice */}
       <div className="mt-4 flex items-start gap-2 rounded-lg bg-slate-50 px-4 py-3 text-xs text-slate-500">
-        <FileText className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
+        <FileText className="mt-1 h-4 w-4 shrink-0 text-slate-400" />
         {isSupabaseConfigured ? (
           <span>
             Connected: uploads are sent to Supabase Storage and the ingestion
@@ -195,15 +196,24 @@ export default function LibraryPage() {
         <div className="mb-2 flex items-center justify-between">
           <h2 className="text-sm font-semibold text-slate-700">
             Catalogue{' '}
-            <span className="ml-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500">
+            <span className="ml-1 rounded-full bg-slate-100 px-2 py-1 text-xs text-slate-500">
               {books.length}
             </span>
           </h2>
         </div>
 
         {books.length === 0 ? (
-          <div className="card p-8 text-center text-sm text-slate-400">
-            No books yet — add your first repertory or materia medica above.
+          <div className="card">
+            <EmptyState
+              icon={Library}
+              title="No books yet"
+              description="Upload a repertory or materia medica to ingest it into the knowledge graph."
+              action={
+                <button className="btn-primary" onClick={() => inputRef.current?.click()}>
+                  <UploadCloud className="h-4 w-4" /> Upload a book
+                </button>
+              }
+            />
           </div>
         ) : (
           <div className="card overflow-hidden">

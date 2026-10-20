@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { BookText, Loader2, X } from 'lucide-react';
+import { BookText, Loader2 } from 'lucide-react';
+import { Sheet } from '../../components/ui/Sheet';
 import { findBookRemedy, useBook } from '../books/booksIndex';
 import { canonicalName } from '../../lib/remedyName';
 import type { Rubric } from './types';
@@ -47,7 +48,7 @@ function Highlighted({ text, keywords }: { text: string; keywords: string[] }) {
     <>
       {parts.map((p, i) =>
         keywords.some((k) => k.toLowerCase() === p.toLowerCase()) ? (
-          <mark key={i} className="rounded bg-amber-200/70 px-0.5 text-slate-900">
+          <mark key={i} className="rounded bg-amber-200/70 px-1 text-slate-900">
             {p}
           </mark>
         ) : (
@@ -128,11 +129,11 @@ function BookSupport({
       ) : (
         <ul className="space-y-2">
           {result.lines.map((l, i) => (
-            <li key={i} className="rounded-lg border border-slate-100 bg-amber-50/40 p-2.5 text-sm leading-relaxed text-slate-700">
+            <li key={i} className="rounded-lg border border-slate-100 bg-amber-50/40 p-3 text-sm leading-relaxed text-slate-700">
               <Highlighted text={l.text} keywords={l.kws} />
               <div className="mt-1 flex flex-wrap gap-1">
                 {l.rubrics.slice(0, 3).map((r) => (
-                  <span key={r} className="rounded-full bg-brand-50 px-2 py-0.5 text-[10px] text-brand-700">
+                  <span key={r} className="rounded-full bg-brand-50 px-2 py-1 text-2xs text-brand-700">
                     {r}
                   </span>
                 ))}
@@ -156,33 +157,15 @@ export function RemedySupportModal({
   onClose: () => void;
 }) {
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4"
-      onClick={onClose}
+    <Sheet
+      title={canonicalName(remedyName)}
+      subtitle={`Materia Medica support for ${rubrics.length} selected rubric${rubrics.length === 1 ? '' : 's'}`}
+      onClose={onClose}
     >
-      <div
-        className="flex max-h-[85vh] w-full max-w-2xl flex-col rounded-2xl bg-white shadow-xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between border-b border-slate-200 px-5 py-3">
-          <div>
-            <h2 className="font-serif text-xl font-semibold text-slate-800">
-            {canonicalName(remedyName)}
-          </h2>
-            <p className="text-xs text-slate-500">
-              Materia Medica support for {rubrics.length} selected rubric
-              {rubrics.length === 1 ? '' : 's'}
-            </p>
-          </div>
-          <button onClick={onClose} className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100">
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-        <div className="min-h-0 flex-1 space-y-5 overflow-auto px-5 py-4">
-          <BookSupport bookId="boericke" remedyName={remedyName} rubrics={rubrics} />
-          <BookSupport bookId="tyler" remedyName={remedyName} rubrics={rubrics} />
-        </div>
+      <div className="space-y-6">
+        <BookSupport bookId="boericke" remedyName={remedyName} rubrics={rubrics} />
+        <BookSupport bookId="tyler" remedyName={remedyName} rubrics={rubrics} />
       </div>
-    </div>
+    </Sheet>
   );
 }

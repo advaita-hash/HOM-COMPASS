@@ -31,10 +31,10 @@ function Section({
           {title}
         </h3>
       </div>
-      <ul className="space-y-1.5">
+      <ul className="space-y-2">
         {items.map((s, i) => (
           <li key={i} className="flex gap-2 text-sm leading-relaxed text-slate-700">
-            <span className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${accent.replace('text-', 'bg-')}`} />
+            <span className={`mt-2 h-1.5 w-1.5 shrink-0 rounded-full ${accent.replace('text-', 'bg-')}`} />
             <span>{s}</span>
           </li>
         ))}
@@ -58,9 +58,9 @@ export function DrugPictureView({ remedy }: { remedy: BookRemedy }) {
     <article className="max-w-none">
       <h2 className="font-serif text-2xl font-bold text-slate-800">{canonicalName(remedy.name)}</h2>
       {remedy.commonName && (
-        <p className="mt-0.5 text-sm italic text-slate-500">{remedy.commonName}</p>
+        <p className="mt-1 text-sm italic text-slate-500">{remedy.commonName}</p>
       )}
-      <p className="mb-4 mt-1 inline-flex items-center gap-1 text-[11px] text-slate-400">
+      <p className="mb-4 mt-1 inline-flex items-center gap-1 text-2xs text-slate-400">
         <Sparkles className="h-3 w-3" /> Auto-distilled portrait — see “Full text” for the
         complete drug picture.
       </p>

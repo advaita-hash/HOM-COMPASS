@@ -9,10 +9,11 @@ function nodeLabel(n: GNode): string {
   return n.label === 'REMEDY' ? canonicalName(n.name) : n.name;
 }
 
+// Theme-aware node colours (CSS variables from design/tokens.js).
 const COLOR: Record<NodeLabel, string> = {
-  REMEDY: '#26665c',
-  RUBRIC: '#7c3aed',
-  CHAPTER: '#3b82f6',
+  REMEDY: 'rgb(var(--accent))',
+  RUBRIC: 'rgb(var(--c-violet-500))',
+  CHAPTER: 'rgb(var(--c-blue-500))',
 };
 const LABEL_TEXT: Record<NodeLabel, string> = {
   REMEDY: 'Remedy',
@@ -78,10 +79,10 @@ export default function KnowledgeGraphPage() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Find a remedy, rubric or chapter…"
-          className="w-full rounded-lg border border-slate-200 bg-white py-2.5 pl-10 pr-3 text-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-100"
+          className="w-full rounded-lg border border-slate-200 bg-surface py-3 pl-10 pr-3 text-sm focus:outline-none"
         />
         {searchResults.length > 0 && (
-          <div className="absolute z-20 mt-1 max-h-64 w-full overflow-auto rounded-lg border border-slate-200 bg-white shadow-lg">
+          <div className="absolute z-20 mt-1 max-h-64 w-full overflow-auto rounded-lg border border-slate-200 bg-surface shadow-lg">
             {searchResults.map((n) => (
               <button
                 key={n.id}
@@ -89,11 +90,11 @@ export default function KnowledgeGraphPage() {
                   setSelectedId(n.id);
                   setQuery('');
                 }}
-                className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm hover:bg-slate-50"
+                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-slate-50"
               >
                 <span className="h-2 w-2 rounded-full" style={{ background: COLOR[n.label] }} />
                 <span className="flex-1 truncate">{nodeLabel(n)}</span>
-                <span className="text-[10px] uppercase text-slate-400">{LABEL_TEXT[n.label]}</span>
+                <span className="text-2xs uppercase text-slate-400">{LABEL_TEXT[n.label]}</span>
               </button>
             ))}
           </div>
@@ -122,7 +123,7 @@ export default function KnowledgeGraphPage() {
                     y1={cy}
                     x2={x}
                     y2={y}
-                    stroke="#cbd5e1"
+                    style={{ stroke: 'rgb(var(--ink) / 0.15)' }}
                     strokeWidth={nb.weight}
                   />
                 );
@@ -140,7 +141,7 @@ export default function KnowledgeGraphPage() {
                     className="cursor-pointer"
                     onClick={() => setSelectedId(nb.node.id)}
                   >
-                    <circle cx={x} cy={y} r={9} fill={COLOR[nb.node.label]} opacity={0.85} />
+                    <circle cx={x} cy={y} r={9} style={{ fill: COLOR[nb.node.label] }} opacity={0.85} />
                     <text
                       x={x}
                       y={y - 13}
@@ -154,7 +155,7 @@ export default function KnowledgeGraphPage() {
                 );
               })}
               {/* center node */}
-              <circle cx={cx} cy={cy} r={16} fill={COLOR[current.label]} />
+              <circle cx={cx} cy={cy} r={16} style={{ fill: COLOR[current.label] }} />
               <text
                 x={cx}
                 y={cy + 34}
@@ -171,7 +172,7 @@ export default function KnowledgeGraphPage() {
             <div className="card p-4">
               <div className="flex items-center gap-2">
                 <span className="h-2.5 w-2.5 rounded-full" style={{ background: COLOR[current.label] }} />
-                <span className="text-[11px] uppercase tracking-wide text-slate-400">
+                <span className="text-2xs uppercase tracking-wide text-slate-400">
                   {LABEL_TEXT[current.label]}
                 </span>
               </div>
@@ -189,10 +190,10 @@ export default function KnowledgeGraphPage() {
               )}
             </div>
             <div className="card p-3">
-              <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+              <div className="mb-1 text-2xs font-semibold uppercase tracking-wide text-slate-400">
                 Connections
               </div>
-              <div className="max-h-64 space-y-0.5 overflow-auto">
+              <div className="max-h-64 space-y-1 overflow-auto">
                 {neighbors.map((nb) => (
                   <button
                     key={nb.node.id}
@@ -202,13 +203,13 @@ export default function KnowledgeGraphPage() {
                     <span className="h-2 w-2 rounded-full" style={{ background: COLOR[nb.node.label] }} />
                     <span className="flex-1 truncate text-slate-700">{nodeLabel(nb.node)}</span>
                     {nb.relationship === 'HAS_RUBRIC' && (
-                      <span className="text-[10px] text-slate-400">g{nb.weight}</span>
+                      <span className="text-2xs text-slate-400">g{nb.weight}</span>
                     )}
                   </button>
                 ))}
               </div>
             </div>
-            <div className="flex flex-wrap gap-3 px-1 text-[11px] text-slate-500">
+            <div className="flex flex-wrap gap-3 px-1 text-2xs text-slate-500">
               {(['REMEDY', 'RUBRIC', 'CHAPTER'] as NodeLabel[]).map((l) => (
                 <span key={l} className="inline-flex items-center gap-1">
                   <span className="h-2 w-2 rounded-full" style={{ background: COLOR[l] }} />

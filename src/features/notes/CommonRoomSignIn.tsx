@@ -49,7 +49,7 @@ export default function CommonRoomSignIn() {
         aria-label="Common Room password"
       />
       {error && <p className="text-sm text-red-600">{error}</p>}
-      <button className="btn btn-primary inline-flex items-center gap-1.5" disabled={busy}>
+      <button className="btn-primary" disabled={busy}>
         {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogIn className="h-4 w-4" />} Sign in with
         Common Room
       </button>

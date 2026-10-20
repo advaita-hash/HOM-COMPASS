@@ -42,7 +42,7 @@ export default function SharedNotePage() {
           </div>
         ) : (
           <div className="card p-6">
-            <div className="mb-1 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-violet-500">
+            <div className="mb-1 flex items-center gap-2 text-2xs font-semibold uppercase tracking-wide text-violet-500">
               <NotebookPen className="h-3.5 w-3.5" /> Shared remedy note
             </div>
             <h1 className="font-serif text-2xl font-semibold text-slate-800">
@@ -53,13 +53,13 @@ export default function SharedNotePage() {
               {note.date && <span>{fmt(note.date)}</span>}
               {note.by && <span>by {note.by}</span>}
             </div>
-            <p className="mt-4 whitespace-pre-wrap text-[15px] leading-relaxed text-slate-800">
+            <p className="mt-4 whitespace-pre-wrap text-subhead leading-relaxed text-slate-800">
               {note.body}
             </p>
           </div>
         )}
 
-        <p className="mt-4 flex items-center gap-1.5 text-xs text-slate-400">
+        <p className="mt-4 flex items-center gap-2 text-xs text-slate-400">
           <Lock className="h-3 w-3" />
           This note was shared as a private link — its contents live only in the link, not on any
           server.

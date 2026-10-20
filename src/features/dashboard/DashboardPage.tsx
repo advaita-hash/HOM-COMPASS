@@ -27,7 +27,7 @@ function StatCard({
   to: string;
 }) {
   return (
-    <Link to={to} className="card p-4 transition-shadow hover:shadow-md">
+    <Link to={to} className="card p-4 pressable">
       <div className="flex items-center gap-3">
         <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand-50 text-brand-600">
           <Icon className="h-5 w-5" />
@@ -62,11 +62,11 @@ export default function DashboardPage() {
       {/* Remedy of the Day hero */}
       <Link
         to="/remedy-of-the-day"
-        className="group block overflow-hidden rounded-2xl border border-brand-200 bg-gradient-to-br from-brand-600 to-brand-500 text-white shadow-sm transition-transform hover:-translate-y-0.5"
+        className="pressable group block overflow-hidden rounded-2xl bg-gradient-to-br from-art-pine to-art-sea text-white shadow-card"
       >
         <div className="flex flex-col gap-4 p-6 md:flex-row md:items-center md:justify-between">
           <div className="max-w-2xl">
-            <div className="flex items-center gap-2 text-brand-50">
+            <div className="flex items-center gap-2 text-white/80">
               <CalendarDays className="h-4 w-4" />
               <span className="text-xs font-medium uppercase tracking-wide">
                 Remedy of the Day
@@ -74,9 +74,9 @@ export default function DashboardPage() {
             </div>
             <div className="mt-2 flex items-baseline gap-2">
               <h2 className="font-serif text-3xl font-bold">{remedy.name}</h2>
-              <span className="text-sm text-brand-100">{remedy.commonName}</span>
+              <span className="text-sm text-white/70">{remedy.commonName}</span>
             </div>
-            <p className="mt-2 font-serif text-[15px] italic leading-relaxed text-white/95">
+            <p className="mt-2 font-serif text-subhead italic leading-relaxed text-white/95">
               “{remedy.essence}”
             </p>
             <ul className="mt-3 flex flex-wrap gap-2">
@@ -109,14 +109,14 @@ export default function DashboardPage() {
       <section className="mt-6">
         <h3 className="mb-2 text-sm font-semibold text-slate-700">Quick actions</h3>
         <div className="grid gap-3 sm:grid-cols-2">
-          <Link to="/library" className="card flex items-center gap-3 p-4 hover:shadow-md">
+          <Link to="/library" className="card flex items-center gap-3 p-4 pressable">
             <Library className="h-5 w-5 text-brand-600" />
             <div>
               <div className="text-sm font-medium text-slate-800">Upload a book</div>
               <div className="text-xs text-slate-500">Add a repertory or materia medica</div>
             </div>
           </Link>
-          <Link to="/materia-medica" className="card flex items-center gap-3 p-4 hover:shadow-md">
+          <Link to="/materia-medica" className="card flex items-center gap-3 p-4 pressable">
             <FlaskConical className="h-5 w-5 text-brand-600" />
             <div>
               <div className="text-sm font-medium text-slate-800">Browse Materia Medica</div>

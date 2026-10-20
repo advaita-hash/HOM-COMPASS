@@ -10,6 +10,8 @@ import {
 } from './useCommonRoom';
 import { buildShareUrl, useNoteVisibility } from './shareNote';
 import type { RemedyNoteEntry } from '../../lib/commonRoom';
+import { EmptyState } from '../../components/ui/EmptyState';
+import { NotebookPen } from 'lucide-react';
 
 const fmt = (d: string) =>
   new Date(d.length === 10 ? d + 'T00:00' : d).toLocaleDateString(undefined, {
@@ -63,7 +65,7 @@ function NoteItem({
         </span>
         <span className="flex-1 text-sm text-slate-800">{note.body}</span>
         <button
-          className="text-slate-300 hover:text-red-600"
+          className="tap rounded-full p-1 text-ink/30 transition-colors hover:bg-red-50 hover:text-red-600"
           title="Delete this note"
           aria-label="Delete this note"
           onClick={onDelete}
@@ -75,7 +77,7 @@ function NoteItem({
       <div className="mt-2 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-2">
         <button
           onClick={() => setPublic(note.id, !isPublic)}
-          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
+          className={`tap inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
             isPublic
               ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
               : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
@@ -90,7 +92,7 @@ function NoteItem({
           <>
             <button
               onClick={copy}
-              className="inline-flex items-center gap-1.5 rounded-full bg-brand-50 px-2.5 py-1 text-xs font-medium text-brand-700 hover:bg-brand-100"
+              className="tap inline-flex items-center gap-2 rounded-full bg-accent/[0.12] px-3 py-1 text-xs font-medium text-brand-700 hover:bg-accent/[0.18]"
             >
               {copied ? <Check className="h-3.5 w-3.5" /> : <Link2 className="h-3.5 w-3.5" />}
               {copied ? 'Copied' : 'Copy link'}
@@ -99,7 +101,7 @@ function NoteItem({
               readOnly
               value={shareUrl}
               onFocus={(e) => e.currentTarget.select()}
-              className="min-w-0 flex-1 truncate rounded border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] text-slate-500"
+              className="min-w-0 flex-1 truncate rounded border border-slate-200 bg-slate-50 px-2 py-1 text-2xs text-slate-500"
             />
           </>
         )}
@@ -132,10 +134,17 @@ export default function MyRemedyNotes({ remedy, abbr }: { remedy: string; abbr: 
       ) : notes.error ? (
         <p className="text-sm text-red-600">Could not load your notes. {(notes.error as Error).message}</p>
       ) : !notes.data?.length ? (
-        <p className="text-sm text-slate-500">
-          No notes on {abbr} yet. In Common Room's OPD notes, start a line with “{abbr} -” and what you
-          observed, e.g. “{abbr} - weepy, thirstless”. It appears here.
-        </p>
+        <EmptyState
+          className="py-8"
+          icon={NotebookPen}
+          title={`No notes on ${abbr} yet`}
+          description={<>In Common Room’s OPD notes, start a line with “{abbr} -” and what you observed — e.g. “{abbr} - weepy, thirstless” — and it appears here.</>}
+          action={
+            <a className="btn-primary" href={COMMON_ROOM_URL} target="common-room" rel="noopener noreferrer">
+              Open Common Room
+            </a>
+          }
+        />
       ) : (
         <ol className="space-y-2">
           {notes.data.map((n) => (

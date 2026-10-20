@@ -34,7 +34,7 @@ export default function RemedyOfTheDayPage() {
               Remedy of the Day
             </span>
           </div>
-          <p className="mt-0.5 text-sm text-slate-500">{dateLabel}</p>
+          <p className="mt-1 text-sm text-slate-500">{dateLabel}</p>
         </div>
         <Link to={`/materia-medica/${remedy.id}`} className="btn-ghost">
           <FlaskConical className="h-4 w-4" />
@@ -48,7 +48,7 @@ export default function RemedyOfTheDayPage() {
         <BookCrossLinks remedyName={remedy.name} />
       </div>
 
-      <div className="mt-6 flex items-center justify-between rounded-xl border border-dashed border-slate-300 bg-white/60 px-4 py-3 text-sm text-slate-500">
+      <div className="mt-6 flex items-center justify-between rounded-xl border border-dashed border-slate-300 bg-surface/60 px-4 py-3 text-sm text-slate-500">
         <span className="inline-flex items-center gap-2">
           <Shuffle className="h-4 w-4" />
           Tomorrow: <span className="font-medium text-slate-700">{tomorrow.name}</span>

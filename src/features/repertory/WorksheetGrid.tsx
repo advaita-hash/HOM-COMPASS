@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { X } from 'lucide-react';
+import { ListPlus, X } from 'lucide-react';
+import { EmptyState } from '../../components/ui/EmptyState';
 import type { Grade, Repertory } from './types';
 import { repertorize, useWorksheet } from './worksheetStore';
 import { canonicalName } from '../../lib/remedyName';
@@ -37,12 +38,17 @@ export function WorksheetGrid({
 
   if (items.length === 0) {
     return (
-      <div className="card p-8 text-center text-sm text-slate-500">
-        No rubrics yet — add them from the symptom translator or the{' '}
-        <Link to="/repertory" className="text-brand-600 underline">
-          Repertory
-        </Link>
-        .
+      <div className="card">
+        <EmptyState
+          icon={ListPlus}
+          title="No rubrics yet"
+          description="Translate the patient’s symptoms, or add rubrics straight from the Repertory, and the grade-weighted analysis builds here."
+          action={
+            <Link to="/repertory" className="btn-primary">
+              Open Repertory
+            </Link>
+          }
+        />
       </div>
     );
   }
@@ -69,13 +75,13 @@ export function WorksheetGrid({
             <button
               key={s.name}
               onClick={() => onRemedy(s.name)}
-              className="card flex items-center gap-3 p-3 text-left hover:shadow-md"
+              className="card flex items-center gap-3 p-3 text-left pressable"
               title="Show Materia Medica support"
             >
               {inner}
             </button>
           ) : (
-            <Link key={s.name} to={remedyBookLink(s.name)} className="card flex items-center gap-3 p-3 hover:shadow-md">
+            <Link key={s.name} to={remedyBookLink(s.name)} className="card flex items-center gap-3 p-3 pressable">
               {inner}
             </Link>
           );
@@ -88,12 +94,12 @@ export function WorksheetGrid({
           {scores.length} remedies across {items.length} rubric
           {items.length === 1 ? '' : 's'}
         </span>
-        <label className="inline-flex items-center gap-1.5">
+        <label className="inline-flex items-center gap-2">
           Show
           <select
             value={showN}
             onChange={(e) => setShowN(Number(e.target.value))}
-            className="rounded border border-slate-200 bg-white px-1.5 py-0.5 text-xs"
+            className="rounded border border-slate-200 bg-surface px-2 py-1 text-xs"
           >
             {COLUMN_OPTIONS.map((n) => (
               <option key={n} value={n}>
@@ -110,7 +116,7 @@ export function WorksheetGrid({
         <table className="w-full border-collapse text-sm">
           <thead>
             <tr className="border-b border-slate-200">
-              <th className="sticky left-0 z-10 bg-white px-3 py-2 text-left font-medium text-slate-500">
+              <th className="sticky left-0 z-10 bg-surface px-3 py-2 text-left font-medium text-slate-500">
                 Rubric
               </th>
               <th className="px-2 py-2 text-center font-medium text-slate-400">Int.</th>
@@ -146,9 +152,9 @@ export function WorksheetGrid({
               if (!rubric) return null;
               return (
                 <tr key={rubricId} className="border-b border-slate-100 hover:bg-slate-50">
-                  <td className="sticky left-0 z-10 w-[220px] min-w-[180px] max-w-[220px] bg-white px-3 py-2 align-top sm:w-[360px] sm:min-w-[240px] sm:max-w-[360px]">
+                  <td className="sticky left-0 z-10 w-[220px] min-w-[180px] max-w-[220px] bg-surface px-3 py-2 align-top sm:w-[360px] sm:min-w-[240px] sm:max-w-[360px]">
                     <div className="break-words">
-                      <span className="text-[10px] uppercase tracking-wide text-slate-400">
+                      <span className="text-2xs uppercase tracking-wide text-slate-400">
                         {rubric.chapter}
                       </span>{' '}
                       <span className="text-slate-800">{rubric.rubric}</span>
@@ -158,7 +164,7 @@ export function WorksheetGrid({
                     <select
                       value={intensity}
                       onChange={(e) => setIntensity(rubricId, Number(e.target.value))}
-                      className="rounded border border-slate-200 bg-white px-1 py-0.5 text-xs"
+                      className="rounded border border-slate-200 bg-surface px-1 py-1 text-xs"
                       title="Rubric intensity"
                     >
                       {[1, 2, 3].map((n) => (
@@ -187,7 +193,7 @@ export function WorksheetGrid({
                   <td className="px-2 py-2 text-center">
                     <button
                       onClick={() => remove(rubricId)}
-                      className="rounded p-1 text-slate-300 hover:bg-red-50 hover:text-red-600"
+                      className="tap rounded-full p-1 text-ink/30 transition-colors hover:bg-red-50 hover:text-red-600"
                       aria-label="Remove rubric"
                     >
                       <X className="h-4 w-4" />

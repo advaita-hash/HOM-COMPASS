@@ -10,7 +10,7 @@ export function RepertorySelect() {
   const clear = useWorksheet((s) => s.clear);
 
   return (
-    <label className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-sm text-slate-600">
+    <label className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-surface px-3 py-2 text-sm text-slate-600">
       <Library className="h-4 w-4 text-brand-600" />
       <select
         value={id}

@@ -98,7 +98,7 @@ export default function GlobalSearchPage() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search remedies, symptoms, rubrics…"
-          className="w-full rounded-lg border border-slate-200 bg-white py-2.5 pl-10 pr-3 text-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-100"
+          className="w-full rounded-lg border border-slate-200 bg-surface py-3 pl-10 pr-3 text-sm focus:outline-none"
         />
       </div>
 
@@ -120,7 +120,7 @@ export default function GlobalSearchPage() {
               </h2>
               <div className="grid gap-2 sm:grid-cols-2">
                 {curated.map((r) => (
-                  <Link key={r.id} to={`/materia-medica/${r.id}`} className="card p-3 hover:shadow-md">
+                  <Link key={r.id} to={`/materia-medica/${r.id}`} className="card p-3 pressable">
                     <div className="flex items-center gap-2 text-sm font-medium text-slate-800">
                       <FlaskConical className="h-4 w-4 text-brand-500" />
                       <Highlight text={canonicalName(r.name)} q={q} />
@@ -141,12 +141,12 @@ export default function GlobalSearchPage() {
                 <Link
                   key={`${h.id}-${h.slug}-${i}`}
                   to={`/books/${h.id}/${h.slug}`}
-                  className="card block p-3 hover:shadow-md"
+                  className="card block p-3 pressable"
                 >
                   <div className="flex items-center gap-2 text-sm font-medium text-slate-800">
                     <BookText className="h-4 w-4 text-brand-500" />
                     {canonicalName(h.name)}
-                    <span className="text-[10px] uppercase tracking-wide text-slate-400">
+                    <span className="text-2xs uppercase tracking-wide text-slate-400">
                       {h.book}
                     </span>
                   </div>
@@ -173,7 +173,7 @@ export default function GlobalSearchPage() {
                     to="/repertory"
                     className="block border-b border-slate-100 px-3 py-2 text-sm last:border-0 hover:bg-slate-50"
                   >
-                    <span className="text-[10px] uppercase tracking-wide text-slate-400">
+                    <span className="text-2xs uppercase tracking-wide text-slate-400">
                       {r.chapter}
                     </span>{' '}
                     <Highlight text={r.rubric} q={q} />

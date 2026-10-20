@@ -90,7 +90,7 @@ export function SymptomTranslator({
         onChange={(e) => onTextChange(e.target.value)}
         rows={4}
         placeholder={'anxious about health\nworse in warm rooms\ncraves salt\nweeps when consoled'}
-        className="mt-3 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-brand-400 focus:outline-none"
+        className="mt-3 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none"
       />
       <button onClick={run} disabled={!rep || !text.trim() || busy} className="btn-primary mt-2">
         {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
@@ -104,14 +104,14 @@ export function SymptomTranslator({
               <div className="mb-1 text-xs font-medium text-slate-500">“{r.phrase}”</div>
 
               {r.translations.length > 0 && (
-                <div className="mb-1.5 flex flex-wrap items-center gap-1.5">
-                  <span className="text-[10px] uppercase tracking-wide text-violet-500">
+                <div className="mb-2 flex flex-wrap items-center gap-2">
+                  <span className="text-2xs uppercase tracking-wide text-violet-500">
                     repertory language
                   </span>
                   {r.translations.map((t) => (
                     <span
                       key={t.word}
-                      className="inline-flex items-center gap-1 rounded-full bg-violet-50 px-2 py-0.5 text-[11px] text-violet-700"
+                      className="inline-flex items-center gap-1 rounded-full bg-violet-50 px-2 py-1 text-2xs text-violet-700"
                     >
                       {t.word}
                       <ArrowRight className="h-3 w-3" />
@@ -132,19 +132,19 @@ export function SymptomTranslator({
                         key={m.rubric.id}
                         onClick={() => add(m.rubric.id)}
                         disabled={on}
-                        className={`flex w-full items-start gap-2 rounded-md border px-3 py-1.5 text-left text-sm ${
+                        className={`flex w-full items-start gap-2 min-h-[44px] rounded-lg border px-3 py-2 text-left text-sm transition-[background-color,border-color,transform,opacity] duration-300 ease-spring active:scale-[0.96] active:opacity-80 ${
                           on
                             ? 'border-brand-200 bg-brand-50 text-brand-700'
                             : 'border-slate-200 hover:border-brand-400 hover:bg-slate-50'
                         }`}
                       >
                         {on ? (
-                          <Check className="mt-0.5 h-4 w-4 shrink-0 text-brand-600" />
+                          <Check className="mt-1 h-4 w-4 shrink-0 text-brand-600" />
                         ) : (
-                          <Plus className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
+                          <Plus className="mt-1 h-4 w-4 shrink-0 text-slate-400" />
                         )}
                         <span className="min-w-0 flex-1 break-words">{m.rubric.rubric}</span>
-                        <span className="mt-0.5 shrink-0 text-[10px] uppercase text-slate-400">
+                        <span className="mt-1 shrink-0 text-2xs uppercase text-slate-400">
                           {m.rubric.remedies.length}
                         </span>
                       </button>
@@ -198,7 +198,7 @@ function SemanticToggle({ sem }: { sem: ReturnType<typeof useSemantic> }) {
           <Loader2 className="h-3.5 w-3.5 animate-spin text-brand-500" />
         )}
       </label>
-      <div className="mt-1 flex items-center gap-1.5 pl-6 text-[11px] text-slate-500">
+      <div className="mt-1 flex items-center gap-2 pl-6 text-2xs text-slate-500">
         <span className={`h-1.5 w-1.5 rounded-full ${dot}`} />
         {line[sem.status]}
       </div>

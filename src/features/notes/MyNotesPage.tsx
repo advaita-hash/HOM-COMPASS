@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom';
 import { Loader2, NotebookPen } from 'lucide-react';
 import ABBREV from '../../data/remedyAbbrev.json';
 import { canonicalName } from '../../lib/remedyName';
-import { usernameOf } from '../../lib/commonRoom';
+import { COMMON_ROOM_URL, usernameOf } from '../../lib/commonRoom';
+import { EmptyState } from '../../components/ui/EmptyState';
 import CommonRoomSignIn from './CommonRoomSignIn';
 import { signOutOfCommonRoom, useCommonRoomSession, useRemedyNotes } from './useCommonRoom';
 
@@ -33,10 +34,10 @@ export default function MyNotesPage() {
   }, [notes.data]);
 
   return (
-    <div className="space-y-5">
+    <div className="page space-y-5">
       <header className="flex items-center gap-2">
         <NotebookPen className="h-5 w-5 text-brand-600" />
-        <h1 className="text-xl font-semibold">My remedy notes</h1>
+        <h1 className="text-2xl font-semibold text-ink/90">My remedy notes</h1>
       </header>
       <div className="card p-5">
         {session === undefined ? (
@@ -54,17 +55,23 @@ export default function MyNotesPage() {
               </button>
             </div>
             {!files.length ? (
-              <p className="text-sm text-slate-500">
-                No remedy notes yet. In Common Room's OPD notes, start a line with a remedy and a dash, e.g.
-                “Puls - weepy, thirstless”, and it is filed here under that remedy.
-              </p>
+              <EmptyState
+                icon={NotebookPen}
+                title="No remedy notes yet"
+                description="In Common Room’s OPD notes, start a line with a remedy and a dash — “Puls - weepy, thirstless” — and it’s filed here under that remedy."
+                action={
+                  <a className="btn-primary" href={COMMON_ROOM_URL} target="common-room" rel="noopener noreferrer">
+                Open Common Room
+              </a>
+                }
+              />
             ) : (
               <ul className="divide-y divide-slate-100">
                 {files.map((f) => (
                   <li key={f.remedy}>
                     <Link
                       to={`/remedy/${encodeURIComponent(f.remedy)}?tab=notes`}
-                      className="flex items-baseline gap-3 py-2.5 hover:bg-slate-50"
+                      className="flex items-baseline gap-3 py-3 hover:bg-slate-50"
                     >
                       <span className="w-20 shrink-0 font-mono text-sm font-semibold text-brand-700">
                         {TABLE[f.remedy]?.[0] ?? ''}

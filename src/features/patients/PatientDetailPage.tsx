@@ -1,6 +1,8 @@
 import { Link, useParams } from 'react-router-dom';
 import { CalendarPlus, ChevronLeft, StickyNote, Trash2 } from 'lucide-react';
 import { usePatients } from './patientsStore';
+import { ClipboardList } from 'lucide-react';
+import { EmptyState } from '../../components/ui/EmptyState';
 
 function CaseCard({ caseId }: { caseId: string }) {
   const c = usePatients((s) => s.cases.find((x) => x.id === caseId));
@@ -20,7 +22,7 @@ function CaseCard({ caseId }: { caseId: string }) {
         <span className="text-sm font-medium text-slate-700">{date}</span>
         <button
           onClick={() => removeCase(c.id)}
-          className="rounded p-1 text-slate-300 hover:bg-red-50 hover:text-red-600"
+          className="tap rounded-full p-1 text-ink/30 transition-colors hover:bg-red-50 hover:text-red-600"
           aria-label="Delete case"
         >
           <Trash2 className="h-4 w-4" />
@@ -47,13 +49,13 @@ function CaseCard({ caseId }: { caseId: string }) {
         }
         rows={4}
         placeholder="Anxiety about health&#10;Worse warmth&#10;Craves salt"
-        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-brand-400 focus:outline-none"
+        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none"
       />
 
       {c.symptoms_list.filter(Boolean).length > 0 && (
-        <div className="mt-2 flex flex-wrap gap-1.5">
+        <div className="mt-2 flex flex-wrap gap-2">
           {c.symptoms_list.filter(Boolean).map((s, i) => (
-            <span key={i} className="rounded-full bg-brand-50 px-2.5 py-0.5 text-xs text-brand-700">
+            <span key={i} className="rounded-full bg-brand-50 px-3 py-1 text-xs text-brand-700">
               {s}
             </span>
           ))}
@@ -66,7 +68,7 @@ function CaseCard({ caseId }: { caseId: string }) {
         onChange={(e) => updateCase(c.id, { notes: e.target.value })}
         rows={2}
         placeholder="Observations, remedy given, follow-up…"
-        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-brand-400 focus:outline-none"
+        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none"
       />
 
       <Link
@@ -115,7 +117,7 @@ export default function PatientDetailPage() {
           onChange={(e) => updatePatient(patient.id, { notes: e.target.value })}
           rows={2}
           placeholder="Constitution, background, general notes…"
-          className="mt-3 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-brand-400 focus:outline-none"
+          className="mt-3 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none"
         />
       </div>
 
@@ -129,8 +131,17 @@ export default function PatientDetailPage() {
       </div>
 
       {cases.length === 0 ? (
-        <div className="card p-8 text-center text-sm text-slate-400">
-          No cases yet — add the first visit.
+        <div className="card">
+          <EmptyState
+            icon={ClipboardList}
+            title="No cases yet"
+            description="Each visit is recorded as a case with its symptoms and repertorisation. Start with the first visit."
+            action={
+              <button onClick={() => addCase(patient.id)} className="btn-primary">
+                <CalendarPlus className="h-4 w-4" /> New case
+              </button>
+            }
+          />
         </div>
       ) : (
         <div className="space-y-3">

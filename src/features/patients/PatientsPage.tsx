@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronRight, Trash2, UserPlus, Users } from 'lucide-react';
 import { usePatients } from './patientsStore';
+import { EmptyState } from '../../components/ui/EmptyState';
 
 export default function PatientsPage() {
   const { patients, cases, addPatient, removePatient } = usePatients();
@@ -40,7 +41,7 @@ export default function PatientsPage() {
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Patient name"
-            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-brand-400 focus:outline-none"
+            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none"
           />
         </div>
         <div className="w-20">
@@ -48,7 +49,7 @@ export default function PatientsPage() {
           <input
             value={age}
             onChange={(e) => setAge(e.target.value.replace(/\D/g, ''))}
-            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-brand-400 focus:outline-none"
+            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none"
           />
         </div>
         <div className="w-28">
@@ -56,7 +57,7 @@ export default function PatientsPage() {
           <select
             value={gender}
             onChange={(e) => setGender(e.target.value)}
-            className="w-full rounded-lg border border-slate-200 bg-white px-2 py-2 text-sm"
+            className="w-full rounded-lg border border-slate-200 bg-surface px-2 py-2 text-sm"
           >
             <option value="">—</option>
             <option>Female</option>
@@ -70,8 +71,17 @@ export default function PatientsPage() {
       </form>
 
       {patients.length === 0 ? (
-        <div className="card p-10 text-center text-sm text-slate-400">
-          No patients yet — add your first above.
+        <div className="card">
+          <EmptyState
+            icon={Users}
+            title="No patients yet"
+            description="Patients appear here once you add one above or save your first case from the Cases workspace."
+            action={
+              <Link to="/analysis" className="btn-primary">
+                Take a new case
+              </Link>
+            }
+          />
         </div>
       ) : (
         <div className="card overflow-hidden">
@@ -91,7 +101,7 @@ export default function PatientsPage() {
                 </Link>
                 <button
                   onClick={() => removePatient(p.id)}
-                  className="rounded p-1.5 text-slate-300 hover:bg-red-50 hover:text-red-600"
+                  className="rounded p-2 text-slate-300 hover:bg-red-50 hover:text-red-600"
                   aria-label={`Remove ${p.name}`}
                 >
                   <Trash2 className="h-4 w-4" />
