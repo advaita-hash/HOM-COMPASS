@@ -99,7 +99,7 @@ function BookGroup({
   if (searching && data && total === 0) return null; // hide books with no matches
   const selectedKeys = new Set(items.map((i) => keyOf(i.book, i.slug)));
   const full = items.length >= COMPARE_MAX;
-  const author = meta.author.split(' ').slice(-1)[0];
+  const author = meta.label;
 
   return (
     <Disclosure

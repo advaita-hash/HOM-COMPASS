@@ -3,8 +3,11 @@
 // Turns a remedy's narrative text (e.g. Tyler) into a scannable portrait by
 // classifying its sentences into Constitution / Mind / Generals / Worse /
 // Better. No AI required; if a backend key is later added this is where an LLM
-// summary would slot in.
+// summary would slot in. Books that are already sectioned (Allen) are mapped
+// heading by heading instead.
 // ---------------------------------------------------------------------------
+
+import { isSectioned, parseSections } from './sections';
 
 export interface DrugPicture {
   constitution: string[];
@@ -63,8 +66,75 @@ function isAnecdote(low: string): boolean {
   return ANECDOTE.some((k) => low.includes(k));
 }
 
-/** Distil a narrative remedy text into a structured drug picture. */
+// Allen already sorts his keynotes; map his headings straight onto the portrait.
+const SECTION_BUCKET: Record<string, keyof DrugPicture> = {
+  Constitution: 'constitution',
+  'Mental Generals': 'mind',
+  'Physical Generals': 'generals',
+};
+const CAP: Record<keyof DrugPicture, number> = { constitution: 6, mind: 7, generals: 8, worse: 6, better: 5 };
+const STRUCTURED_CAP: Record<keyof DrugPicture, number> = {
+  constitution: 8,
+  mind: 10,
+  generals: 12,
+  worse: 12,
+  better: 10,
+};
+
+/** "Evening and night; in a warm room (Hep.)." → ["Evening and night", "In a warm room (Hep.)"] */
+function splitModality(s: string): string[] {
+  return s
+    .split(/;\s+/)
+    .map((p) => p.trim().replace(/[.;,]+$/, ''))
+    .filter((p) => p.length > 1)
+    .map((p) => p[0].toUpperCase() + p.slice(1));
+}
+
+function distillSections(text: string): DrugPicture {
+  const out: DrugPicture = { constitution: [], mind: [], generals: [], worse: [], better: [] };
+  const push = (b: keyof DrugPicture, s: string) => {
+    if (out[b].length < STRUCTURED_CAP[b]) out[b].push(s);
+  };
+  for (const { heading, items } of parseSections(text)) {
+    if (heading === 'Modalities') {
+      for (const it of items) {
+        const label = it.label?.toLowerCase();
+        if (label === 'aggravation') splitModality(it.text).forEach((s) => push('worse', s));
+        else if (label === 'amelioration') splitModality(it.text).forEach((s) => push('better', s));
+        else {
+          const low = it.text.toLowerCase();
+          if (hasAny(low, WORSE)) push('worse', it.text);
+          else if (hasAny(low, BETTER)) push('better', it.text);
+        }
+      }
+      continue;
+    }
+    const bucket = heading ? SECTION_BUCKET[heading] : undefined;
+    if (!bucket) continue;
+    for (const it of items) push(bucket, it.label ? `${it.label}: ${it.text}` : it.text);
+  }
+  return out;
+}
+
+/** Distil a remedy text into a structured drug picture. */
 export function distill(text: string): DrugPicture {
+  if (!isSectioned(text)) return distillNarrative(text);
+  // Allen: use his own classification; fill any section he leaves empty from
+  // the keyword classifier so the portrait never has needless gaps.
+  const out = distillSections(text);
+  const keynotes = parseSections(text)
+    .filter((s) => s.heading !== 'Relation')
+    .flatMap((s) => s.items.map((i) => i.text))
+    .join(' ');
+  const fallback = distillNarrative(keynotes);
+  for (const k of Object.keys(out) as (keyof DrugPicture)[]) {
+    if (out[k].length === 0) out[k] = fallback[k];
+  }
+  return out;
+}
+
+/** Classify a narrative remedy text's sentences into a drug picture. */
+function distillNarrative(text: string): DrugPicture {
   const out: DrugPicture = {
     constitution: [],
     mind: [],
@@ -87,14 +157,7 @@ export function distill(text: string): DrugPicture {
     else if (hasAny(low, GENERAL)) bucket = 'generals';
     if (!bucket) continue;
 
-    const cap: Record<keyof DrugPicture, number> = {
-      constitution: 6,
-      mind: 7,
-      generals: 8,
-      worse: 6,
-      better: 5,
-    };
-    if (out[bucket].length >= cap[bucket]) continue;
+    if (out[bucket].length >= CAP[bucket]) continue;
     out[bucket].push(s);
     seen.add(key);
   }

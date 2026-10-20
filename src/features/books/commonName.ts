@@ -17,11 +17,16 @@ export function cleanCommonName(raw?: string | null): string | null {
 }
 
 /**
- * Common name for a remedy in any book. Boericke's field is reliable; Tyler's
- * is mostly fragments, so other books borrow Boericke's name for the remedy.
+ * Common name for a remedy in any book. Boericke's and Allen's fields are
+ * reliable; Tyler's is mostly fragments, so it borrows Boericke's name (as
+ * Allen does when his entry has none).
  */
 export function commonNameFor(book: string, remedy: BookRemedy, boericke?: BookData): string | null {
   if (book === 'boericke') return cleanCommonName(remedy.commonName);
+  if (book === 'allen') {
+    const own = cleanCommonName(remedy.commonName);
+    if (own) return own;
+  }
   const b = boericke ? findBookRemedy(boericke, remedy.name) : undefined;
   return cleanCommonName(b?.commonName);
 }

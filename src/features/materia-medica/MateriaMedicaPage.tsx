@@ -6,11 +6,13 @@ import { EmptyState } from '../../components/ui/EmptyState';
 import { REMEDIES, getRemedyById } from '../../data/remedies';
 import { RemedyDetail } from '../remedy/RemedyDetail';
 import { BookCrossLinks } from '../books/BookCrossLinks';
-import { useBook } from '../books/booksIndex';
+import { useQueries } from '@tanstack/react-query';
+import { BOOKS, bookQueryOptions } from '../books/booksIndex';
+import { commonNameFor } from '../books/commonName';
 import { canonicalName } from '../../lib/remedyName';
 import { SegmentedControl } from '../../components/ui/SegmentedControl';
 
-type Source = 'Curated' | 'Boericke' | 'Tyler';
+type Source = 'Curated' | (typeof BOOKS)[number]['label'];
 
 interface Entry {
   key: string;
@@ -20,18 +22,18 @@ interface Entry {
   to: string;
 }
 
-const SOURCE_BADGE: Record<Source, string> = {
+const SOURCE_BADGE: Record<string, string> = {
   Curated: 'bg-brand-100 text-brand-700',
   Boericke: 'bg-teal-100 text-teal-700',
   Tyler: 'bg-indigo-100 text-indigo-700',
+  Allen: 'bg-amber-100 text-amber-700',
 };
 
 function RemedyBrowser() {
   const [query, setQuery] = useState('');
   const [source, setSource] = useState<'All' | Source>('All');
-  const boericke = useBook('boericke');
-  const tyler = useBook('tyler');
-  const loading = boericke.isLoading || tyler.isLoading;
+  const books = useQueries({ queries: BOOKS.map((b) => bookQueryOptions(b.id)) });
+  const loading = books.some((b) => b.isLoading);
 
   const entries = useMemo<Entry[]>(() => {
     const out: Entry[] = [];
@@ -43,27 +45,24 @@ function RemedyBrowser() {
         sub: r.essence,
         to: `/materia-medica/${r.id}`,
       });
-    for (const r of boericke.data?.remedies ?? [])
-      out.push({
-        key: `b-${r.slug}`,
-        name: r.name,
-        source: 'Boericke',
-        sub: r.commonName,
-        to: `/books/boericke/${r.slug}`,
-      });
-    for (const r of tyler.data?.remedies ?? [])
-      out.push({
-        key: `t-${r.slug}`,
-        name: r.name,
-        source: 'Tyler',
-        sub: r.commonName,
-        to: `/books/tyler/${r.slug}`,
-      });
+    const boericke = books[BOOKS.findIndex((b) => b.id === 'boericke')]?.data;
+    BOOKS.forEach((meta, i) => {
+      for (const r of books[i].data?.remedies ?? [])
+        out.push({
+          key: `${meta.id}-${r.slug}`,
+          name: r.name,
+          source: meta.label,
+          sub: commonNameFor(meta.id, r, boericke),
+          to: `/books/${meta.id}/${r.slug}`,
+        });
+    });
     return out;
-  }, [boericke.data, tyler.data]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [books.map((b) => b.dataUpdatedAt).join()]);
 
   const counts = useMemo(() => {
-    const c: Record<string, number> = { All: entries.length, Curated: 0, Boericke: 0, Tyler: 0 };
+    const c: Record<string, number> = { All: entries.length, Curated: 0 };
+    for (const b of BOOKS) c[b.label] = 0;
     for (const e of entries) c[e.source] += 1;
     return c;
   }, [entries]);
@@ -79,7 +78,7 @@ function RemedyBrowser() {
     return list.slice(0, 400);
   }, [entries, source, q]);
 
-  const tabs: ('All' | Source)[] = ['All', 'Curated', 'Boericke', 'Tyler'];
+  const tabs: ('All' | Source)[] = ['All', 'Curated', ...BOOKS.map((b) => b.label)];
 
   return (
     <div className="mx-auto max-w-4xl p-6 md:p-8">
@@ -88,23 +87,25 @@ function RemedyBrowser() {
         <div>
           <h1 className="text-2xl font-semibold text-slate-800">Materia Medica</h1>
           <p className="text-sm text-slate-500">
-            {loading ? 'Loading remedies…' : `${entries.length} remedies across 3 sources`}
+            {loading ? 'Loading remedies…' : `${entries.length} remedies across ${BOOKS.length + 1} sources`}
           </p>
         </div>
       </header>
 
-      {/* Source segregation */}
-      <SegmentedControl
-        className="mb-4"
-        ariaLabel="Source"
-        value={source}
-        onChange={setSource}
-        options={tabs.map((t) => ({
-          value: t,
-          label: t,
-          badge: <span className="text-2xs tabular-nums text-ink/60">{counts[t] ?? 0}</span>,
-        }))}
-      />
+      {/* Source segregation — scrolls sideways on phones rather than truncating */}
+      <div className="-mx-6 mb-4 overflow-x-auto px-6 md:mx-0 md:px-0">
+        <SegmentedControl
+          className="!max-w-none"
+          ariaLabel="Source"
+          value={source}
+          onChange={setSource}
+          options={tabs.map((t) => ({
+            value: t,
+            label: t,
+            badge: <span className="text-2xs tabular-nums text-ink/60">{counts[t] ?? 0}</span>,
+          }))}
+        />
+      </div>
 
       <div className="relative mb-4">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -129,7 +130,7 @@ function RemedyBrowser() {
               <span className="min-w-0 flex-1 truncate font-serif text-base font-semibold text-slate-800">
                 {canonicalName(e.name)}
               </span>
-              <span className={`shrink-0 rounded-full px-2 py-1 text-2xs font-medium ${SOURCE_BADGE[e.source]}`}>
+              <span className={`shrink-0 rounded-full px-2 py-1 text-2xs font-medium ${SOURCE_BADGE[e.source] ?? SOURCE_BADGE.Curated}`}>
                 {e.source}
               </span>
             </div>

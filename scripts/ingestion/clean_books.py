@@ -25,6 +25,7 @@ KEEP_LABELS = {
     "expectoration", "sexual", "menses", "nails", "bones", "glands", "pulse",
     "temperature", "aggravation", "amelioration", "compare", "antidote", "limbs",
     "hands", "legs", "abamen", "chill", "heat", "sweat", "perspiration", "action",
+    "spine", "spleen", "nervous", "doses",
 }
 
 def _lev(a, b):
@@ -82,7 +83,7 @@ AE_OE_RULES = [
     (r"\b([Dd])iarrh(?:aa|eea|ea|a)\b", r"\1iarrhoea"),
     (r"\b([Gg])onorrh(?:aa|eea|ea|a)\b", r"\1onorrhoea"),
     (r"\b([Ll])eucorrh(?:aa|eea|ea|cea|a)\b", r"\1eucorrhoea"),
-    (r"\b([Oo])torrh(?:aa|eea|ea|a)\b", r"\1otorrhoea"),
+    (r"\b([Oo])torrh(?:aa|eea|ea|a)\b", r"\1torrhoea"),
     (r"\b([Hh])(?:a|ae|e)morrh", r"\1aemorrh"),
     (r"\b([Dd])yspn(?:aa|ea|oea|a)\b", r"\1yspnoea"),
     (r"\b([Aa])n(?:a|ae|e)mia\b", r"\1naemia"),
@@ -150,14 +151,14 @@ def clean_ocr(text):
 def main():
     import os
     total = 0
-    for fn in ("boericke.json", "tyler.json"):
+    for fn in ("boericke.json", "tyler.json", "allen.json"):
         path = os.path.join(BOOKS_DIR, fn)
         book = json.load(open(path))
         for r in book["remedies"]:
             r["text"] = clean_ocr(r["text"])
             if r.get("commonName"):
                 r["commonName"] = clean_ocr(r["commonName"]).strip(" .,-—")
-        json.dump(book, open(path, "w"), ensure_ascii=False)
+        json.dump(book, open(path, "w"), ensure_ascii=False, separators=(",", ":"))
         total += len(book["remedies"])
         print(f"cleaned {fn}: {len(book['remedies'])} remedies")
     print("total:", total)

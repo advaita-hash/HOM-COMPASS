@@ -36,8 +36,9 @@ const FULL_CANON: Record<string, string> = {
 function titleCase(word: string): string {
   if (!word) return word;
   // Latin binomials: capitalise the first letter, lower-case the rest
-  // (fixes Tyler's "vomica" / "phosphoricum"). Leaves non-letters alone.
-  return word[0].toUpperCase() + word.slice(1).toLowerCase();
+  // (fixes Tyler's "vomica" / "phosphoricum"). Leaves non-letters alone, so
+  // "(Bach)" keeps its capital after the bracket.
+  return word.toLowerCase().replace(/[a-z]/, (c) => c.toUpperCase());
 }
 
 /** Canonical display spelling for a remedy name from any source. */

@@ -34,7 +34,7 @@ function Section({
       <ul className="space-y-2">
         {items.map((s, i) => (
           <li key={i} className="flex gap-2 text-sm leading-relaxed text-slate-700">
-            <span className={`mt-2 h-1.5 w-1.5 shrink-0 rounded-full ${accent.replace('text-', 'bg-')}`} />
+            <span aria-hidden className={`mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-current ${accent}`} />
             <span>{s}</span>
           </li>
         ))}
@@ -43,8 +43,33 @@ function Section({
   );
 }
 
+/**
+ * Remedy title block shared by both reading views: canonical name, the
+ * cleaned common name in italics, and the family (Allen) as a quiet caption.
+ */
+export function RemedyHeading({
+  remedy,
+  common,
+}: {
+  remedy: BookRemedy;
+  common: string | null;
+}) {
+  return (
+    <header>
+      <h2 className="font-serif text-2xl font-bold text-slate-800">{canonicalName(remedy.name)}</h2>
+      {(common || remedy.family) && (
+        <p className="mt-1 text-sm text-slate-500">
+          {common && <span className="italic">{common}</span>}
+          {common && remedy.family && <span aria-hidden> · </span>}
+          {remedy.family && <span>{remedy.family}</span>}
+        </p>
+      )}
+    </header>
+  );
+}
+
 /** Auto-distilled drug picture (constitution + portrait) for a book remedy. */
-export function DrugPictureView({ remedy }: { remedy: BookRemedy }) {
+export function DrugPictureView({ remedy, common }: { remedy: BookRemedy; common: string | null }) {
   const dp: DrugPicture = useMemo(() => distill(remedy.text), [remedy.text]);
   const empty =
     dp.constitution.length +
@@ -56,10 +81,7 @@ export function DrugPictureView({ remedy }: { remedy: BookRemedy }) {
 
   return (
     <article className="max-w-none">
-      <h2 className="font-serif text-2xl font-bold text-slate-800">{canonicalName(remedy.name)}</h2>
-      {remedy.commonName && (
-        <p className="mt-1 text-sm italic text-slate-500">{remedy.commonName}</p>
-      )}
+      <RemedyHeading remedy={remedy} common={common} />
       <p className="mb-4 mt-1 inline-flex items-center gap-1 text-2xs text-slate-400">
         <Sparkles className="h-3 w-3" /> Auto-distilled portrait — see “Full text” for the
         complete drug picture.

@@ -25,7 +25,7 @@ export function BookCrossLinks({ remedyName }: { remedyName: string }) {
             to={`/books/${book.id}?q=${encodeURIComponent(term)}`}
             className="btn-secondary"
           >
-            {book.author.split(' ').slice(-1)[0]} — {book.title.length > 28 ? 'Materia Medica' : book.title}
+            {book.label} — {book.shortTitle}
           </Link>
         ))}
       </div>

@@ -8,7 +8,8 @@ import { canonicalName } from '../../lib/remedyName';
 import { REMEDIES } from '../../data/remedies';
 import ABBREV from '../../data/remedyAbbrev.json';
 import { useRepertoryById } from '../repertory/repertoryData';
-import { findBookRemedy, useBook } from '../books/booksIndex';
+import { useQueries } from '@tanstack/react-query';
+import { BOOKS, bookQueryOptions, findBookRemedy } from '../books/booksIndex';
 import type { Grade } from '../repertory/types';
 
 // ---------------------------------------------------------------------------
@@ -103,8 +104,7 @@ export default function RemedyProfilePage() {
   const setTab = (t: 'repertory' | 'notes') => setSearch(t === 'notes' ? { tab: 'notes' } : {}, { replace: true });
   const name = resolveRemedy(decodeURIComponent(param));
   const { data: rep, isLoading, error } = useRepertoryById('kent');
-  const boericke = useBook('boericke');
-  const tyler = useBook('tyler');
+  const books = useQueries({ queries: BOOKS.map((b) => bookQueryOptions(b.id)) });
   const [chapter, setChapter] = useState('all');
   const [minGrade, setMinGrade] = useState<Grade>(1);
   const [query, setQuery] = useState('');
@@ -157,8 +157,11 @@ export default function RemedyProfilePage() {
   const [abbr, alts = []] = TABLE[name];
   const display = canonicalName(name);
   const curated = REMEDIES.find((r) => r.abbr === abbr || canonicalName(r.name) === display);
-  const bk = boericke.data ? findBookRemedy(boericke.data, name) : undefined;
-  const ty = tyler.data ? findBookRemedy(tyler.data, name) : undefined;
+  const bookLinks = BOOKS.flatMap((meta, i) => {
+    const data = books[i].data;
+    const hit = data ? findBookRemedy(data, name) : undefined;
+    return hit ? [{ meta, slug: hit.slug }] : [];
+  });
 
   return (
     <div className="page space-y-5">
@@ -181,16 +184,11 @@ export default function RemedyProfilePage() {
               <FlaskConical className="h-4 w-4" /> Materia Medica profile
             </Link>
           )}
-          {bk && (
-            <Link to={`/books/boericke/${bk.slug}`} className="btn-ghost inline-flex items-center gap-2">
-              <BookText className="h-4 w-4" /> Boericke
+          {bookLinks.map(({ meta, slug }) => (
+            <Link key={meta.id} to={`/books/${meta.id}/${slug}`} className="btn-ghost inline-flex items-center gap-2">
+              <BookText className="h-4 w-4" /> {meta.label}
             </Link>
-          )}
-          {ty && (
-            <Link to={`/books/tyler/${ty.slug}`} className="btn-ghost inline-flex items-center gap-2">
-              <BookText className="h-4 w-4" /> Tyler
-            </Link>
-          )}
+          ))}
         </div>
       </header>
 

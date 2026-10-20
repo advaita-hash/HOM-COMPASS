@@ -152,7 +152,7 @@ export const colors = {
   // fixed artwork colours — identical in light and dark (covers, heroes)
   art: {
     pine: '#26665c', sea: '#337f72', teal: '#0d9488', emerald: '#10b981',
-    indigo: '#4f46e5', violet: '#8b5cf6',
+    indigo: '#4f46e5', violet: '#8b5cf6', amber: '#b45309', rose: '#be4b49',
   },
 };
 

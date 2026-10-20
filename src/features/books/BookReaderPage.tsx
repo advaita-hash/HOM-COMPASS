@@ -2,26 +2,47 @@ import { useMemo, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { ChevronLeft, List, Loader2, Search } from 'lucide-react';
 import { getBookMeta, useBook } from './booksIndex';
-import { DrugPictureView } from './DrugPictureView';
+import { DrugPictureView, RemedyHeading } from './DrugPictureView';
 import { canonicalName } from '../../lib/remedyName';
 import type { BookRemedy } from './types';
+import { parseSections } from './sections';
+import { commonNameFor } from './commonName';
 import { SegmentedControl } from '../../components/ui/SegmentedControl';
 import { CompareButton, CompareTray } from '../compare/CompareControls';
 
-function RemedyText({ remedy }: { remedy: BookRemedy }) {
-  const paragraphs = useMemo(
-    () => remedy.text.split(/\n{2,}/).filter((p) => p.trim().length > 0),
-    [remedy.text],
-  );
+function RemedyText({ remedy, common }: { remedy: BookRemedy; common: string | null }) {
+  const sections = useMemo(() => parseSections(remedy.text), [remedy.text]);
   return (
     <article className="prose-sm max-w-none">
-      <h2 className="font-serif text-2xl font-bold text-slate-800">{canonicalName(remedy.name)}</h2>
-      {remedy.commonName && (
-        <p className="mt-1 text-sm italic text-slate-500">{remedy.commonName}</p>
-      )}
-      <div className="mt-4 space-y-3 font-serif text-subhead leading-relaxed text-slate-700">
-        {paragraphs.map((p, i) => (
-          <p key={i}>{p}</p>
+      <RemedyHeading remedy={remedy} common={common} />
+      <div className="mt-4 space-y-4 font-serif text-subhead leading-relaxed text-slate-700">
+        {sections.map(({ heading, items }, i) => (
+          <section key={i} aria-label={heading ?? undefined}>
+            {heading && (
+              <h3 className="mb-2 mt-6 font-sans text-xs font-semibold uppercase tracking-wide text-brand-600">
+                {heading}
+              </h3>
+            )}
+            {items.some((it) => it.bullet) ? (
+              <ul className="space-y-2">
+                {items.map((it, j) => (
+                  <li key={j} className="flex gap-3">
+                    <span aria-hidden className="mt-[0.6em] h-1.5 w-1.5 shrink-0 rounded-full bg-brand-500/60" />
+                    <span>
+                      {it.label && <strong className="font-semibold text-slate-800">{it.label}: </strong>}
+                      {it.text}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="space-y-3">
+                {items.map((it, j) => (
+                  <p key={j}>{it.text}</p>
+                ))}
+              </div>
+            )}
+          </section>
         ))}
       </div>
     </article>
@@ -53,6 +74,11 @@ export default function BookReaderPage() {
 
   const selected =
     remedies.find((r) => r.slug === remedySlug) ?? filtered[0] ?? remedies[0];
+  // Tyler (and Allen, where he gives none) borrow Boericke's common name.
+  const boericke = useBook(bookId && bookId !== 'boericke' ? 'boericke' : undefined);
+  const common = selected
+    ? commonNameFor(bookId ?? '', selected, bookId === 'boericke' ? book : boericke.data)
+    : null;
 
   if (!meta) {
     return (
@@ -158,9 +184,9 @@ export default function BookReaderPage() {
               </div>
               </div>
               {view === 'portrait' ? (
-                <DrugPictureView remedy={selected} />
+                <DrugPictureView remedy={selected} common={common} />
               ) : (
-                <RemedyText remedy={selected} />
+                <RemedyText remedy={selected} common={common} />
               )}
             </div>
           ) : (

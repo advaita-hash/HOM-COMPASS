@@ -2,8 +2,8 @@ import { useQuery } from '@tanstack/react-query';
 import type { BookData, BookMeta, BookRemedy } from './types';
 
 // Cross-source spelling aliases (per word) so the same remedy matches across
-// Kent's Repertory, Boericke and Tyler. Non-destructive — the source data keeps
-// its own names; this only normalises names at lookup time.
+// Kent's Repertory, Boericke, Tyler and Allen. Non-destructive — the source
+// data keeps its own names; this only normalises names at lookup time.
 const WORD_ALIAS: Record<string, string> = {
   kalium: 'kali', // Kent uses Kalium/Natrium; Boericke & Tyler use Kali/Natrum
   natrium: 'natrum',
@@ -16,9 +16,41 @@ const WORD_ALIAS: Record<string, string> = {
   sativus: 'sativa',
   hippozaeninum: 'hippozaenium',
   acidum: 'acid', // Tyler anglicises some acids
+  magnesium: 'magnesia', // Boericke: Magnesia carbonica
+  actea: 'actaea',
+  glonoine: 'glonoinum',
+  virginica: 'virginiana',
+  amylenum: 'amyl',
+  thyroidinum: 'thyreoidinum',
+  iodum: 'iodium',
 };
 
-function canonWords(s: string): string[] {
+// Whole-name synonyms: the same medicine under a different binomial. Matched
+// at the start of the name, so "Lac vaccinum defloratum" finds Allen's
+// "Lac defloratum" rather than his "Lac vaccinum".
+const PHRASE_ALIAS: Record<string, string> = {
+  'calcarea ostrearum': 'calcarea carbonica',
+  'pulsatilla nigricans': 'pulsatilla pratensis',
+  'actaea racemosa': 'cimicifuga racemosa',
+  'lachesis mutus': 'lachesis muta',
+  'asarum europaeum': 'asarum officinale',
+  'mercurius biniodatus': 'mercurius iodatus ruber',
+  'mercurius proto iodatus': 'mercurius iodatus flavus',
+  'lac vaccinum defloratum': 'lac defloratum',
+  'malaria officinalis': 'malaria nosode',
+  'hepar sulphuris calcareum': 'hepar sulphur',
+  'terebinthiniae oleum': 'terebinthina',
+};
+
+/** Latin case endings vary by source (carbonicum / carbonica, Adrenalin / -inum). */
+function stem(w: string): string {
+  for (const e of ['um', 'us', 'a']) {
+    if (w.endsWith(e) && w.length - e.length >= 4) return w.slice(0, -e.length);
+  }
+  return w;
+}
+
+function baseWords(s: string): string[] {
   return s
     .toLowerCase()
     .normalize('NFKD')
@@ -26,7 +58,22 @@ function canonWords(s: string): string[] {
     .trim()
     .split(' ')
     .filter(Boolean)
-    .map((w) => WORD_ALIAS[w] ?? w);
+    .map((w) => stem(WORD_ALIAS[w] ?? w));
+}
+
+const PHRASES = Object.entries(PHRASE_ALIAS).map(
+  ([from, to]) => [baseWords(from).join(' '), baseWords(to).join(' ')] as const,
+);
+
+function canonWords(s: string): string[] {
+  let joined = baseWords(s).join(' ');
+  for (const [from, to] of PHRASES) {
+    if (joined === from || joined.startsWith(`${from} `)) {
+      joined = to + joined.slice(from.length);
+      break;
+    }
+  }
+  return joined.split(' ').filter(Boolean);
 }
 
 const nameIndexCache = new WeakMap<BookData, Map<string, BookRemedy>>();
@@ -42,7 +89,10 @@ export function findBookRemedy(book: BookData, name: string): BookRemedy | undef
   let idx = nameIndexCache.get(book);
   if (!idx) {
     idx = new Map();
-    for (const r of book.remedies) idx.set(canonWords(r.name).join(''), r);
+    for (const r of book.remedies) {
+      const key = canonWords(r.name).join('');
+      if (!idx.has(key)) idx.set(key, r);
+    }
     nameIndexCache.set(book, idx);
   }
   const words = canonWords(name);
@@ -63,6 +113,8 @@ export const BOOKS: BookMeta[] = [
     id: 'boericke',
     title: 'Pocket Manual of Homœopathic Materia Medica',
     author: 'William Boericke',
+    label: 'Boericke',
+    shortTitle: 'Materia Medica',
     blurb:
       'The classic bedside repertory-materia medica — concise, system-by-system remedy pictures with modalities and relationships.',
     cover: 'from-art-teal to-art-emerald',
@@ -72,10 +124,23 @@ export const BOOKS: BookMeta[] = [
     id: 'tyler',
     title: 'Homœopathic Drug Pictures',
     author: 'Margaret L. Tyler',
+    label: 'Tyler',
+    shortTitle: 'Drug Pictures',
     blurb:
       'Vivid, narrative remedy portraits that bring the constitutional picture of each medicine to life for the practitioner.',
     cover: 'from-art-indigo to-art-violet',
     approxRemedies: 120,
+  },
+  {
+    id: 'allen',
+    title: "Allen's Keynotes — Rearranged and Classified",
+    author: 'H. C. Allen',
+    label: 'Allen',
+    shortTitle: 'Keynotes',
+    blurb:
+      'Characteristic keynotes of the leading remedies, sorted into constitution, mental and physical generals, systems and modalities — plus the bowel nosodes.',
+    cover: 'from-art-amber to-art-rose',
+    approxRemedies: 208,
   },
 ];
 

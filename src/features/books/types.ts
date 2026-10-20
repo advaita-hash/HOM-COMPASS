@@ -3,6 +3,8 @@ export interface BookRemedy {
   slug: string;
   name: string;
   commonName: string | null;
+  /** Botanical family / kingdom, where the source gives one (Allen). */
+  family?: string | null;
   text: string;
 }
 
@@ -22,6 +24,10 @@ export interface BookMeta {
   id: string;
   title: string;
   author: string;
+  /** Short source label for badges and tabs ("Boericke"). */
+  label: string;
+  /** Short title for compact links ("Keynotes"). */
+  shortTitle: string;
   /** Short descriptor of the work. */
   blurb: string;
   /** Tailwind gradient classes for the cover. */

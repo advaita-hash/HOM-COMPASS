@@ -97,7 +97,7 @@ export function ComparisonTable({ items }: { items: CompareItem[] }) {
               <div className="flex items-start gap-2">
                 <div className="min-w-0 flex-1">
                   <div className="text-2xs font-semibold uppercase tracking-wide text-ink/60">
-                    {book?.author.split(' ').slice(-1)[0] ?? item.book}
+                    {book?.label ?? item.book}
                   </div>
                   <h3 className="font-serif text-lg font-semibold leading-tight text-ink/90">
                     {canonicalName(item.name)}

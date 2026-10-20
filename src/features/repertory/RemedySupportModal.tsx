@@ -2,7 +2,8 @@ import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { BookText, Loader2 } from 'lucide-react';
 import { Sheet } from '../../components/ui/Sheet';
-import { findBookRemedy, useBook } from '../books/booksIndex';
+import { BOOKS, findBookRemedy, getBookMeta, useBook } from '../books/booksIndex';
+import { parseSections } from '../books/sections';
 import { canonicalName } from '../../lib/remedyName';
 import type { Rubric } from './types';
 
@@ -64,12 +65,12 @@ function BookSupport({
   remedyName,
   rubrics,
 }: {
-  bookId: 'boericke' | 'tyler';
+  bookId: string;
   remedyName: string;
   rubrics: Rubric[];
 }) {
   const { data: book, isLoading } = useBook(bookId);
-  const label = bookId === 'boericke' ? 'Boericke' : 'Tyler';
+  const label = getBookMeta(bookId)?.label ?? bookId;
 
   const result = useMemo(() => {
     if (!book) return null;
@@ -78,7 +79,12 @@ function BookSupport({
 
     const rubricKws = rubrics.map((r) => ({ rubric: r.rubric, kws: rubricKeywords(r.rubric) }));
     const lines: { text: string; kws: string[]; rubrics: string[] }[] = [];
-    for (const sentence of splitSentences(remedy.text)) {
+    // Allen's keynotes are already one statement per bullet; prose books are
+    // split into sentences.
+    const statements = parseSections(remedy.text).flatMap(({ items }) =>
+      items.flatMap((it) => (it.bullet ? [it.label ? `${it.label}: ${it.text}` : it.text] : splitSentences(it.text))),
+    );
+    for (const sentence of statements) {
       // whole words of the sentence — match keywords verbatim, never a fragment
       const wordSet = new Set(sentence.toLowerCase().split(/[^a-z]+/).filter(Boolean));
       const hitKws = new Set<string>();
@@ -163,8 +169,9 @@ export function RemedySupportModal({
       onClose={onClose}
     >
       <div className="space-y-6">
-        <BookSupport bookId="boericke" remedyName={remedyName} rubrics={rubrics} />
-        <BookSupport bookId="tyler" remedyName={remedyName} rubrics={rubrics} />
+        {BOOKS.map((b) => (
+          <BookSupport key={b.id} bookId={b.id} remedyName={remedyName} rubrics={rubrics} />
+        ))}
       </div>
     </Sheet>
   );

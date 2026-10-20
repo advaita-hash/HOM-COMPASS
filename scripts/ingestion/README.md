@@ -64,13 +64,36 @@ at load. Attribution and licensing (GPL-3.0) are in
 > with grades approximated from letter-case; that was replaced by the OOREP
 > import above, which has exact grades and full coverage.
 
+## Allen's Keynotes (`gen_allen.py`)
+
+_Allen's Keynotes Rearranged and Classified_ (B. Jain, 10th ed.) has a clean
+text layer, so no OCR is needed:
+
+```bash
+python3 -m pip install pypdfium2
+python3 scripts/ingestion/gen_allen.py "Allens Keynotes.pdf" public/books/allen.json
+python3 scripts/ingestion/clean_books.py   # shared spelling normalisation
+```
+
+The script keeps Allen's own classification: each remedy's `text` is
+`"<Section>\n• keynote\n• keynote\n\n<Section>\n…"`, which the reader renders
+as headings with bullet lists and the drug-picture distiller maps section by
+section (Constitution, Mental Generals, Physical Generals, Modalities'
+Aggravation and Amelioration). It also emits an optional `family` field. The
+eight bowel nosodes (Bach / Paterson) are kept as prose; Paterson's essay and
+the repertorial index at the back are skipped.
+
+> **Copyright.** This is a copyrighted edition (B. Jain Publishers), used
+> pending the publisher's permission. Serve it only from a deployment behind
+> Vercel Deployment Protection, and don't commit the source PDF.
+
 ## Re-running the cleanup
 
 ```bash
 python3 scripts/ingestion/clean_books.py
 ```
 
-Operates in place on `public/books/*.json`. Safe to run repeatedly.
+Operates in place on `public/books/{boericke,tyler,allen}.json`. Safe to run repeatedly.
 
 > The source PDFs are not kept in the repo (their text now ships as JSON). To
 > re-ingest a new book, reproduce stages 1–2 for that title, then run the

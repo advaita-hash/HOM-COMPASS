@@ -2,7 +2,8 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { BookText, FlaskConical, Loader2, Search } from 'lucide-react';
 import { REMEDIES } from '../../data/remedies';
-import { useBook } from '../books/booksIndex';
+import { useQueries } from '@tanstack/react-query';
+import { BOOKS, bookQueryOptions } from '../books/booksIndex';
 import { useRepertory } from '../repertory/repertoryData';
 import { canonicalName } from '../../lib/remedyName';
 
@@ -30,10 +31,11 @@ export default function GlobalSearchPage() {
   const q = query.trim().toLowerCase();
   const active = q.length >= 2;
 
-  const boericke = useBook(active ? 'boericke' : undefined);
-  const tyler = useBook(active ? 'tyler' : undefined);
+  const books = useQueries({
+    queries: BOOKS.map((b) => ({ ...bookQueryOptions(b.id), enabled: active })),
+  });
   const { data: rep } = useRepertory();
-  const loading = active && (boericke.isLoading || tyler.isLoading);
+  const loading = active && books.some((b) => b.isLoading);
 
   const curated = useMemo(() => {
     if (!active) return [];
@@ -47,25 +49,22 @@ export default function GlobalSearchPage() {
 
   const bookHits = useMemo(() => {
     if (!active) return [];
-    const out: { book: string; id: string; slug: string; name: string; snip: string }[] = [];
-    for (const b of [boericke.data, tyler.data]) {
-      if (!b) continue;
-      for (const r of b.remedies) {
-        const hay = (r.name + ' ' + r.text).toLowerCase();
-        if (hay.includes(q)) {
-          out.push({
-            book: b.id,
-            id: b.id,
-            slug: r.slug,
-            name: r.name,
-            snip: snippet(r.text, q),
-          });
-          if (out.length > 60) break;
-        }
+    // Up to 20 hits per book, interleaved so every book shows near the top.
+    const perBook = BOOKS.map((meta, i) => {
+      const hits: { book: string; id: string; slug: string; name: string; snip: string }[] = [];
+      for (const r of books[i].data?.remedies ?? []) {
+        if (!(r.name + ' ' + r.text).toLowerCase().includes(q)) continue;
+        const flat = r.text.replace(/\s*•\s*/g, ' ');
+        hits.push({ book: meta.label, id: meta.id, slug: r.slug, name: r.name, snip: snippet(flat, q) });
+        if (hits.length >= 20) break;
       }
-    }
+      return hits;
+    });
+    const out: (typeof perBook)[number] = [];
+    for (let k = 0; k < 20; k++) for (const hits of perBook) if (hits[k]) out.push(hits[k]);
     return out;
-  }, [q, active, boericke.data, tyler.data]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [q, active, books.map((b) => b.dataUpdatedAt).join()]);
 
   const rubricHits = useMemo(() => {
     if (!active || !rep) return [];
@@ -137,7 +136,7 @@ export default function GlobalSearchPage() {
               Reference Books ({bookHits.length})
             </h2>
             <div className="space-y-2">
-              {bookHits.slice(0, 20).map((h, i) => (
+              {bookHits.slice(0, 30).map((h, i) => (
                 <Link
                   key={`${h.id}-${h.slug}-${i}`}
                   to={`/books/${h.id}/${h.slug}`}
