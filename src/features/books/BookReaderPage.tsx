@@ -6,6 +6,7 @@ import { DrugPictureView } from './DrugPictureView';
 import { canonicalName } from '../../lib/remedyName';
 import type { BookRemedy } from './types';
 import { SegmentedControl } from '../../components/ui/SegmentedControl';
+import { CompareButton, CompareTray } from '../compare/CompareControls';
 
 function RemedyText({ remedy }: { remedy: BookRemedy }) {
   const paragraphs = useMemo(
@@ -129,7 +130,7 @@ export default function BookReaderPage() {
         <div
           className={`${
             listOpen ? 'hidden' : 'block'
-          } min-h-0 flex-1 overflow-auto bg-surface px-6 py-6 md:px-10 lg:block`}
+          } min-h-0 flex-1 overflow-auto bg-surface px-6 pb-28 pt-6 md:px-10 lg:block`}
         >
           {isError && (
             <p className="text-sm text-red-600">
@@ -151,6 +152,10 @@ export default function BookReaderPage() {
                   { value: 'full', label: 'Full text' },
                 ]}
               />
+              {/* Compare — on top of every remedy, in every book */}
+              <div className="ml-auto">
+                <CompareButton book={bookId!} slug={selected.slug} name={selected.name} />
+              </div>
               </div>
               {view === 'portrait' ? (
                 <DrugPictureView remedy={selected} />
@@ -165,6 +170,7 @@ export default function BookReaderPage() {
           )}
         </div>
       </div>
+      <CompareTray />
     </div>
   );
 }

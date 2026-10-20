@@ -5,6 +5,8 @@ export interface Segment<T extends string | number> {
   label: ReactNode;
   /** Optional trailing count/badge. */
   badge?: ReactNode;
+  /** Tooltip, e.g. for icon-only segments. */
+  title?: string;
 }
 
 /**
@@ -46,7 +48,7 @@ export function SegmentedControl<T extends string | number>({
       {/* sliding thumb */}
       <span
         aria-hidden
-        className="pointer-events-none absolute bottom-1 left-1 top-1 rounded-md bg-elevated shadow-segment transition-transform duration-300 ease-spring dark:bg-slate-300"
+        className="pointer-events-none absolute bottom-1 left-1 top-1 rounded-md bg-thumb shadow-segment transition-transform duration-300 ease-spring"
         style={{ width: `calc((100% - 8px) / ${n})`, transform: `translateX(${index * 100}%)` }}
       />
       {options.map((o, i) => {
@@ -57,6 +59,7 @@ export function SegmentedControl<T extends string | number>({
             type="button"
             role="radio"
             aria-checked={active}
+            title={o.title}
             onClick={() => onChange(o.value)}
             className={`tap relative z-10 flex h-9 min-w-0 items-center justify-center gap-2 rounded-md px-3 text-sm transition-colors duration-300 ease-spring ${
               active ? 'font-semibold text-ink/90' : 'font-medium text-ink/60 hover:text-ink/90'

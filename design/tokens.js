@@ -99,6 +99,8 @@ function themeVars(T, dark) {
     '--on-accent': triplet(T.onAccent),
     '--shadow': triplet(T.shadow),
     '--dim': `rgb(${T.dim.slice(0, 3).join(' ')} / ${T.dim[3]})`,
+    // segmented-control thumb: white in light, a lifted ink grey in dark
+    '--seg-thumb': triplet(dark ? mix(T.ink, T.surface, 0.3) : T.elevated),
   };
   for (const s of SHADES) vars[`--c-slate-${s}`] = triplet(mix(T.ink, T.surface, INK_ALPHA[s]));
 
@@ -146,6 +148,7 @@ export const colors = {
   ink: v('ink'), // text-ink/90 · text-ink/60 · text-ink/30 · border-ink/10
   accent: { DEFAULT: v('accent'), hover: v('accent-hover') },
   'on-accent': v('on-accent'),
+  thumb: v('seg-thumb'),
   // fixed artwork colours — identical in light and dark (covers, heroes)
   art: {
     pine: '#26665c', sea: '#337f72', teal: '#0d9488', emerald: '#10b981',
@@ -160,9 +163,25 @@ export const grid = {
   ...Object.fromEntries(GRID_STEPS.map((k) => [k, k === 0 ? '0px' : `${k * 0.25}rem`])),
 };
 
+/**
+ * Appearance: Auto follows the system; a manual choice is stored as
+ * <html data-theme="light|dark"> and wins over the system setting.
+ */
 export const tokensPlugin = plugin(({ addBase }) => {
   addBase({
     ':root': themeVars(LIGHT, false),
-    '@media (prefers-color-scheme: dark)': { ':root': themeVars(DARK, true) },
+    '@media (prefers-color-scheme: dark)': {
+      ':root:not([data-theme="light"])': themeVars(DARK, true),
+    },
+    ':root[data-theme="dark"]': themeVars(DARK, true),
   });
 });
+
+/** `dark:` variant that honours both the system setting and the manual override. */
+export const darkVariant = [
+  'variant',
+  [
+    '@media (prefers-color-scheme: dark) { &:not([data-theme="light"] *) }',
+    '&:is([data-theme="dark"] *)',
+  ],
+];

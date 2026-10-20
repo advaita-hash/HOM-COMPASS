@@ -1,9 +1,9 @@
-import { colors, grid, tokensPlugin } from './design/tokens.js';
+import { colors, darkVariant, grid, tokensPlugin } from './design/tokens.js';
 
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
-  darkMode: 'media',
+  darkMode: darkVariant,
   theme: {
     // Brand-driven semantic palette (see design/tokens.js). Replaces the
     // default palette entirely — no System Blue, no fixed Apple greys.

@@ -15,6 +15,10 @@ import {
   Users,
   X,
   NotebookPen,
+  Columns3,
+  Sun,
+  Moon,
+  SunMoon,
 } from 'lucide-react';
 import { isSupabaseConfigured } from './lib/supabase';
 import DashboardPage from './features/dashboard/DashboardPage';
@@ -32,6 +36,10 @@ import KnowledgeGraphPage from './features/graph/KnowledgeGraphPage';
 import RemedyProfilePage from './features/remedy/RemedyProfilePage';
 import MyNotesPage from './features/notes/MyNotesPage';
 import SharedNotePage from './features/notes/SharedNotePage';
+import ComparePage from './features/compare/ComparePage';
+import { useCompare } from './features/compare/compareStore';
+import { SegmentedControl } from './components/ui/SegmentedControl';
+import { type Appearance, useAppearance, useApplyAppearance } from './lib/appearance';
 
 // ---------------------------------------------------------------------------
 // Application shell — responsive navigation + routed module outlet.
@@ -46,6 +54,7 @@ const NAV = [
   { to: '/repertory', label: 'Repertory', icon: BookOpen },
   { to: '/analysis', label: 'Cases', icon: Activity },
   { to: '/materia-medica', label: 'Materia Medica', icon: FlaskConical },
+  { to: '/compare', label: 'Compare', icon: Columns3 },
   { to: '/my-notes', label: 'My remedy notes', icon: NotebookPen },
   { to: '/books', label: 'Reference Books', icon: BookText },
   { to: '/library', label: 'Library', icon: Library },
@@ -53,7 +62,45 @@ const NAV = [
   { to: '/patients', label: 'Patients', icon: Users },
 ] as const;
 
+const APPEARANCE_CAPTION: Record<Appearance, string> = {
+  light: 'Light',
+  dark: 'Dark',
+  system: 'Auto — matches your system',
+};
+
+/** Light / Dark / Auto, as in Settings › Display & Brightness. */
+function AppearanceControl() {
+  const mode = useAppearance((s) => s.mode);
+  const setMode = useAppearance((s) => s.setMode);
+  const icon = (Icon: typeof Sun, label: string) => (
+    <>
+      <Icon className="h-4 w-4" aria-hidden />
+      <span className="sr-only">{label}</span>
+    </>
+  );
+  return (
+    <div className="px-4 pt-4">
+      <div className="mb-2 px-1 text-2xs font-semibold uppercase tracking-wide text-ink/60">Appearance</div>
+      <SegmentedControl
+        fullWidth
+        ariaLabel="Appearance"
+        value={mode}
+        onChange={setMode}
+        options={[
+          { value: 'light', title: 'Light', label: icon(Sun, 'Light') },
+          { value: 'dark', title: 'Dark', label: icon(Moon, 'Dark') },
+          { value: 'system', title: 'Auto (match system)', label: icon(SunMoon, 'Auto') },
+        ]}
+      />
+      <p className="mt-2 px-1 text-2xs text-ink/60" aria-live="polite">
+        {APPEARANCE_CAPTION[mode]}
+      </p>
+    </div>
+  );
+}
+
 function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const compareCount = useCompare((s) => s.items.length);
   return (
     <aside
       className={`material fixed inset-y-0 left-0 z-50 flex w-64 max-w-[80vw] shrink-0 transform flex-col border-r border-ink/10 transition-transform duration-500 ease-smooth lg:static lg:z-auto lg:w-60 lg:max-w-none lg:translate-x-0 ${
@@ -99,9 +146,21 @@ function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
             {/* SF-Symbols-style: glyphs carry the accent, labels stay neutral */}
             <Icon className="h-[18px] w-[18px] shrink-0 text-brand-600" />
             {label}
+            {to === '/compare' && compareCount > 0 && (
+              <span
+                className="ml-auto min-w-[20px] rounded-full bg-accent px-2 text-center text-2xs font-semibold tabular-nums leading-5 text-on-accent"
+                aria-label={`${compareCount} selected`}
+              >
+                {compareCount}
+              </span>
+            )}
           </NavLink>
         ))}
       </nav>
+
+      <div className="border-t border-ink/10">
+        <AppearanceControl />
+      </div>
 
       <div className="px-5 py-4 text-2xs text-ink/60">
         {isSupabaseConfigured ? (
@@ -124,6 +183,7 @@ export default function App() {
 
   // Close the drawer on navigation.
   useEffect(() => setMenuOpen(false), [location.pathname]);
+  useApplyAppearance();
 
   // Shared-note links are a clean public page — no sidebar/app shell.
   if (location.pathname === '/shared/note') return <SharedNotePage />;
@@ -171,6 +231,7 @@ export default function App() {
           <Route path="/materia-medica/:remedyId" element={<MateriaMedicaPage />} />
           <Route path="/remedy/:name" element={<RemedyProfilePage />} />
           <Route path="/my-notes" element={<MyNotesPage />} />
+          <Route path="/compare" element={<ComparePage />} />
           <Route path="/books" element={<BooksPage />} />
           <Route path="/books/:bookId" element={<BookReaderPage />} />
           <Route path="/books/:bookId/:remedySlug" element={<BookReaderPage />} />

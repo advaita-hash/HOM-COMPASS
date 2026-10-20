@@ -91,13 +91,17 @@ async function fetchBook(id: string): Promise<BookData> {
   return res.json();
 }
 
-/** Load a book's full text payload (cached by TanStack Query). */
-export function useBook(id: string | undefined) {
-  return useQuery({
-    queryKey: ['book', id],
-    queryFn: () => fetchBook(id as string),
-    enabled: Boolean(id),
+/** Shared query options, so useBook and useQueries hit the same cache entry. */
+export function bookQueryOptions(id: string) {
+  return {
+    queryKey: ['book', id] as const,
+    queryFn: () => fetchBook(id),
     staleTime: Infinity,
     gcTime: 30 * 60_000,
-  });
+  };
+}
+
+/** Load a book's full text payload (cached by TanStack Query). */
+export function useBook(id: string | undefined) {
+  return useQuery({ ...bookQueryOptions(id as string), enabled: Boolean(id) });
 }
