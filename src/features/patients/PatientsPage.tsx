@@ -1,14 +1,19 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronRight, Trash2, UserPlus, Users } from 'lucide-react';
-import { usePatients } from './patientsStore';
+import { usePatients, type Patient } from './patientsStore';
 import { EmptyState } from '../../components/ui/EmptyState';
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
+import { BackupSection } from './BackupSection';
 
 export default function PatientsPage() {
   const { patients, cases, addPatient, removePatient } = usePatients();
   const [name, setName] = useState('');
   const [age, setAge] = useState('');
   const [gender, setGender] = useState('');
+  const [toDelete, setToDelete] = useState<Patient | null>(null);
+  const cancelDelete = useCallback(() => setToDelete(null), []);
+  const deleteCaseCount = toDelete ? cases.filter((c) => c.patient_id === toDelete.id).length : 0;
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -100,13 +105,15 @@ export default function PatientsPage() {
                   </div>
                 </Link>
                 <button
-                  onClick={() => removePatient(p.id)}
-                  className="rounded p-2 text-slate-300 hover:bg-red-50 hover:text-red-600"
-                  aria-label={`Remove ${p.name}`}
+                  type="button"
+                  onClick={() => setToDelete(p)}
+                  className="tap rounded-full p-2 text-ink/60 transition-colors hover:bg-red-50 hover:text-red-600"
+                  aria-label={`Delete ${p.name}`}
+                  title="Delete patient"
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Trash2 className="h-4 w-4" aria-hidden />
                 </button>
-                <Link to={`/patients/${p.id}`} className="text-slate-300">
+                <Link to={`/patients/${p.id}`} className="text-slate-300" aria-hidden tabIndex={-1}>
                   <ChevronRight className="h-5 w-5" />
                 </Link>
               </div>
@@ -114,6 +121,26 @@ export default function PatientsPage() {
           })}
         </div>
       )}
+
+      <BackupSection />
+
+      <ConfirmDialog
+        open={toDelete !== null}
+        title={toDelete ? `Delete ${toDelete.name}?` : ''}
+        message={
+          toDelete &&
+          `This permanently removes ${toDelete.name}${
+            deleteCaseCount > 0 ? ` and their ${deleteCaseCount} case${deleteCaseCount === 1 ? '' : 's'}` : ''
+          } from this device. Export a backup first if you might need ${deleteCaseCount > 0 ? 'them' : 'it'}.`
+        }
+        confirmLabel="Delete"
+        destructive
+        onConfirm={() => {
+          if (toDelete) removePatient(toDelete.id);
+          setToDelete(null);
+        }}
+        onCancel={cancelDelete}
+      />
     </div>
   );
 }
