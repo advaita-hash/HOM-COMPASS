@@ -188,6 +188,12 @@ export default function BookReaderPage() {
               ) : (
                 <RemedyText remedy={selected} common={common} />
               )}
+              {/* attribution for the edition the text comes from */}
+              {book?.source && (
+                <p className="mt-8 border-t border-ink/10 pt-4 text-xs leading-relaxed text-ink/70">
+                  Source: {book.source}
+                </p>
+              )}
             </div>
           ) : (
             !isLoading && (

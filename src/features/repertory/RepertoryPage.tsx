@@ -109,7 +109,7 @@ export default function RepertoryPage() {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <RepertorySelect />
           <Link to="/analysis" className="btn-primary">
             Worksheet

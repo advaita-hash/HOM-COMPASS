@@ -58,15 +58,16 @@ export function WorksheetGrid({
   return (
     <>
       {/* Ranked remedies — click for Materia Medica support */}
-      {/* lg: the analysis column is only ~360px beside the 340px step-1 column */}
-      <div className="mb-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-3">
+      {/* lg: the analysis column is only ~360px beside the 340px step-1 column;
+          three cards fit only from 2xl, so names don't truncate at laptop widths */}
+      <div className="mb-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3">
         {top.slice(0, 6).map((s, i) => {
           const inner = (
             <>
               <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-50 text-sm font-semibold text-brand-700">
                 {i + 1}
               </span>
-              <span className="flex-1 truncate text-left text-sm font-medium text-slate-800">
+              <span className="flex-1 truncate text-left text-sm font-medium text-slate-800" title={canonicalName(s.name)}>
                 {canonicalName(s.name)}
               </span>
               <span className="text-xs text-slate-500">

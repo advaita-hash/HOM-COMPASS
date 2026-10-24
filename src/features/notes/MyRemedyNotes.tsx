@@ -75,7 +75,7 @@ function NoteItem({
         <span className="shrink-0 font-mono text-xs text-slate-400">
           {fmt(note.visit_date ?? note.created_at)}
         </span>
-        <span className="flex-1 text-sm text-slate-800">{note.body}</span>
+        <span className="min-w-0 flex-1 break-words text-sm text-slate-800">{note.body}</span>
         <button
           className="tap rounded-full p-1 text-ink/30 transition-colors hover:bg-red-50 hover:text-red-600"
           title="Delete this note"
