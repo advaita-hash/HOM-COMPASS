@@ -151,7 +151,9 @@ export default function RepertorizationPage() {
   const cancelClear = useCallback(() => setConfirmClear(false), []);
 
   return (
-    <div className="mx-auto max-w-6xl p-6 md:p-8">
+    // p-4 on phones (the HIG 16pt margin) leaves the three equal segments room for
+    // "Analysis" plus its badge down to 360px wide; sm+ keeps the roomier padding.
+    <div className="mx-auto max-w-6xl p-4 sm:p-6 md:p-8">
       <header className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <Activity className="h-6 w-6 text-brand-600" />
@@ -201,9 +203,11 @@ export default function RepertorizationPage() {
         options={TABS.map((t) => ({
           value: t.id,
           label: t.label,
+          // -ml-1 tightens the label→badge gap to 4px; -mr-1 lets the badge use 4px of
+          // the segment's 12px end padding on phones, so "Analysis" + badge fit at 360px.
           badge:
             t.id === 'analysis' && items.length > 0 ? (
-              <span className="min-w-[20px] shrink-0 rounded-full bg-accent px-1 text-center text-2xs font-semibold leading-5 text-on-accent">
+              <span className="-ml-1 -mr-1 min-w-[20px] shrink-0 rounded-full bg-accent px-1 text-center text-2xs font-semibold leading-5 text-on-accent sm:mr-0">
                 {items.length}
               </span>
             ) : undefined,
