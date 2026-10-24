@@ -70,8 +70,13 @@
     display: none;
   }
 
-  ::placeholder {
-    color: rgb(var(--ink) / 0.3);
+  /* Same specificity as Tailwind preflight's rule, which it follows, so it wins.
+     0.45 = the tokens' placeholder level (slate-400): clearly fainter than
+     entered text (0.9) in both themes, yet not lighter than the old grey. */
+  input::placeholder,
+  textarea::placeholder {
+    color: rgb(var(--ink) / 0.45);
+    opacity: 1;
   }
 
   input[type='checkbox'],

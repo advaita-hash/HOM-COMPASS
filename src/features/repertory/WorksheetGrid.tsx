@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ListPlus, X } from 'lucide-react';
 import { EmptyState } from '../../components/ui/EmptyState';
-import { ClinicalDisclaimer } from '../../components/ClinicalDisclaimer';
 import type { Grade, Repertory } from './types';
 import { repertorize, useWorksheet } from './worksheetStore';
 import { canonicalName } from '../../lib/remedyName';
@@ -31,10 +30,12 @@ export function WorksheetGrid({
   const items = useWorksheet((s) => s.items);
   const remove = useWorksheet((s) => s.remove);
   const setIntensity = useWorksheet((s) => s.setIntensity);
-  const [showN, setShowN] = useState(25);
+  // 'all' is stored as a choice, not a snapshot of the remedy count, so it stays
+  // valid when rubrics are added/removed or the repertory finishes loading.
+  const [showN, setShowN] = useState<number | 'all'>(25);
 
   const { scores, rubrics } = repertorize(rep, items);
-  const top = scores.slice(0, Math.min(showN, scores.length));
+  const top = showN === 'all' ? scores : scores.slice(0, showN);
   const byId = new Map(rubrics.map((r) => [r.id, r]));
 
   if (items.length === 0) {
@@ -57,7 +58,8 @@ export function WorksheetGrid({
   return (
     <>
       {/* Ranked remedies — click for Materia Medica support */}
-      <div className="mb-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+      {/* lg: the analysis column is only ~360px beside the 340px step-1 column */}
+      <div className="mb-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-3">
         {top.slice(0, 6).map((s, i) => {
           const inner = (
             <>
@@ -88,7 +90,6 @@ export function WorksheetGrid({
           );
         })}
       </div>
-      <ClinicalDisclaimer className="mb-4" />
 
       {/* Controls */}
       <div className="mb-2 flex items-center justify-between text-xs text-slate-500">
@@ -100,7 +101,7 @@ export function WorksheetGrid({
           Show
           <select
             value={showN}
-            onChange={(e) => setShowN(Number(e.target.value))}
+            onChange={(e) => setShowN(e.target.value === 'all' ? 'all' : Number(e.target.value))}
             className="rounded border border-slate-200 bg-surface px-2 py-1 text-xs"
           >
             {COLUMN_OPTIONS.map((n) => (
@@ -108,7 +109,7 @@ export function WorksheetGrid({
                 top {n}
               </option>
             ))}
-            <option value={scores.length}>all ({scores.length})</option>
+            <option value="all">all ({scores.length})</option>
           </select>
         </label>
       </div>

@@ -4,7 +4,6 @@ import type { Repertory, Rubric } from './types';
 import { findRubricsForPhrase, hasCuratedSense } from './rubricFinder';
 import { useWorksheet } from './worksheetStore';
 import { useSemantic, type WordTranslation } from './semantic/useSemantic';
-import { ClinicalDisclaimer } from '../../components/ClinicalDisclaimer';
 
 interface PhraseBlock {
   phrase: string;
@@ -102,7 +101,8 @@ export function SymptomTranslator({
         value={text}
         onChange={(e) => onTextChange(e.target.value)}
         rows={4}
-        placeholder={'anxious about health\nworse in warm rooms\ncraves salt\nweeps when consoled'}
+        placeholder={'e.g. anxious about health\nworse in warm rooms'}
+        aria-label="Symptoms in plain language, one per line"
         className="mt-3 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none"
       />
       <button onClick={run} disabled={!rep || !text.trim() || busy} className="btn-primary mt-2">
@@ -112,7 +112,6 @@ export function SymptomTranslator({
 
       {results.length > 0 && (
         <div className="mt-4 space-y-4">
-          <ClinicalDisclaimer />
           {results.map((r, i) => (
             <div key={i}>
               <div className="mb-1 text-xs font-medium text-slate-500">“{r.phrase}”</div>

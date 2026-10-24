@@ -12,6 +12,7 @@ import { cleanSymptoms, useCaseDraft } from './caseDraftStore';
 import { usePatients } from '../patients/patientsStore';
 import { SegmentedControl } from '../../components/ui/SegmentedControl';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
+import { ClinicalDisclaimer } from '../../components/ClinicalDisclaimer';
 
 /** Phone/tablet tabs so each part of the case fits one screen (desktop shows
  *  everything in two columns, unchanged). */
@@ -167,7 +168,7 @@ export default function RepertorizationPage() {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <RepertorySelect />
           <Link to="/repertory" className="btn-secondary">
             <BookOpen className="h-4 w-4" /> Repertory
@@ -202,22 +203,30 @@ export default function RepertorizationPage() {
           label: t.label,
           badge:
             t.id === 'analysis' && items.length > 0 ? (
-              <span className="min-w-[20px] rounded-full bg-accent px-2 text-center text-2xs font-semibold leading-5 text-on-accent">
+              <span className="min-w-[20px] shrink-0 rounded-full bg-accent px-1 text-center text-2xs font-semibold leading-5 text-on-accent">
                 {items.length}
               </span>
             ) : undefined,
         }))}
       />
 
-      <div className="grid gap-5 lg:grid-cols-[340px_1fr]">
+      {/* Shown once per screen (desktop and every phone tab), not per panel. */}
+      <ClinicalDisclaimer className="mb-4" />
+
+      {/* minmax(0,…) + min-w-0 let wide content (the score table) scroll inside
+          its own card instead of widening the column and the page. */}
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[340px_minmax(0,1fr)]">
         {/* Left: STEP 1 — patient's language → rubrics */}
-        <div className="space-y-4">
+        <div className="min-w-0 space-y-4">
           <div className="hidden text-xs font-semibold uppercase tracking-wide text-slate-400 lg:block">
             Step 1 · Patient’s language → rubrics
           </div>
           <div className={`card p-4 ${panel('patient')}`}>
-            <h2 className="mb-2 text-sm font-semibold text-slate-700">Patient</h2>
+            <h2 id="case-patient-heading" className="mb-2 text-sm font-semibold text-slate-700">
+              Patient
+            </h2>
             <select
+              aria-labelledby="case-patient-heading"
               value={patientId}
               onChange={(e) => setPatientId(e.target.value)}
               className="mb-2 w-full rounded-lg border border-slate-200 bg-surface px-3 py-2 text-sm"
@@ -236,17 +245,22 @@ export default function RepertorizationPage() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Name"
+                  aria-label="Patient name"
+                  autoComplete="off"
                   className="min-w-0 flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none"
                 />
                 <input
                   value={age}
                   onChange={(e) => setAge(e.target.value.replace(/\D/g, ''))}
                   placeholder="Age"
+                  aria-label="Age"
+                  inputMode="numeric"
                   className="w-16 rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none"
                 />
                 <select
                   value={gender}
                   onChange={(e) => setGender(e.target.value)}
+                  aria-label="Sex"
                   className="w-24 rounded-lg border border-slate-200 bg-surface px-2 py-2 text-sm"
                 >
                   <option value="">Sex</option>
@@ -338,7 +352,7 @@ export default function RepertorizationPage() {
         </div>
 
         {/* Right: STEP 2 & 3 — chosen rubrics graded & evaluated */}
-        <div className={panel('analysis')}>
+        <div className={`min-w-0 ${panel('analysis')}`}>
           <div className="mb-2 hidden text-xs font-semibold uppercase tracking-wide text-slate-400 lg:block">
             Step 2 &amp; 3 · Chosen rubrics — graded &amp; evaluated
           </div>
