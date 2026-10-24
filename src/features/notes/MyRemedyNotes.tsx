@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Check, Globe, Link2, Loader2, Lock, Trash2 } from 'lucide-react';
+import { useCallback, useState } from 'react';
+import { AlertTriangle, Check, Globe, Link2, Loader2, Lock, Trash2 } from 'lucide-react';
 import { COMMON_ROOM_URL, usernameOf } from '../../lib/commonRoom';
 import CommonRoomSignIn from './CommonRoomSignIn';
 import {
@@ -11,6 +11,7 @@ import {
 import { buildShareUrl, useNoteVisibility } from './shareNote';
 import type { RemedyNoteEntry } from '../../lib/commonRoom';
 import { EmptyState } from '../../components/ui/EmptyState';
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { NotebookPen } from 'lucide-react';
 
 const fmt = (d: string) =>
@@ -20,7 +21,13 @@ const fmt = (d: string) =>
     year: 'numeric',
   });
 
-/** One note with its private/public toggle and share link. */
+const NO_IDENTIFIERS = 'Don’t include patient names or other identifying details in shared notes.';
+
+/**
+ * One note with its share toggle and link. Creating a link takes a snapshot
+ * of the note that anyone with the link can read; it can't be withdrawn.
+ * Switching back to private only hides the share option on this device.
+ */
 function NoteItem({
   note,
   remedy,
@@ -37,6 +44,8 @@ function NoteItem({
   const isPublic = useNoteVisibility((s) => !!s.publicIds[note.id]);
   const setPublic = useNoteVisibility((s) => s.setPublic);
   const [copied, setCopied] = useState(false);
+  const [confirmShare, setConfirmShare] = useState(false);
+  const cancelShare = useCallback(() => setConfirmShare(false), []);
 
   const shareUrl = buildShareUrl({
     v: 1,
@@ -76,16 +85,20 @@ function NoteItem({
 
       <div className="mt-2 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-2">
         <button
-          onClick={() => setPublic(note.id, !isPublic)}
+          onClick={() => (isPublic ? setPublic(note.id, false) : setConfirmShare(true))}
           className={`tap inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
             isPublic
               ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
               : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
           }`}
-          title={isPublic ? 'Shared by link — click to make private' : 'Private — click to share by link'}
+          title={
+            isPublic
+              ? 'Hide the share option on this device. Links you already sent keep working.'
+              : 'Create a share link: a snapshot of this note that anyone with the link can read. It can’t be withdrawn later.'
+          }
         >
           {isPublic ? <Globe className="h-3.5 w-3.5" /> : <Lock className="h-3.5 w-3.5" />}
-          {isPublic ? 'Public (link)' : 'Private'}
+          {isPublic ? 'Link created' : 'Private — create share link'}
         </button>
 
         {isPublic && (
@@ -103,9 +116,34 @@ function NoteItem({
               onFocus={(e) => e.currentTarget.select()}
               className="min-w-0 flex-1 truncate rounded border border-slate-200 bg-slate-50 px-2 py-1 text-2xs text-slate-500"
             />
+            <p className="w-full text-2xs leading-relaxed text-ink/60">
+              Anyone with this link can read this snapshot of the note. It can’t be withdrawn —
+              switching back to private only hides the link on this device.
+            </p>
+            <p className="flex w-full items-start gap-1 text-2xs leading-relaxed text-amber-700">
+              <AlertTriangle className="mt-px h-3 w-3 shrink-0" aria-hidden />
+              {NO_IDENTIFIERS}
+            </p>
           </>
         )}
       </div>
+
+      <ConfirmDialog
+        open={confirmShare}
+        title="Create share link?"
+        message={
+          <>
+            Anyone with the link will be able to read this note as it is now. Once sent, the link
+            can’t be withdrawn. {NO_IDENTIFIERS}
+          </>
+        }
+        confirmLabel="Create link"
+        onConfirm={() => {
+          setPublic(note.id, true);
+          setConfirmShare(false);
+        }}
+        onCancel={cancelShare}
+      />
     </li>
   );
 }

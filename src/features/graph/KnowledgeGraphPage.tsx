@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Loader2, Network, Search } from 'lucide-react';
+import { AlertTriangle, Loader2, Network, Search } from 'lucide-react';
 import { type GNode, type NodeLabel, useGraph } from './graphData';
 import { canonicalName } from '../../lib/remedyName';
 
@@ -63,6 +63,14 @@ export default function KnowledgeGraphPage() {
 
   return (
     <div className="mx-auto max-w-5xl p-6 md:p-8">
+      <div
+        role="note"
+        className="mb-4 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
+      >
+        <AlertTriangle className="mt-px h-4 w-4 shrink-0 text-amber-600" aria-hidden />
+        <span>Demo data — this graph uses a 55-rubric sample, not the full Kent repertory.</span>
+      </div>
+
       <header className="mb-4 flex items-center gap-3">
         <Network className="h-6 w-6 text-brand-600" />
         <div>

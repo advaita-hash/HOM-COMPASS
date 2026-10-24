@@ -1,10 +1,8 @@
 # HOM-COMPASS
 
-**AI-powered Homeopathic Repertory & Materia Medica** — a full-stack web
-application modelled after professional desktop platforms (RadarOpus, Synthesis,
-Hompath Firefly), built on a **Supabase GraphRAG knowledge graph** (relational
-Node/Edge schema + `pgvector` for hybrid entity resolution) with a React /
-Tailwind frontend.
+**Homeopathic repertory, repertorisation worksheet and materia medica reference
+for practitioners** — a React / Tailwind web application modelled after
+professional desktop platforms (RadarOpus, Synthesis, Hompath Firefly).
 
 > **Status: working build.** All core modules are implemented and run in demo
 > mode (no backend required).

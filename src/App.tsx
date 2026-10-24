@@ -40,6 +40,8 @@ import ComparePage from './features/compare/ComparePage';
 import { useCompare } from './features/compare/compareStore';
 import { SegmentedControl } from './components/ui/SegmentedControl';
 import { StorageStatusBanner } from './components/StorageStatusBanner';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { DISCLAIMER } from './components/ClinicalDisclaimer';
 import { type Appearance, useAppearance, useApplyAppearance } from './lib/appearance';
 
 // ---------------------------------------------------------------------------
@@ -48,7 +50,7 @@ import { type Appearance, useAppearance, useApplyAppearance } from './lib/appear
 // hamburger that opens the same nav as a slide-in drawer.
 // ---------------------------------------------------------------------------
 
-const NAV = [
+const NAV: readonly { to: string; label: string; icon: typeof Search; demo?: true }[] = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/search', label: 'Search', icon: Search },
   { to: '/remedy-of-the-day', label: 'Remedy of the Day', icon: CalendarDays },
@@ -59,9 +61,10 @@ const NAV = [
   { to: '/my-notes', label: 'My remedy notes', icon: NotebookPen },
   { to: '/books', label: 'Reference Books', icon: BookText },
   { to: '/library', label: 'Library', icon: Library },
-  { to: '/graph', label: 'Knowledge Graph', icon: Network },
+  // Built from the 55-rubric sample repertory, not the full Kent repertory.
+  { to: '/graph', label: 'Knowledge Graph', icon: Network, demo: true },
   { to: '/patients', label: 'Patients', icon: Users },
-] as const;
+];
 
 const APPEARANCE_CAPTION: Record<Appearance, string> = {
   light: 'Light',
@@ -131,7 +134,7 @@ function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
       </div>
 
       <nav className="flex-1 space-y-1 overflow-y-auto px-3">
-        {NAV.map(({ to, label, icon: Icon }) => (
+        {NAV.map(({ to, label, icon: Icon, demo }) => (
           <NavLink
             key={to}
             to={to}
@@ -147,6 +150,14 @@ function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
             {/* SF-Symbols-style: glyphs carry the accent, labels stay neutral */}
             <Icon className="h-[18px] w-[18px] shrink-0 text-brand-600" />
             {label}
+            {demo && (
+              <span
+                className="ml-auto rounded-full bg-amber-100 px-2 text-2xs font-semibold leading-5 text-amber-700"
+                title="Uses sample data"
+              >
+                Demo
+              </span>
+            )}
             {to === '/compare' && compareCount > 0 && (
               <span
                 className="ml-auto min-w-[20px] rounded-full bg-accent px-2 text-center text-2xs font-semibold tabular-nums leading-5 text-on-accent"
@@ -173,6 +184,11 @@ function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
             <span className="h-2 w-2 rounded-full bg-amber-500" /> Demo mode
           </span>
         )}
+        {/* Always-visible clinical disclaimer; full wording on hover / for screen readers. */}
+        <p className="mt-2 leading-snug" title={DISCLAIMER}>
+          Study aid — not a diagnosis or prescription.
+          <span className="sr-only"> {DISCLAIMER}</span>
+        </p>
       </div>
     </aside>
   );
@@ -187,7 +203,12 @@ export default function App() {
   useApplyAppearance();
 
   // Shared-note links are a clean public page — no sidebar/app shell.
-  if (location.pathname === '/shared/note') return <SharedNotePage />;
+  if (location.pathname === '/shared/note')
+    return (
+      <ErrorBoundary>
+        <SharedNotePage />
+      </ErrorBoundary>
+    );
 
   return (
     <div className="flex h-full">
@@ -223,27 +244,30 @@ export default function App() {
 
       <main className="min-w-0 flex-1 overflow-auto pt-[calc(3.5rem+env(safe-area-inset-top))] lg:pt-0">
         <StorageStatusBanner />
-        <Routes>
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/remedy-of-the-day" element={<RemedyOfTheDayPage />} />
-          <Route path="/repertory" element={<RepertoryPage />} />
-          <Route path="/analysis" element={<RepertorizationPage />} />
-          <Route path="/materia-medica" element={<MateriaMedicaPage />} />
-          <Route path="/materia-medica/:remedyId" element={<MateriaMedicaPage />} />
-          <Route path="/remedy/:name" element={<RemedyProfilePage />} />
-          <Route path="/my-notes" element={<MyNotesPage />} />
-          <Route path="/compare" element={<ComparePage />} />
-          <Route path="/books" element={<BooksPage />} />
-          <Route path="/books/:bookId" element={<BookReaderPage />} />
-          <Route path="/books/:bookId/:remedySlug" element={<BookReaderPage />} />
-          <Route path="/library" element={<LibraryPage />} />
-          <Route path="/graph" element={<KnowledgeGraphPage />} />
-          <Route path="/search" element={<GlobalSearchPage />} />
-          <Route path="/patients" element={<PatientsPage />} />
-          <Route path="/patients/:patientId" element={<PatientDetailPage />} />
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
-        </Routes>
+        {/* Keyed by route: a crash stays on its screen and navigating away recovers. */}
+        <ErrorBoundary key={location.pathname}>
+          <Routes>
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/remedy-of-the-day" element={<RemedyOfTheDayPage />} />
+            <Route path="/repertory" element={<RepertoryPage />} />
+            <Route path="/analysis" element={<RepertorizationPage />} />
+            <Route path="/materia-medica" element={<MateriaMedicaPage />} />
+            <Route path="/materia-medica/:remedyId" element={<MateriaMedicaPage />} />
+            <Route path="/remedy/:name" element={<RemedyProfilePage />} />
+            <Route path="/my-notes" element={<MyNotesPage />} />
+            <Route path="/compare" element={<ComparePage />} />
+            <Route path="/books" element={<BooksPage />} />
+            <Route path="/books/:bookId" element={<BookReaderPage />} />
+            <Route path="/books/:bookId/:remedySlug" element={<BookReaderPage />} />
+            <Route path="/library" element={<LibraryPage />} />
+            <Route path="/graph" element={<KnowledgeGraphPage />} />
+            <Route path="/search" element={<GlobalSearchPage />} />
+            <Route path="/patients" element={<PatientsPage />} />
+            <Route path="/patients/:patientId" element={<PatientDetailPage />} />
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          </Routes>
+        </ErrorBoundary>
       </main>
     </div>
   );
