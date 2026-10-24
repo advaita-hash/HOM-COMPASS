@@ -40,16 +40,18 @@ function relativeDay(d: Date, now: Date): string {
  * /patients#backup, which the global "Not saved" banner links to.
  */
 export function BackupSection() {
-  const { hash } = useLocation();
+  const { hash, key: locationKey } = useLocation();
   const sectionRef = useRef<HTMLElement>(null);
   const patientCount = usePatients((s) => s.patients.length);
   const [lastBackup, setLastBackup] = useState<Date | null>(() => readLastBackup(browserStorage()));
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState<{ backup: Backup; counts: BackupCounts } | null>(null);
+  const [justExported, setJustExported] = useState(false);
 
+  // keyed on the location too, so following the banner link again re-scrolls
   useEffect(() => {
     if (hash === '#backup') sectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }, [hash]);
+  }, [hash, locationKey]);
 
   const now = new Date();
   const overdue =
@@ -57,6 +59,7 @@ export function BackupSection() {
 
   function exportBackup() {
     setError(null);
+    setJustExported(false);
     try {
       // Export what's on screen, even if the last save to storage failed.
       const { patients, cases } = usePatients.getState();
@@ -65,6 +68,7 @@ export function BackupSection() {
       const at = new Date(backup.exportedAt);
       recordLastBackup(browserStorage(), at);
       setLastBackup(at);
+      setJustExported(true);
     } catch {
       setError('The backup couldn’t be created. Try again, or use a different browser.');
     }
@@ -76,6 +80,7 @@ export function BackupSection() {
     e.target.value = '';
     if (!file) return;
     setError(null);
+    setJustExported(false);
     let text: string;
     try {
       text = await file.text();
@@ -108,7 +113,7 @@ export function BackupSection() {
   return (
     <section id="backup" ref={sectionRef} aria-labelledby="backup-heading" className="card mt-6 scroll-mt-16 p-4">
       <div className="flex items-start gap-3">
-        <HardDrive className="mt-0.5 h-5 w-5 shrink-0 text-brand-600" aria-hidden />
+        <HardDrive className="h-5 w-5 shrink-0 text-brand-600" aria-hidden />
         <div className="min-w-0 flex-1">
           <h2 id="backup-heading" className="text-base font-semibold text-ink/90">
             Backup
@@ -118,15 +123,16 @@ export function BackupSection() {
             clearing site data, a private window, or a new browser or device starts empty. Export a backup regularly
             and keep the file somewhere safe — it contains patient details.
           </p>
-          <p className="mt-2 text-xs text-ink/45">
+          <p role="status" className="mt-2 text-xs text-ink/45">
             {lastBackup ? `Last backup: ${relativeDay(lastBackup, now)}` : 'No backup yet'}
+            {justExported && ' · Backup exported, check your downloads'}
           </p>
         </div>
       </div>
 
       {overdue && (
         <div className="mt-4 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
-          <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+          <TriangleAlert className="h-4 w-4 shrink-0" aria-hidden />
           <p>
             {lastBackup
               ? `It’s been more than ${REMIND_AFTER_DAYS} days since your last backup.`
@@ -140,7 +146,7 @@ export function BackupSection() {
         <button type="button" onClick={exportBackup} className="btn-primary">
           <Download className="h-4 w-4" aria-hidden /> Export backup
         </button>
-        <label className="btn-secondary cursor-pointer focus-within:ring-2">
+        <label className="btn-secondary cursor-pointer has-[:focus-visible]:ring-2">
           <Upload className="h-4 w-4" aria-hidden /> Restore from backup
           <input
             type="file"
@@ -164,8 +170,8 @@ export function BackupSection() {
           pending && (
             <>
               This backup from {formatDate(new Date(pending.backup.exportedAt))} has{' '}
-              {plural(pending.counts.patients, 'patient')} and {plural(pending.counts.cases, 'case')}. It replaces the
-              records and settings currently on this device. This can’t be undone.
+              {plural(pending.counts.patients, 'patient')} and {plural(pending.counts.cases, 'case')}. Patients, cases and settings in
+              this backup replace the ones on this device. This can’t be undone.
             </>
           )
         }

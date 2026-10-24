@@ -117,7 +117,7 @@ export function parseBackup(text: string): ParseResult {
   try {
     json = JSON.parse(text);
   } catch {
-    return { ok: false, error: 'This file isn’t a HOM-COMPASS backup. It couldn’t be read as JSON.' };
+    return { ok: false, error: 'This file isn’t a HOM-COMPASS backup, or it’s damaged.' };
   }
   if (!isPlainObject(json) || json.app !== BACKUP_APP) {
     return { ok: false, error: 'This file isn’t a HOM-COMPASS backup.' };
@@ -136,11 +136,12 @@ export function parseBackup(text: string): ParseResult {
     return { ok: false, error: 'This backup is damaged: it contains no data.' };
   }
   const keys = Object.keys(data);
-  if (keys.length === 0) {
-    return { ok: false, error: 'This backup is empty.' };
-  }
   if (!keys.every((k) => k.startsWith(KEY_PREFIX))) {
     return { ok: false, error: 'This backup contains data that doesn’t belong to HOM-COMPASS.' };
+  }
+  // only excluded keys (sign-in, last-backup time) would mean nothing to restore
+  if (!keys.some(included)) {
+    return { ok: false, error: 'This backup is empty.' };
   }
   const backup: Backup = { app: BACKUP_APP, format: BACKUP_FORMAT, exportedAt: json.exportedAt, data };
   return { ok: true, backup, counts: countRecords(data) };

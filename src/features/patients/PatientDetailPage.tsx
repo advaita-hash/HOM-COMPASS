@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { CalendarPlus, ChevronLeft, StickyNote, Trash2 } from 'lucide-react';
 import { usePatients } from './patientsStore';
@@ -6,7 +6,7 @@ import { ClipboardList } from 'lucide-react';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 
-function CaseCard({ caseId }: { caseId: string }) {
+function CaseCard({ caseId, onRemoved }: { caseId: string; onRemoved: () => void }) {
   const c = usePatients((s) => s.cases.find((x) => x.id === caseId));
   const updateCase = usePatients((s) => s.updateCase);
   const removeCase = usePatients((s) => s.removeCase);
@@ -96,6 +96,7 @@ function CaseCard({ caseId }: { caseId: string }) {
         onConfirm={() => {
           setConfirming(false);
           removeCase(c.id);
+          onRemoved();
         }}
         onCancel={cancelDelete}
       />
@@ -109,6 +110,16 @@ export default function PatientDetailPage() {
   const cases = usePatients((s) => (patientId ? s.casesFor(patientId) : []));
   const addCase = usePatients((s) => s.addCase);
   const updatePatient = usePatients((s) => s.updatePatient);
+  // after a case card (and its bin button) is removed, focus the Cases heading
+  // so keyboard and screen-reader focus doesn't fall back to the page top
+  const casesHeadingRef = useRef<HTMLHeadingElement>(null);
+  const [refocus, setRefocus] = useState(false);
+  const caseRemoved = useCallback(() => setRefocus(true), []);
+  useEffect(() => {
+    if (!refocus) return;
+    casesHeadingRef.current?.focus();
+    setRefocus(false);
+  }, [refocus]);
 
   if (!patient) {
     return (
@@ -144,7 +155,7 @@ export default function PatientDetailPage() {
       </div>
 
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-slate-700">
+        <h2 ref={casesHeadingRef} tabIndex={-1} className="text-sm font-semibold text-slate-700">
           Cases <span className="text-slate-400">({cases.length})</span>
         </h2>
         <button onClick={() => addCase(patient.id)} className="btn-primary">
@@ -168,7 +179,7 @@ export default function PatientDetailPage() {
       ) : (
         <div className="space-y-3">
           {cases.map((c) => (
-            <CaseCard key={c.id} caseId={c.id} />
+            <CaseCard key={c.id} caseId={c.id} onRemoved={caseRemoved} />
           ))}
         </div>
       )}
