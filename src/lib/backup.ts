@@ -143,8 +143,19 @@ export function parseBackup(text: string): ParseResult {
   if (!keys.some(included)) {
     return { ok: false, error: 'This backup is empty.' };
   }
-  const backup: Backup = { app: BACKUP_APP, format: BACKUP_FORMAT, exportedAt: json.exportedAt, data };
-  return { ok: true, backup, counts: countRecords(data) };
+  // Every app entry is a saved store: { state: {...}, version? }. A damaged
+  // patients entry means the records can't be trusted; any other damaged
+  // entry (a setting or draft) is left out so this device keeps its own.
+  const isStoreEntry = (v: unknown) => isPlainObject(v) && isPlainObject(v.state);
+  if (PATIENTS_KEY in data && !isStoreEntry(data[PATIENTS_KEY])) {
+    return { ok: false, error: 'This backup is damaged: its patient records can’t be read.' };
+  }
+  const kept = Object.fromEntries(Object.entries(data).filter(([k, v]) => !included(k) || isStoreEntry(v)));
+  if (!Object.keys(kept).some(included)) {
+    return { ok: false, error: 'This backup is damaged: none of its data can be read.' };
+  }
+  const backup: Backup = { app: BACKUP_APP, format: BACKUP_FORMAT, exportedAt: json.exportedAt, data: kept };
+  return { ok: true, backup, counts: countRecords(kept) };
 }
 
 /**

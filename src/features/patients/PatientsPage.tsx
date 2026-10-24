@@ -49,7 +49,7 @@ export default function PatientsPage() {
         <Users className="h-6 w-6 text-brand-600" />
         <div>
           <h1 ref={headingRef} tabIndex={-1} className="text-2xl font-semibold text-slate-800">Patients &amp; Cases</h1>
-          <p className="text-sm text-slate-500">{patients.length} patients</p>
+          <p className="text-sm text-slate-500">{patients.length} {patients.length === 1 ? 'patient' : 'patients'}</p>
         </div>
       </header>
 

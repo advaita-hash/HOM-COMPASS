@@ -70,7 +70,9 @@ const BRAND_LIGHT = {
 };
 
 const GRADE = {
-  light: { 1: '#94a3b8', 2: '#3b82f6', 3: '#7c3aed', 4: '#dc2626' },
+  // light: every grade ≥ 4.5:1 on surface, base and slate-50 fills (grade 1 stays
+  // visibly lighter than primary text so "plain" still reads as the lowest grade)
+  light: { 1: '#5f6e82', 2: '#2563eb', 3: '#7c3aed', 4: '#dc2626' },
   dark: { 1: '#94a3b8', 2: '#60a5fa', 3: '#a78bfa', 4: '#f87171' },
 };
 

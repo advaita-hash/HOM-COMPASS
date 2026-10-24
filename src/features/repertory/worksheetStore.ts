@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { Repertory, RemedyScore, Rubric, WorksheetItem } from './types';
-import { safeStorage } from '../../lib/safeStorage';
+import { persistedObject, safeStorage } from '../../lib/safeStorage';
 import { RETIRED_RUBRIC_IDS } from './repertoryData';
 
 interface WorksheetState {
@@ -56,16 +56,18 @@ export const useWorksheet = create<WorksheetState>()(
       migrate: (persisted) => persisted as WorksheetState,
       // Point saved items at the surviving rubric (ids of all other rubrics
       // are unchanged). Retired ids are tombstones, so this never touches a
-      // live rubric.
+      // live rubric. Only fields of the right type are taken from storage.
       merge: (persisted, current) => {
-        const state = (persisted ?? {}) as Partial<Pick<WorksheetState, 'repId' | 'items'>>;
-        const repId = state.repId ?? current.repId;
-        return {
-          ...current,
-          ...state,
-          repId,
-          items: migrateRetiredIds(repId, state.items ?? current.items),
-        };
+        const state = persistedObject(persisted);
+        const repId = typeof state.repId === 'string' ? state.repId : current.repId;
+        const items = Array.isArray(state.items)
+          ? (state.items as Array<Partial<WorksheetItem> | null>).flatMap((i) =>
+              i && typeof i.rubricId === 'string' && Number.isFinite(i.intensity)
+                ? [{ rubricId: i.rubricId, intensity: i.intensity as number }]
+                : [],
+            )
+          : current.items;
+        return { ...current, repId, items: migrateRetiredIds(repId, items) };
       },
     },
   ),

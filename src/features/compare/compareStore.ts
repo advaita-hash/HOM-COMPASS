@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { safeStorage } from '../../lib/safeStorage';
+import { persistedObject, safeStorage } from '../../lib/safeStorage';
 
 // ---------------------------------------------------------------------------
 // Remedies chosen for side-by-side comparison. An item is a remedy *in a
@@ -47,6 +47,24 @@ export const useCompare = create<CompareState>()(
         set({ items: get().items.filter((i) => keyOf(i.book, i.slug) !== keyOf(book, slug)) }),
       clear: () => set({ items: [] }),
     }),
-    { name: 'hom-compass.compare', storage: safeStorage() },
+    {
+      name: 'hom-compass.compare',
+      storage: safeStorage(),
+      // keep only well-formed, distinct items, at most COMPARE_MAX
+      merge: (persisted, current) => {
+        const raw = persistedObject(persisted).items;
+        if (!Array.isArray(raw)) return current;
+        const seen = new Set<string>();
+        const items: CompareItem[] = [];
+        for (const i of raw as Array<Partial<CompareItem> | null>) {
+          if (!i || typeof i.book !== 'string' || typeof i.slug !== 'string' || typeof i.name !== 'string') continue;
+          const k = keyOf(i.book, i.slug);
+          if (seen.has(k)) continue;
+          seen.add(k);
+          items.push({ book: i.book, slug: i.slug, name: i.name });
+        }
+        return { ...current, items: items.slice(0, COMPARE_MAX) };
+      },
+    },
   ),
 );

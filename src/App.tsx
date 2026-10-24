@@ -149,18 +149,21 @@ function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
           >
             {/* SF-Symbols-style: glyphs carry the accent, labels stay neutral */}
             <Icon className="h-[18px] w-[18px] shrink-0 text-brand-600" />
-            {label}
+            {/* Truncate rather than wrap, so every row keeps the 44px list rhythm. */}
+            <span className="min-w-0 flex-1 truncate">
+              {label}
+              {demo && <span className="sr-only"> (demo, sample data)</span>}
+            </span>
             {demo && (
               <span
-                className="ml-auto rounded-full bg-amber-100 px-2 text-2xs font-semibold leading-5 text-amber-700"
+                className="ml-auto h-2 w-2 shrink-0 rounded-full bg-amber-700"
                 title="Uses sample data"
-              >
-                Demo
-              </span>
+                aria-hidden="true"
+              />
             )}
             {to === '/compare' && compareCount > 0 && (
               <span
-                className="ml-auto min-w-[20px] rounded-full bg-accent px-2 text-center text-2xs font-semibold tabular-nums leading-5 text-on-accent"
+                className="ml-auto min-w-[20px] shrink-0 rounded-full bg-accent px-2 text-center text-2xs font-semibold tabular-nums leading-5 text-on-accent"
                 aria-label={`${compareCount} selected`}
               >
                 {compareCount}

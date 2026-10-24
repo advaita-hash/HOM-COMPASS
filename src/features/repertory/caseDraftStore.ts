@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { safeStorage } from '../../lib/safeStorage';
+import { persistedObject, safeStorage } from '../../lib/safeStorage';
 
 /**
  * The current case's symptoms, stored as INDIVIDUAL entries (one per line) and
@@ -25,7 +25,20 @@ export const useCaseDraft = create<CaseDraftState>()(
         set({ symptoms: get().symptoms.filter((_, i) => i !== index) }),
       clear: () => set({ symptoms: [] }),
     }),
-    { name: 'hom-compass.casedraft', storage: safeStorage() },
+    {
+      name: 'hom-compass.casedraft',
+      storage: safeStorage(),
+      // keep only string lines, whatever storage or a restored backup holds
+      merge: (persisted, current) => {
+        const s = persistedObject(persisted).symptoms;
+        const symptoms = Array.isArray(s)
+          ? s.filter((x): x is string => typeof x === 'string')
+          : typeof s === 'string'
+            ? s.split('\n')
+            : current.symptoms;
+        return { ...current, symptoms };
+      },
+    },
   ),
 );
 

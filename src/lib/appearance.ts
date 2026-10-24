@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { safeStorage } from './safeStorage';
+import { persistedObject, safeStorage } from './safeStorage';
 
 // ---------------------------------------------------------------------------
 // Appearance (Light / Dark / Auto), as in Apple's Settings › Display.
@@ -20,6 +20,10 @@ export const useAppearance = create<{ mode: Appearance; setMode: (m: Appearance)
   persist((set) => ({ mode: 'system', setMode: (mode) => set({ mode }) }), {
     name: APPEARANCE_KEY,
     storage: safeStorage(),
+    merge: (persisted, current) => {
+      const mode = persistedObject(persisted).mode;
+      return { ...current, mode: mode === 'light' || mode === 'dark' || mode === 'system' ? mode : current.mode };
+    },
   }),
 );
 

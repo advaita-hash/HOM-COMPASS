@@ -77,12 +77,15 @@ export function ConfirmDialog({
             </div>
           )}
         </div>
+        {/* focus rings are inset and follow the bottom corners, so the
+            dialog's overflow-hidden (needed for the rounded hover fills)
+            can't clip them */}
         <div className="grid grid-cols-2 border-t border-ink/10">
           <button
             ref={cancelRef}
             type="button"
             onClick={onCancel}
-            className="min-h-[44px] px-4 py-3 text-base font-medium text-brand-600 transition-colors hover:bg-ink/[0.05] active:bg-ink/10"
+            className="min-h-[44px] rounded-bl-2xl px-4 py-3 text-base font-medium text-brand-600 transition-colors hover:bg-ink/[0.05] focus-visible:outline-offset-[-3px] active:bg-ink/10"
           >
             {cancelLabel}
           </button>
@@ -90,8 +93,8 @@ export function ConfirmDialog({
             ref={confirmRef}
             type="button"
             onClick={onConfirm}
-            className={`min-h-[44px] border-l border-ink/10 px-4 py-3 text-base font-semibold transition-colors hover:bg-ink/[0.05] active:bg-ink/10 ${
-              destructive ? 'text-red-600' : 'text-brand-600'
+            className={`min-h-[44px] rounded-br-2xl border-l border-ink/10 px-4 py-3 text-base font-semibold transition-colors hover:bg-ink/[0.05] focus-visible:outline-offset-[-3px] active:bg-ink/10 ${
+              destructive ? 'text-red-700' : 'text-brand-600'
             }`}
           >
             {confirmLabel}
