@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ListPlus, X } from 'lucide-react';
 import { EmptyState } from '../../components/ui/EmptyState';
+import { ClinicalDisclaimer } from '../../components/ClinicalDisclaimer';
 import type { Grade, Repertory } from './types';
 import { repertorize, useWorksheet } from './worksheetStore';
 import { canonicalName } from '../../lib/remedyName';
@@ -56,7 +57,7 @@ export function WorksheetGrid({
   return (
     <>
       {/* Ranked remedies — click for Materia Medica support */}
-      <div className="mb-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mb-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
         {top.slice(0, 6).map((s, i) => {
           const inner = (
             <>
@@ -87,6 +88,7 @@ export function WorksheetGrid({
           );
         })}
       </div>
+      <ClinicalDisclaimer className="mb-4" />
 
       {/* Controls */}
       <div className="mb-2 flex items-center justify-between text-xs text-slate-500">

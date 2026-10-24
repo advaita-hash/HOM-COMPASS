@@ -1,14 +1,33 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronRight, Trash2, UserPlus, Users } from 'lucide-react';
-import { usePatients } from './patientsStore';
+import { usePatients, type Patient } from './patientsStore';
 import { EmptyState } from '../../components/ui/EmptyState';
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
+import { BackupSection } from './BackupSection';
 
 export default function PatientsPage() {
   const { patients, cases, addPatient, removePatient } = usePatients();
   const [name, setName] = useState('');
   const [age, setAge] = useState('');
   const [gender, setGender] = useState('');
+  const [toDelete, setToDelete] = useState<Patient | null>(null);
+  const cancelDelete = useCallback(() => setToDelete(null), []);
+  // row index to move focus to once a deleted row (and its bin button) is gone
+  const [refocusIndex, setRefocusIndex] = useState<number | null>(null);
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  const deleteCaseCount = toDelete ? cases.filter((c) => c.patient_id === toDelete.id).length : 0;
+
+  // Runs after ConfirmDialog's cleanup has tried (and failed) to refocus the
+  // removed bin button: focus the row that took its place, else the heading.
+  useEffect(() => {
+    if (refocusIndex === null) return;
+    const links = listRef.current?.querySelectorAll<HTMLElement>('[data-patient-link]');
+    const next = links && links.length > 0 ? links[Math.min(refocusIndex, links.length - 1)] : headingRef.current;
+    next?.focus();
+    setRefocusIndex(null);
+  }, [refocusIndex]);
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -29,7 +48,7 @@ export default function PatientsPage() {
       <header className="mb-5 flex items-center gap-3">
         <Users className="h-6 w-6 text-brand-600" />
         <div>
-          <h1 className="text-2xl font-semibold text-slate-800">Patients &amp; Cases</h1>
+          <h1 ref={headingRef} tabIndex={-1} className="text-2xl font-semibold text-slate-800">Patients &amp; Cases</h1>
           <p className="text-sm text-slate-500">{patients.length} patients</p>
         </div>
       </header>
@@ -84,7 +103,7 @@ export default function PatientsPage() {
           />
         </div>
       ) : (
-        <div className="card overflow-hidden">
+        <div ref={listRef} className="card overflow-hidden">
           {patients.map((p) => {
             const n = cases.filter((c) => c.patient_id === p.id).length;
             return (
@@ -92,7 +111,7 @@ export default function PatientsPage() {
                 key={p.id}
                 className="flex items-center gap-3 border-b border-slate-100 px-4 py-3 last:border-0 hover:bg-slate-50"
               >
-                <Link to={`/patients/${p.id}`} className="min-w-0 flex-1">
+                <Link to={`/patients/${p.id}`} className="min-w-0 flex-1" data-patient-link>
                   <div className="text-sm font-medium text-slate-800">{p.name}</div>
                   <div className="text-xs text-slate-500">
                     {[p.age ? `${p.age}y` : null, p.gender].filter(Boolean).join(' · ') || '—'} ·{' '}
@@ -100,13 +119,15 @@ export default function PatientsPage() {
                   </div>
                 </Link>
                 <button
-                  onClick={() => removePatient(p.id)}
-                  className="rounded p-2 text-slate-300 hover:bg-red-50 hover:text-red-600"
-                  aria-label={`Remove ${p.name}`}
+                  type="button"
+                  onClick={() => setToDelete(p)}
+                  className="tap rounded-full p-2 text-ink/60 transition-colors hover:bg-red-50 hover:text-red-600"
+                  aria-label={`Delete ${p.name}`}
+                  title="Delete patient"
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Trash2 className="h-4 w-4" aria-hidden />
                 </button>
-                <Link to={`/patients/${p.id}`} className="text-slate-300">
+                <Link to={`/patients/${p.id}`} className="text-slate-300" aria-hidden tabIndex={-1}>
                   <ChevronRight className="h-5 w-5" />
                 </Link>
               </div>
@@ -114,6 +135,29 @@ export default function PatientsPage() {
           })}
         </div>
       )}
+
+      <BackupSection />
+
+      <ConfirmDialog
+        open={toDelete !== null}
+        title={toDelete ? `Delete ${toDelete.name}?` : ''}
+        message={
+          toDelete &&
+          `This permanently removes ${toDelete.name}${
+            deleteCaseCount > 0 ? ` and their ${deleteCaseCount} case${deleteCaseCount === 1 ? '' : 's'}` : ''
+          } from this device. Export a backup first if you might need ${deleteCaseCount > 0 ? 'them' : 'it'}.`
+        }
+        confirmLabel="Delete"
+        destructive
+        onConfirm={() => {
+          if (toDelete) {
+            setRefocusIndex(patients.findIndex((p) => p.id === toDelete.id));
+            removePatient(toDelete.id);
+          }
+          setToDelete(null);
+        }}
+        onCancel={cancelDelete}
+      />
     </div>
   );
 }

@@ -11,7 +11,9 @@ import { safeStorage } from '../../lib/safeStorage';
 //   • nothing is exposed in the Common Room database,
 //   • the fragment is never sent to any server (it stays in the browser),
 //   • anyone with the link can read that one note — and nothing else.
-// The link is a snapshot taken when it was shared.
+// The link is a snapshot taken when it was shared. Because the note lives in
+// the link itself, it can't be withdrawn: marking the note private again only
+// hides the share option on this device.
 // ---------------------------------------------------------------------------
 
 export interface SharedNote {
@@ -40,16 +42,63 @@ export function encodeNote(note: SharedNote): string {
   return b64urlEncode(JSON.stringify(note));
 }
 
+/** Upper bounds for each field of a shared note (characters). */
+export const LIMITS = { remedy: 120, body: 20_000, abbr: 40, by: 80, date: 40 } as const;
+
+const isText = (x: unknown, max: number): x is string => typeof x === 'string' && x.length <= max;
+
+/** Shorten to `max` characters with an ellipsis, without splitting a surrogate pair. */
+function clip(s: string, max: number): string {
+  if (s.length <= max) return s;
+  let cut = s.slice(0, max - 1);
+  if (/[\uD800-\uDBFF]$/.test(cut)) cut = cut.slice(0, -1);
+  return cut + '…';
+}
+
+/**
+ * Fit a note to the limits `decodeNote` enforces, so the app never creates a
+ * link it then refuses to open. Optional fields are shortened or dropped;
+ * returns null when the remedy or body itself is too long (or empty) to share.
+ */
+export function toShareable(note: SharedNote): SharedNote | null {
+  if (!note.remedy.trim() || note.remedy.length > LIMITS.remedy) return null;
+  if (!note.body.trim() || note.body.length > LIMITS.body) return null;
+  const out: SharedNote = { v: 1, remedy: note.remedy, body: note.body };
+  if (note.abbr) out.abbr = clip(note.abbr, LIMITS.abbr);
+  if (note.date && note.date.length <= LIMITS.date) out.date = note.date;
+  if (note.by) out.by = clip(note.by, LIMITS.by);
+  return out;
+}
+
+/**
+ * Decode and strictly validate a share token. Every field is checked — a link
+ * is untrusted input, so anything malformed, oversized or of the wrong type
+ * yields null. Only known fields are copied; unknown keys are dropped.
+ */
 export function decodeNote(token: string): SharedNote | null {
+  if (!token || token.length > 60_000) return null;
+  let obj: unknown;
   try {
-    const obj = JSON.parse(b64urlDecode(token));
-    if (obj && obj.v === 1 && typeof obj.remedy === 'string' && typeof obj.body === 'string') {
-      return obj as SharedNote;
-    }
+    obj = JSON.parse(b64urlDecode(token));
   } catch {
-    /* malformed */
+    return null; /* malformed */
   }
-  return null;
+  if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return null;
+  const o = obj as Record<string, unknown>;
+
+  if (o.v !== 1) return null;
+  if (!isText(o.remedy, LIMITS.remedy) || !o.remedy.trim()) return null;
+  if (!isText(o.body, LIMITS.body) || !o.body.trim()) return null;
+  if (o.abbr !== undefined && !isText(o.abbr, LIMITS.abbr)) return null;
+  if (o.by !== undefined && !isText(o.by, LIMITS.by)) return null;
+  // `date` may be null (a note without a visit date).
+  if (o.date !== undefined && o.date !== null && !isText(o.date, LIMITS.date)) return null;
+
+  const note: SharedNote = { v: 1, remedy: o.remedy, body: o.body };
+  if (o.abbr) note.abbr = o.abbr as string;
+  if (o.by) note.by = o.by as string;
+  if (o.date) note.date = o.date as string;
+  return note;
 }
 
 /** Full share URL for a note (content travels in the fragment). */

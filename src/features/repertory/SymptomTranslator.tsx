@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ArrowRight, Check, Loader2, Plus, Sparkles, Wand2 } from 'lucide-react';
 import type { Repertory, Rubric } from './types';
 import { findRubricsForPhrase, hasCuratedSense } from './rubricFinder';
 import { useWorksheet } from './worksheetStore';
 import { useSemantic, type WordTranslation } from './semantic/useSemantic';
+import { ClinicalDisclaimer } from '../../components/ClinicalDisclaimer';
 
 interface PhraseBlock {
   phrase: string;
@@ -31,9 +32,19 @@ export function SymptomTranslator({
   const has = useWorksheet((s) => s.has);
   const add = useWorksheet((s) => s.add);
   const sem = useSemantic(rep);
+  /** Bumped on every run and text change, so a slow run can't show stale results. */
+  const runId = useRef(0);
+
+  // Suggestions belong to the text that produced them: once the symptoms are
+  // cleared (e.g. after saving a case) the previous patient's matches go too.
+  useEffect(() => {
+    runId.current += 1;
+    if (!text.trim()) setResults([]);
+  }, [text]);
 
   async function run() {
     if (!rep) return;
+    const id = ++runId.current;
     setBusy(true);
     try {
       const phrases = text
@@ -51,6 +62,8 @@ export function SymptomTranslator({
           .filter((w) => w.length >= 3 && !hasCuratedSense(w)),
       );
       const trans = sem.status === 'ready' ? await sem.translate(allWords) : [];
+      // The text changed or was cleared (e.g. the case was saved) while waiting.
+      if (id !== runId.current) return;
       const transByWord = new Map(trans.map((t) => [t.word, t.to]));
 
       const blocks: PhraseBlock[] = phrases.map((phrase) => {
@@ -99,6 +112,7 @@ export function SymptomTranslator({
 
       {results.length > 0 && (
         <div className="mt-4 space-y-4">
+          <ClinicalDisclaimer />
           {results.map((r, i) => (
             <div key={i}>
               <div className="mb-1 text-xs font-medium text-slate-500">“{r.phrase}”</div>

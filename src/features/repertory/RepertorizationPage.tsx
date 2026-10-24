@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Activity, BookOpen, Check, Save, Trash2 } from 'lucide-react';
+import { Activity, BookOpen, CheckCircle2, Save, Trash2 } from 'lucide-react';
 import { REPERTORIES, useRepertory, useRepertorySelection } from './repertoryData';
 import { repertorize, useBindWorksheet, useWorksheet } from './worksheetStore';
 import { RepertorySelect } from './RepertorySelect';
@@ -11,6 +11,7 @@ import { RemedySupportModal } from './RemedySupportModal';
 import { cleanSymptoms, useCaseDraft } from './caseDraftStore';
 import { usePatients } from '../patients/patientsStore';
 import { SegmentedControl } from '../../components/ui/SegmentedControl';
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 
 /** Phone/tablet tabs so each part of the case fits one screen (desktop shows
  *  everything in two columns, unchanged). */
@@ -26,7 +27,7 @@ const TABS: { id: CaseTab; label: string }[] = [
  * rubrics, repertorise live, and save the case to the patient's record.
  */
 export default function RepertorizationPage() {
-  const { data: rep } = useRepertory();
+  const { data: rep, isError: repFailed } = useRepertory();
   const repId = useRepertorySelection((s) => s.id);
   const repMeta = REPERTORIES.find((r) => r.id === repId);
   useBindWorksheet(repId); // rubrics only ever from the chosen repertory
@@ -45,7 +46,14 @@ export default function RepertorizationPage() {
   const symptoms = useCaseDraft((s) => s.symptoms);
   const setFromText = useCaseDraft((s) => s.setFromText);
   const removeSymptom = useCaseDraft((s) => s.removeSymptom);
-  const [saved, setSaved] = useState(false);
+  const clearSymptoms = useCaseDraft((s) => s.clear);
+  /** The last saved case's patient — shown until the next edit starts a new case. */
+  const [savedTo, setSavedTo] = useState<{ id: string; name: string } | null>(null);
+  const [confirmClear, setConfirmClear] = useState(false);
+  const [caseKey, setCaseKey] = useState(0); // remounts per-case inputs on reset
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  const openRecordRef = useRef<HTMLAnchorElement>(null);
+  const focusAfterClear = useRef(false);
   const [supportRemedy, setSupportRemedy] = useState<string | null>(null);
   const [tab, setTab] = useState<CaseTab>('patient'); // phone/tablet only
   const symptomList = cleanSymptoms(symptoms); // individual, non-empty symptoms
@@ -56,10 +64,24 @@ export default function RepertorizationPage() {
 
   const { scores, rubrics } = repertorize(rep, items);
 
+  /** Empty the whole case — rubrics, symptoms and the causative-factor search. */
+  function clearCase() {
+    clear();
+    clearSymptoms();
+    setCaseKey((k) => k + 1);
+  }
+
+  // Only save once the repertory has loaded and the rubrics resolve: saving
+  // clears the worksheet, so saving an unresolved (empty) case would lose it.
+  const canSave = !!rep && rubrics.length > 0 && (patientId !== '' || name.trim() !== '');
+
   function saveCase() {
+    // The guard against double saves is the live worksheet: it is emptied
+    // synchronously after a save, so a repeat click finds nothing to save.
+    if (!canSave || useWorksheet.getState().items.length === 0) return;
     let pid = patientId;
+    let patientName = patients.find((p) => p.id === pid)?.name ?? '';
     if (!pid) {
-      if (!name.trim()) return;
       const p = addPatient({
         name: name.trim(),
         age: age ? Number(age) : null,
@@ -67,20 +89,65 @@ export default function RepertorizationPage() {
         notes: null,
       });
       pid = p.id;
-      setPatientId(pid);
+      patientName = p.name;
     }
     const symptomLines = symptomList; // each symptom saved individually
     const topRemedies = scores.slice(0, 5).map((s) => `${s.name} (${s.totalScore})`);
     const notes =
       `Rubrics (${rubrics.length}): ${rubrics.map((r) => r.rubric).join('; ')}` +
-      (topRemedies.length ? `\n\nTop remedies: ${topRemedies.join(', ')}` : '');
+      (topRemedies.length
+        ? `\n\nAutomated repertorisation (study aid, not a prescription): ${topRemedies.join(', ')}`
+        : '');
     const c = addCase(pid);
     updateCase(c.id, { symptoms_list: symptomLines, notes });
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
+
+    // Start the next patient from a clean slate — nothing carries over.
+    clearCase();
+    setPatientId('');
+    setName('');
+    setAge('');
+    setGender('');
+    setSavedTo({ id: pid, name: patientName });
   }
 
-  const canSave = items.length > 0 && (patientId !== '' || name.trim() !== '');
+  const hasCaseText = items.length > 0 || symptoms.some((s) => s.trim() !== '');
+  const isBlank =
+    !hasCaseText && patientId === '' && name.trim() === '' && age === '' && gender === '';
+
+  // The success message stays until the next case is started.
+  useEffect(() => {
+    if (!isBlank) setSavedTo(null);
+  }, [isBlank]);
+
+  // The Save button disables itself after saving, so move keyboard focus to
+  // the success message's link instead of leaving it stranded.
+  useEffect(() => {
+    if (savedTo) openRecordRef.current?.focus();
+  }, [savedTo]);
+
+  // "Clear case" unmounts its own button; land focus on the page heading
+  // (this runs after the dialog's attempt to refocus the removed button).
+  useEffect(() => {
+    if (!confirmClear && focusAfterClear.current) {
+      focusAfterClear.current = false;
+      headingRef.current?.focus();
+    }
+  }, [confirmClear]);
+
+  const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
+  const clearSummary = [
+    items.length > 0 ? plural(items.length, 'rubric') : '',
+    symptomList.length > 0 ? plural(symptomList.length, 'symptom') : '',
+  ]
+    .filter(Boolean)
+    .join(' and ');
+
+  function requestClear() {
+    // Only ask when there is something to lose (stray blank lines are not).
+    if (items.length > 0 || symptomList.length > 0) setConfirmClear(true);
+    else clearCase();
+  }
+  const cancelClear = useCallback(() => setConfirmClear(false), []);
 
   return (
     <div className="mx-auto max-w-6xl p-6 md:p-8">
@@ -88,7 +155,13 @@ export default function RepertorizationPage() {
         <div className="flex items-center gap-3">
           <Activity className="h-6 w-6 text-brand-600" />
           <div>
-            <h1 className="text-2xl font-semibold text-slate-800">Case</h1>
+            <h1
+              ref={headingRef}
+              tabIndex={-1}
+              className="text-2xl font-semibold text-slate-800 focus:outline-none"
+            >
+              Case
+            </h1>
             <p className="text-sm text-slate-500">
               {items.length} rubric{items.length === 1 ? '' : 's'} · grade-weighted analysis
             </p>
@@ -99,9 +172,9 @@ export default function RepertorizationPage() {
           <Link to="/repertory" className="btn-secondary">
             <BookOpen className="h-4 w-4" /> Repertory
           </Link>
-          {items.length > 0 && (
-            <button onClick={clear} className="btn-ghost text-red-600 hover:bg-red-50">
-              <Trash2 className="h-4 w-4" /> Clear
+          {hasCaseText && (
+            <button onClick={requestClear} className="btn-ghost text-red-600 hover:bg-red-50">
+              <Trash2 className="h-4 w-4" /> Clear case
             </button>
           )}
         </div>
@@ -186,7 +259,7 @@ export default function RepertorizationPage() {
           </div>
 
           <div className={`space-y-4 ${panel('symptoms')}`}>
-          <CausativeFactor rep={rep} />
+          <CausativeFactor key={caseKey} rep={rep} />
 
           <SymptomTranslator
             rep={rep}
@@ -226,16 +299,33 @@ export default function RepertorizationPage() {
             disabled={!canSave}
             className="btn-primary w-full justify-center"
           >
-            {saved ? (
-              <>
-                <Check className="h-4 w-4" /> Saved to patient
-              </>
-            ) : (
-              <>
-                <Save className="h-4 w-4" /> Save case
-              </>
-            )}
+            <Save className="h-4 w-4" /> Save case
           </button>
+          {items.length > 0 && !rep && (
+            <p className="text-center text-xs text-ink/60">
+              {repFailed
+                ? 'The repertory couldn’t load, so this case can’t be saved yet. Your rubrics are kept.'
+                : 'Loading the repertory — you can save once it’s ready.'}
+            </p>
+          )}
+          <div role="status" aria-live="polite">
+            {savedTo && (
+              <div className="flex items-start gap-2 rounded-lg border border-brand-200 bg-brand-50 px-3 py-2 text-sm text-ink/90">
+                <CheckCircle2 className="mt-px h-4 w-4 shrink-0 text-brand-600" aria-hidden />
+                <span className="min-w-0 flex-1">
+                  Case saved to {savedTo.name}’s record. The worksheet is clear for the next
+                  patient.{' '}
+                  <Link
+                    ref={openRecordRef}
+                    to={`/patients/${savedTo.id}`}
+                    className="tap font-medium text-brand-600 hover:underline"
+                  >
+                    Open record
+                  </Link>
+                </span>
+              </div>
+            )}
+          </div>
           {patients.length > 0 && (
             <Link
               to="/patients"
@@ -261,6 +351,20 @@ export default function RepertorizationPage() {
           )}
         </div>
       </div>
+
+      <ConfirmDialog
+        open={confirmClear}
+        title="Clear this case?"
+        message={`Removes ${clearSummary}. This can’t be undone.`}
+        confirmLabel="Clear case"
+        destructive
+        onConfirm={() => {
+          clearCase();
+          focusAfterClear.current = true;
+          setConfirmClear(false);
+        }}
+        onCancel={cancelClear}
+      />
 
       {supportRemedy && (
         <RemedySupportModal

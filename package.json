@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "AI-powered Homeopathic Repertory & Materia Medica platform built on a Supabase GraphRAG knowledge graph.",
+  "description": "HOM-COMPASS: homeopathic repertory, repertorisation worksheet and materia medica reference for practitioners.",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",

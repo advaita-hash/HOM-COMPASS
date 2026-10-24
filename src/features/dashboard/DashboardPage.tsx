@@ -5,12 +5,15 @@ import {
   BookMarked,
   CalendarDays,
   FlaskConical,
+  Info,
   Library,
   Sparkles,
 } from 'lucide-react';
 import { REMEDIES, remedyOfTheDay } from '../../data/remedies';
 import { BOOKS } from '../books/booksIndex';
 import { useLibraryStore } from '../library/libraryStore';
+import { DISCLAIMER } from '../../components/ClinicalDisclaimer';
+import { useDisclaimerAck } from './disclaimerStore';
 
 const REMEDY_TOTAL =
   REMEDIES.length + BOOKS.reduce((n, b) => n + b.approxRemedies, 0);
@@ -45,6 +48,8 @@ export default function DashboardPage() {
   const today = useMemo(() => new Date(), []);
   const remedy = useMemo(() => remedyOfTheDay(today), [today]);
   const bookCount = useLibraryStore((s) => s.books.length);
+  const disclaimerAck = useDisclaimerAck((s) => s.acknowledged);
+  const acknowledgeDisclaimer = useDisclaimerAck((s) => s.acknowledge);
 
   const dateLabel = today.toLocaleDateString(undefined, {
     weekday: 'long',
@@ -58,6 +63,22 @@ export default function DashboardPage() {
         <h1 className="text-2xl font-semibold text-slate-800">Dashboard</h1>
         <p className="text-sm text-slate-500">{dateLabel}</p>
       </header>
+
+      {/* One-time clinical disclaimer (the sidebar keeps a short version visible). */}
+      {!disclaimerAck && (
+        <section
+          aria-label="About this app"
+          className="card mb-6 flex flex-col gap-3 p-4 sm:flex-row sm:items-center"
+        >
+          <Info className="h-5 w-5 shrink-0 text-brand-600" aria-hidden />
+          <p className="flex-1 text-sm leading-relaxed text-ink/80">
+            HOM-COMPASS is a reference and study tool. {DISCLAIMER}
+          </p>
+          <button type="button" className="btn-secondary self-start sm:self-auto" onClick={acknowledgeDisclaimer}>
+            Got it
+          </button>
+        </section>
+      )}
 
       {/* Remedy of the Day hero */}
       <Link

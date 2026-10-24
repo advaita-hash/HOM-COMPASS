@@ -1,14 +1,21 @@
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { CalendarPlus, ChevronLeft, StickyNote, Trash2 } from 'lucide-react';
 import { usePatients } from './patientsStore';
 import { ClipboardList } from 'lucide-react';
 import { EmptyState } from '../../components/ui/EmptyState';
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 
-function CaseCard({ caseId }: { caseId: string }) {
+function CaseCard({ caseId, onRemoved }: { caseId: string; onRemoved: () => void }) {
   const c = usePatients((s) => s.cases.find((x) => x.id === caseId));
   const updateCase = usePatients((s) => s.updateCase);
   const removeCase = usePatients((s) => s.removeCase);
+  const [confirming, setConfirming] = useState(false);
+  const cancelDelete = useCallback(() => setConfirming(false), []);
   if (!c) return null;
+
+  // older or restored records may lack a symptom list
+  const symptoms = Array.isArray(c.symptoms_list) ? c.symptoms_list : [];
 
   const date = new Date(c.visit_date).toLocaleDateString(undefined, {
     year: 'numeric',
@@ -21,11 +28,13 @@ function CaseCard({ caseId }: { caseId: string }) {
       <div className="mb-2 flex items-center justify-between">
         <span className="text-sm font-medium text-slate-700">{date}</span>
         <button
-          onClick={() => removeCase(c.id)}
-          className="tap rounded-full p-1 text-ink/30 transition-colors hover:bg-red-50 hover:text-red-600"
-          aria-label="Delete case"
+          type="button"
+          onClick={() => setConfirming(true)}
+          className="tap rounded-full p-1 text-ink/60 transition-colors hover:bg-red-50 hover:text-red-600"
+          aria-label={`Delete case from ${date}`}
+          title="Delete case"
         >
-          <Trash2 className="h-4 w-4" />
+          <Trash2 className="h-4 w-4" aria-hidden />
         </button>
       </div>
 
@@ -33,7 +42,7 @@ function CaseCard({ caseId }: { caseId: string }) {
         Symptoms (one per line)
       </label>
       <textarea
-        value={c.symptoms_list.join('\n')}
+        value={symptoms.join('\n')}
         onChange={(e) =>
           // keep raw lines (incl. blanks) while typing
           updateCase(c.id, { symptoms_list: e.target.value.split('\n') })
@@ -52,9 +61,9 @@ function CaseCard({ caseId }: { caseId: string }) {
         className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none"
       />
 
-      {c.symptoms_list.filter(Boolean).length > 0 && (
+      {symptoms.filter(Boolean).length > 0 && (
         <div className="mt-2 flex flex-wrap gap-2">
-          {c.symptoms_list.filter(Boolean).map((s, i) => (
+          {symptoms.filter(Boolean).map((s, i) => (
             <span key={i} className="rounded-full bg-brand-50 px-3 py-1 text-xs text-brand-700">
               {s}
             </span>
@@ -64,7 +73,7 @@ function CaseCard({ caseId }: { caseId: string }) {
 
       <label className="mb-1 mt-3 block text-xs font-medium text-slate-500">Notes</label>
       <textarea
-        value={c.notes}
+        value={c.notes ?? ''}
         onChange={(e) => updateCase(c.id, { notes: e.target.value })}
         rows={2}
         placeholder="Observations, remedy given, follow-up…"
@@ -77,6 +86,20 @@ function CaseCard({ caseId }: { caseId: string }) {
       >
         <StickyNote className="h-3.5 w-3.5" /> Open the case workspace →
       </Link>
+
+      <ConfirmDialog
+        open={confirming}
+        title="Delete this case?"
+        message={`This permanently removes the case from ${date}, with its symptoms and notes, from this device.`}
+        confirmLabel="Delete"
+        destructive
+        onConfirm={() => {
+          setConfirming(false);
+          removeCase(c.id);
+          onRemoved();
+        }}
+        onCancel={cancelDelete}
+      />
     </div>
   );
 }
@@ -87,6 +110,16 @@ export default function PatientDetailPage() {
   const cases = usePatients((s) => (patientId ? s.casesFor(patientId) : []));
   const addCase = usePatients((s) => s.addCase);
   const updatePatient = usePatients((s) => s.updatePatient);
+  // after a case card (and its bin button) is removed, focus the Cases heading
+  // so keyboard and screen-reader focus doesn't fall back to the page top
+  const casesHeadingRef = useRef<HTMLHeadingElement>(null);
+  const [refocus, setRefocus] = useState(false);
+  const caseRemoved = useCallback(() => setRefocus(true), []);
+  useEffect(() => {
+    if (!refocus) return;
+    casesHeadingRef.current?.focus();
+    setRefocus(false);
+  }, [refocus]);
 
   if (!patient) {
     return (
@@ -122,7 +155,7 @@ export default function PatientDetailPage() {
       </div>
 
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-slate-700">
+        <h2 ref={casesHeadingRef} tabIndex={-1} className="text-sm font-semibold text-slate-700">
           Cases <span className="text-slate-400">({cases.length})</span>
         </h2>
         <button onClick={() => addCase(patient.id)} className="btn-primary">
@@ -146,7 +179,7 @@ export default function PatientDetailPage() {
       ) : (
         <div className="space-y-3">
           {cases.map((c) => (
-            <CaseCard key={c.id} caseId={c.id} />
+            <CaseCard key={c.id} caseId={c.id} onRemoved={caseRemoved} />
           ))}
         </div>
       )}
