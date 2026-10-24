@@ -121,9 +121,10 @@ after every re-ingestion or cleanup. It fails on:
 - two differently named remedies with identical text (one monograph copied
   over another), except known synonyms listed in `SYNONYMS`
   (Ustilago / Ustilago Maydis);
-- a Boericke entry with more than one `Dose.` section (the next monograph ran
-  into it — a second `Dose.` inside a "Non-Homœopathic Uses" block is allowed),
-  or with text after the `Copyright © Médi-T 1999 Home` footer;
+- a Boericke entry with more than one `Dose.` section, counting OCR variants
+  such as `Dose, —` (the next monograph ran into it — a second `Dose.` after a
+  `Non-Homœopathic Uses. —` label is allowed), or with text after the
+  `Copyright © Médi-T 1999 Home` footer;
 - a Boericke polychrest (Sulphur, Lycopodium, Calcarea Carbonica, Pulsatilla,
   Natrum Muriaticum, Sepia, Phosphorus, Arsenicum Album, Nux Vomica, Lachesis)
   shorter than 2000 characters. An entry showing the "not yet available"
@@ -131,9 +132,26 @@ after every re-ingestion or cleanup. It fails on:
 
 ## Repairs to the Boericke text
 
-Fixed by hand from the Médi-T transcription (two independent mirrors of the
-homeoint.org pages were compared word for word before use), in the same
-format as the other entries:
+Fixed from the Médi-T transcription of Boericke published at
+homeoint.org/books/boericmm/. That site is not reachable from our build
+environment, so the pages were taken from two public GitHub repositories that
+keep copies of them, fetched via raw.githubusercontent.com:
+`pragya6/homoeo-quiz` (`*.html`) and `kgsnipes/homeoparser` (`*.htm`). The two
+copies of each page were compared word for word and agree. Each page was
+converted to the format of the other entries:
+
+- the page header (title, author, "Presented by Médi-T") and the monograph's
+  own title line are dropped; the text runs up to the `Copyright ©` line;
+- each `<p>` becomes a paragraph, separated by a blank line; tags are removed,
+  HTML entities decoded and whitespace collapsed;
+- the common name and synonym line are joined onto the start of the first
+  paragraph;
+- a section label `Mind.--` becomes `Mind. — `, any other `--` becomes ` — `,
+  and `œ`/`Œ` become `oe`/`Oe`;
+- `Copyright © Médi-T 1999 Home` is appended to the last paragraph, as in the
+  other Médi-T entries.
+
+The entries repaired (page paths relative to `boericmm/`):
 
 - **Sulphur** held a copy of Sulphur Iodatum's text; it now has its own
   chapter (`s/sulph.htm`).
@@ -142,7 +160,9 @@ format as the other entries:
   **Ilex Aquifolium** (`i/ilx-a.htm`) and **Indigo** (`i/indg.htm`) are separate
   entries.
 - **Juniperus** carried Justicia Adhatoda's sections; it now has its own text
-  (`j/juni-c.htm`). Justicia's own entry was already complete.
+  (`j/juni-c.htm`). Justicia's own entry was intact apart from its
+  `Relationship.` section, which, like most Médi-T entries, the original
+  import dropped.
 
 Unlike most Médi-T-sourced entries, these repaired entries keep their
 `Relationship.` section.

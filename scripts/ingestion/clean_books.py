@@ -86,6 +86,7 @@ AE_OE_RULES = [
     (r"\b([Oo])torrh(?:aa|eea|ea|a)\b", r"\1torrhoea"),
     (r"\b([Hh])(?:a|ae|e)morrh", r"\1aemorrh"),
     (r"\b([Hh])oematuria\b", r"\1aematuria"),  # source typo "Hœmaturia"
+    (r"\b([Oo])zoena\b", r"\1zaena"),          # source typo "Ozœna"
     (r"\b([Dd])yspn(?:aa|ea|oea|a)\b", r"\1yspnoea"),
     (r"\b([Aa])n(?:a|ae|e)mia\b", r"\1naemia"),
     (r"\boedema\b", "oedema"), (r"\bedema\b", "oedema"),
@@ -102,8 +103,9 @@ TOKEN_FIXES = {
 # Mis-decoded characters. The Médi-T pages are cp1252, and some of their text
 # reached us decoded as Latin-1, leaving C1 control characters where the œ/Œ
 # ligatures were ("Diarrh\x9ca", "\x8cdema"). Tyler's PDF text layer uses the
-# U+FFFE non-character for its hyphens ("blood￾poisoning").
-ENCODING_FIXES = {"\x9c": "oe", "\x8c": "Oe", "￾": "-", "\t": " ", "\r": " "}
+# U+FFFE non-character for its hyphens ("blood\ufffepoisoning"). All are written
+# as escapes: the raw characters are invisible and easily lost in an edit.
+ENCODING_FIXES = {"\x9c": "oe", "\x8c": "Oe", "\ufffe": "-", "\t": " ", "\r": " "}
 # Any other C0/C1 control character (newlines are kept: they separate paragraphs).
 CONTROL_CHARS = re.compile(r"[\x00-\x09\x0b-\x1f\x7f-\x9f]")
 
@@ -169,6 +171,7 @@ def main():
         path = os.path.join(BOOKS_DIR, fn)
         book = json.load(open(path))
         for r in book["remedies"]:
+            r["name"] = fix_encoding(r["name"])
             r["text"] = clean_ocr(r["text"])
             if r.get("commonName"):
                 r["commonName"] = clean_ocr(r["commonName"]).strip(" .,-—")

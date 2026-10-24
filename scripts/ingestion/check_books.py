@@ -13,8 +13,9 @@ Checks
   * no duplicate slugs within a book
   * no two differently named remedies with identical text (known synonyms
     excepted) — catches one monograph copied over another
-  * Boericke: at most one "Dose." section per entry (a second one usually means
-    the next monograph ran into this one), and no text after the Médi-T footer
+  * Boericke: at most one "Dose." section per entry, outside a "Non-Homoeopathic
+    Uses" block (a second one usually means the next monograph ran into this
+    one), and no text after the Médi-T footer
   * Boericke: the major polychrests have a full-length chapter
 """
 import glob, json, os, re, sys
@@ -36,10 +37,14 @@ SYNONYMS = [
 # entry is reported as a warning rather than a failure.
 MISSING_NOTICE = "is not yet available in this edition"
 
-BAD_CHARS = re.compile(r"[\u0080-\u009f￾]")
-DOSE_SECTION = re.compile(r"\bDose\.\s*(?:—|--?)")
-# Boericke's "Non-Homoeopathic Uses" block legitimately carries its own Dose.
-NON_HOMOEOPATHIC = re.compile(r"Non-Hom\w*pathic", re.IGNORECASE)
+# Escapes, not raw characters: U+FFFE is invisible and easily lost in an edit.
+BAD_CHARS = re.compile(r"[\u0080-\u009f\ufffe]")
+# Also matches the OCR variants of the label ("Dose, —", "Dose —", "Dosa. ~").
+DOSE_SECTION = re.compile(r"\bDos[ea][.,:;]?\s*[—–~-]", re.IGNORECASE)
+# Boericke's "Non-Homoeopathic Uses. —" block legitimately carries its own Dose,
+# so only the text before that block's label is checked.
+NON_HOMOEOPATHIC_USES = re.compile(
+    r"Non-Hom\w*pathic\s+(?:Preparations\s+and\s+)?Uses?[.,]?\s*[—–-]", re.IGNORECASE)
 MEDIT_FOOTER = "Copyright © Médi-T 1999 Home"
 
 
@@ -94,7 +99,7 @@ def check_book(fn, book, errors, warnings):
             by_text[text].append(r.get("name"))
 
         if book.get("id") == "boericke" and text:
-            own = NON_HOMOEOPATHIC.split(text, 1)[0]
+            own = NON_HOMOEOPATHIC_USES.split(text, 1)[0]
             doses = len(DOSE_SECTION.findall(own))
             if doses > 1:
                 err(f"{label}: {doses} 'Dose.' sections — another monograph may have run into it")
