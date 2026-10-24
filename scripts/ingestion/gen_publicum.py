@@ -8,10 +8,15 @@ Compact schema (expanded in the app loader):
 Rubric ids in the app are positional (`k<index>`). Output is cleaned with
 dedupe_kent.py's rules (one entry per remedy per rubric at its highest grade,
 trailing commas trimmed, duplicate paths merged into the first and the later
-slot kept as a `["", []]` tombstone so ids stay stable).
+slot kept as a `["", []]` tombstone so ids stay stable). The resulting
+retired slots must match RETIRED_RUBRIC_IDS in
+src/features/repertory/repertoryData.ts, or the script exits non-zero without
+writing kent.json.
 """
-import json, os
-from dedupe_kent import dedupe_rubrics, live_count
+import json, os, sys
+# Import the sibling module even under `python3 -I` / `-P` (script dir not on sys.path).
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from dedupe_kent import dedupe_rubrics, live_count, require_aliases_in_sync
 
 SQL = "/tmp/claude-0/-home-user-HOM-COMPASS/8f717a98-08d9-59a0-b17a-c32a39a7349d/scratchpad/oorep.sql"
 REP = "publicum"
@@ -83,6 +88,7 @@ rubrics, dedupe_report = dedupe_rubrics(rubrics, remedies)
 print("dedupe: trimmed", len(dedupe_report["trimmed"]), "| deduped",
       len(dedupe_report["deduped"]), "| merged", len(dedupe_report["merged"]),
       "| retired id aliases:", dedupe_report["aliases"])
+require_aliases_in_sync(rubrics, dedupe_report["aliases"])
 
 # order chapters canonically, unknown ones after, alphabetical
 chap_list = sorted(chapters.keys(),

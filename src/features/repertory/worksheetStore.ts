@@ -48,34 +48,45 @@ export const useWorksheet = create<WorksheetState>()(
     {
       name: 'hom-compass.worksheet',
       storage: safeStorage(),
+      // v1: duplicate Kent rubrics were merged. The remap itself runs in
+      // `merge` on every load, so a future alias in RETIRED_RUBRIC_IDS reaches
+      // existing worksheets without another version bump; bumping to 1 only
+      // makes zustand write the remapped v0 worksheet back once.
       version: 1,
-      // v0 → v1: duplicate rubrics were merged in the Kent data; point saved
-      // items at the surviving rubric (ids of all other rubrics are unchanged).
-      migrate: (persisted, version) => {
-        const state = persisted as Pick<WorksheetState, 'repId' | 'items'>;
-        if (version < 1) state.items = migrateRetiredIds(state.repId, state.items ?? []);
-        return state as WorksheetState;
+      migrate: (persisted) => persisted as WorksheetState,
+      // Point saved items at the surviving rubric (ids of all other rubrics
+      // are unchanged). Retired ids are tombstones, so this never touches a
+      // live rubric.
+      merge: (persisted, current) => {
+        const state = (persisted ?? {}) as Partial<Pick<WorksheetState, 'repId' | 'items'>>;
+        const repId = state.repId ?? current.repId;
+        return {
+          ...current,
+          ...state,
+          repId,
+          items: migrateRetiredIds(repId, state.items ?? current.items),
+        };
       },
     },
   ),
 );
 
-/** Replace retired rubric ids with their surviving rubric, dropping any item
- *  that would then duplicate one already on the worksheet. */
+/** Replace retired rubric ids with their surviving rubric. If that rubric is
+ *  already on the worksheet, the two items become one at the higher intensity
+ *  (in the position of the first), so no intensity a clinician set is lost. */
 export function migrateRetiredIds(
   repId: string | null,
   items: WorksheetItem[],
 ): WorksheetItem[] {
   const aliases = (repId && RETIRED_RUBRIC_IDS[repId]) || {};
-  const seen = new Set<string>();
-  const out: WorksheetItem[] = [];
+  const byId = new Map<string, WorksheetItem>();
   for (const item of items) {
     const rubricId = aliases[item.rubricId] ?? item.rubricId;
-    if (seen.has(rubricId)) continue;
-    seen.add(rubricId);
-    out.push({ ...item, rubricId });
+    const cur = byId.get(rubricId);
+    if (cur) cur.intensity = Math.max(cur.intensity, item.intensity);
+    else byId.set(rubricId, { ...item, rubricId });
   }
-  return out;
+  return [...byId.values()];
 }
 
 /** Keep the worksheet bound to the active repertory; resets it if the chosen

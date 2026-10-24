@@ -22,10 +22,16 @@ src/features/repertory/repertoryData.ts), and saved worksheets store those ids.
 So a merged-away rubric is NOT removed from the array — that would shift every
 later id. Its slot is replaced by a tombstone `["", []]`, which the app skips
 when it expands the file. Every other rubric keeps its index and id. The
-retired ids are printed below as an alias map; the worksheet store migrates
-saved worksheets from the retired id to the surviving one
-(RETIRED_RUBRIC_IDS in repertoryData.ts — keep it in sync if this ever
-reports new merges).
+retired ids are printed below as an alias map; the worksheet store remaps
+saved worksheets from the retired id to the surviving one on every load, using
+RETIRED_RUBRIC_IDS["kent"] in repertoryData.ts (no persist version bump needed).
+
+That constant is checked, not trusted: before writing, the script requires that
+every retired slot in the result has exactly one alias there, pointing at the
+rubric it was merged into, and that every alias there names a retired slot. If
+a new merge appears (or an alias goes stale), it prints what to change and
+exits non-zero without writing. Add the alias to RETIRED_RUBRIC_IDS, then
+re-run.
 
 The file is written back with exactly the original serialisation
 (ensure_ascii=False, separators=(",", ":"), original key order, no trailing
@@ -39,8 +45,9 @@ import os
 import re
 import sys
 
-DEFAULT = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                       "..", "..", "public", "repertory", "kent.json")
+_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
+DEFAULT = os.path.join(_ROOT, "public", "repertory", "kent.json")
+ALIASES_TS = os.path.join(_ROOT, "src", "features", "repertory", "repertoryData.ts")
 
 TOMBSTONE_PATH = ""  # retired slot: keeps later rubric ids stable
 
@@ -108,6 +115,55 @@ def live_count(rubrics):
     return sum(1 for path, _ in rubrics if path != TOMBSTONE_PATH)
 
 
+def known_aliases(ts_path=ALIASES_TS, rep_id="kent"):
+    """RETIRED_RUBRIC_IDS[rep_id] from repertoryData.ts as {retired: surviving}."""
+    with open(ts_path, encoding="utf-8") as f:
+        ts = f.read()
+    const = re.search(r"RETIRED_RUBRIC_IDS\b[^=]*=\s*\{(.*?)\n\};", ts, re.S)
+    if not const:
+        sys.exit(f"cannot find RETIRED_RUBRIC_IDS in {ts_path}")
+    block = re.search(rf"\b{rep_id}\s*:\s*\{{([^}}]*)\}}", const.group(1))
+    if not block:
+        return {}
+    return dict(re.findall(r"['\"]?(k\d+)['\"]?\s*:\s*['\"](k\d+)['\"]", block.group(1)))
+
+
+def alias_problems(rubrics, new_aliases, known):
+    """Mismatches between the cleaned `rubrics` and the app's alias map.
+
+    `new_aliases` are the merges made by this run (retired id -> surviving id).
+    Returns a list of human-readable problems; empty means they agree.
+    """
+    problems = []
+    for old, new in sorted(new_aliases.items()):
+        if known.get(old) != new:
+            problems.append(f"new merge {old} -> {new} is not in RETIRED_RUBRIC_IDS "
+                            f"(has {known.get(old)!r})")
+    tombstones = {f"k{i}" for i, (path, _) in enumerate(rubrics) if path == TOMBSTONE_PATH}
+    for old in sorted(tombstones - set(known)):
+        problems.append(f"retired slot {old} has no alias in RETIRED_RUBRIC_IDS")
+    for old, new in sorted(known.items()):
+        if old not in tombstones:
+            problems.append(f"alias {old} -> {new} names a live rubric (or no slot); "
+                            "saved worksheets would be remapped wrongly")
+        i = int(new[1:])
+        if i >= len(rubrics) or rubrics[i][0] == TOMBSTONE_PATH:
+            problems.append(f"alias {old} -> {new} points at a retired or missing slot")
+    return problems
+
+
+def require_aliases_in_sync(rubrics, new_aliases, ts_path=ALIASES_TS):
+    """Exit non-zero (before anything is written) if the app's aliases disagree."""
+    problems = alias_problems(rubrics, new_aliases, known_aliases(ts_path))
+    if problems:
+        print("\n*** RETIRED RUBRIC IDS OUT OF SYNC — nothing written ***", file=sys.stderr)
+        for p in problems:
+            print("  " + p, file=sys.stderr)
+        print(f"Update RETIRED_RUBRIC_IDS in {os.path.normpath(ts_path)} so saved "
+              "worksheets follow merged rubrics, then re-run.", file=sys.stderr)
+        sys.exit(1)
+
+
 def dump(rep, fh):
     json.dump(rep, fh, ensure_ascii=False, separators=(",", ":"))
 
@@ -140,6 +196,9 @@ def main(path):
         print(f"  k{i} -> k{j} {p!r}: {a} + {n} -> {b} remedies (k{i} retired)")
     if report["aliases"]:
         print("retired id aliases:", json.dumps(report["aliases"]))
+
+    require_aliases_in_sync(rubrics, report["aliases"])
+    print("retired id aliases match RETIRED_RUBRIC_IDS")
 
     out = json.dumps(rep, ensure_ascii=False, separators=(",", ":"))
     if out == raw:

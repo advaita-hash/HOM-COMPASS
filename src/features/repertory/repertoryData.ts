@@ -57,8 +57,10 @@ interface CompactRepertory {
 }
 
 /** Rubric ids retired when duplicate rubrics were merged, per repertory:
- *  retired id → surviving id. Saved worksheets are migrated with this
- *  (see worksheetStore). Kept in sync with scripts/ingestion/dedupe_kent.py. */
+ *  retired id → surviving id. Saved worksheets are remapped with this on every
+ *  load (see worksheetStore), so adding an alias needs no persist version bump.
+ *  scripts/ingestion/dedupe_kent.py and gen_publicum.py read this constant and
+ *  refuse to write kent.json unless it matches the file's retired slots. */
 export const RETIRED_RUBRIC_IDS: Record<string, Record<string, string>> = {
   kent: { k46002: 'k46001', k65312: 'k15312' },
 };
