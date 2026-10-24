@@ -45,6 +45,12 @@ export function encodeNote(note: SharedNote): string {
 /** Upper bounds for each field of a shared note (characters). */
 export const LIMITS = { remedy: 120, body: 20_000, abbr: 40, by: 80, date: 40 } as const;
 
+/**
+ * Longest share token `decodeNote` accepts (characters). The token is base64url
+ * of UTF-8 JSON, so non-Latin text can hit this well before `LIMITS.body`.
+ */
+export const MAX_TOKEN = 60_000;
+
 const isText = (x: unknown, max: number): x is string => typeof x === 'string' && x.length <= max;
 
 /** Shorten to `max` characters with an ellipsis, without splitting a surrogate pair. */
@@ -67,7 +73,8 @@ export function toShareable(note: SharedNote): SharedNote | null {
   if (note.abbr) out.abbr = clip(note.abbr, LIMITS.abbr);
   if (note.date && note.date.length <= LIMITS.date) out.date = note.date;
   if (note.by) out.by = clip(note.by, LIMITS.by);
-  return out;
+  // Measure the real link: 3-byte (e.g. Devanagari, CJK) text grows ~4x when encoded.
+  return encodeNote(out).length <= MAX_TOKEN ? out : null;
 }
 
 /**
@@ -76,7 +83,7 @@ export function toShareable(note: SharedNote): SharedNote | null {
  * yields null. Only known fields are copied; unknown keys are dropped.
  */
 export function decodeNote(token: string): SharedNote | null {
-  if (!token || token.length > 60_000) return null;
+  if (!token || token.length > MAX_TOKEN) return null;
   let obj: unknown;
   try {
     obj = JSON.parse(b64urlDecode(token));

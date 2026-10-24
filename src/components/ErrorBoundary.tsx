@@ -29,9 +29,13 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidUpdate(prevProps: Props, prevState: State) {
-    if (this.state.error && prevProps.resetKey !== this.props.resetKey) {
+    const { error } = this.state;
+    if (error && prevState.error && prevProps.resetKey !== this.props.resetKey) {
+      // Only reset when the route changes while the panel was already showing:
+      // a crash on the commit that navigated *into* a screen must not be retried.
       this.setState({ error: null });
-    } else if (this.state.error && !prevState.error) {
+    } else if (error && error !== prevState.error) {
+      // A new error (incl. crash A → crash B, or "Try again" crashing again).
       // The focused element may have just unmounted; start keyboard users at the panel.
       this.heading.current?.focus();
     }

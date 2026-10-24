@@ -41,25 +41,25 @@ export default function SharedNotePage() {
         {note === undefined ? null : !note ? (
           <div role="alert" className="card p-6">
             <h1 className="text-base font-semibold text-ink/90">This link can’t be opened</h1>
-            <p className="mt-1 text-sm text-ink/60">
+            <p className="mt-1 text-sm text-ink/70">
               The shared note link is invalid, incomplete or has been altered. Ask whoever shared
               it to send the link again.
             </p>
           </div>
         ) : (
           <div className="card p-6">
-            <div className="mb-1 flex items-center gap-2 text-2xs font-semibold uppercase tracking-wide text-violet-500">
+            <div className="mb-1 flex items-center gap-2 text-2xs font-semibold uppercase tracking-wide text-violet-600">
               <NotebookPen className="h-3.5 w-3.5" /> Shared remedy note
             </div>
             <h1 className="break-words font-serif text-2xl font-semibold text-ink/90">
               {canonicalName(note.remedy)}
-              {note.abbr && <span className="ml-2 font-mono text-sm text-ink/45">{note.abbr}</span>}
+              {note.abbr && <span className="ml-2 font-mono text-sm text-ink/70">{note.abbr}</span>}
             </h1>
-            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink/60">
+            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink/70">
               {date && <span>{date}</span>}
               {note.by && (
                 <span className="break-words">
-                  Shared by “{note.by}” <span className="text-ink/45">(not verified)</span>
+                  Shared by “{note.by}” <span className="italic">(not verified)</span>
                 </span>
               )}
             </div>
@@ -69,7 +69,7 @@ export default function SharedNotePage() {
           </div>
         )}
 
-        <p className="mt-4 flex items-start gap-2 text-xs text-ink/60">
+        <p className="mt-4 flex items-start gap-2 text-xs text-ink/70">
           <Link2 className="mt-px h-3 w-3 shrink-0" aria-hidden />
           <span>
             This note is contained in the link itself. Anyone with the link can read it, and it

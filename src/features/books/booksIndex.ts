@@ -148,12 +148,23 @@ export function getBookMeta(id: string | undefined): BookMeta | undefined {
   return BOOKS.find((b) => b.id === id);
 }
 
+/**
+ * Site footer scraped along with the Médi-T Boericke transcription ("Home" is a
+ * nav link). The JSON keeps it — the ingestion checks use it as an end marker —
+ * so it is stripped here, once, for the reader, drug picture and search alike.
+ */
+const SCRAPED_FOOTER_RE = /\s*Copyright\s*©\s*Médi-T\s*1999\s*Home\s*$/;
+
 async function fetchBook(id: string): Promise<BookData> {
   const res = await fetch(`${import.meta.env.BASE_URL}books/${id}.json`);
   if (!res.ok) {
     throw new Error(`Could not load "${id}" (${res.status})`);
   }
-  return res.json();
+  const data: BookData = await res.json();
+  return {
+    ...data,
+    remedies: data.remedies.map((r) => ({ ...r, text: r.text.replace(SCRAPED_FOOTER_RE, '') })),
+  };
 }
 
 /** Shared query options, so useBook and useQueries hit the same cache entry. */
