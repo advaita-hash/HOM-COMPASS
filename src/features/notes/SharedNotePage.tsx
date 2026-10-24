@@ -58,7 +58,7 @@ export default function SharedNotePage() {
             <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink/60">
               {date && <span>{date}</span>}
               {note.by && (
-                <span className="break-all">
+                <span className="break-words">
                   Shared by “{note.by}” <span className="text-ink/45">(not verified)</span>
                 </span>
               )}

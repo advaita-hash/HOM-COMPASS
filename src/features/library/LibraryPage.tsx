@@ -186,7 +186,7 @@ export default function LibraryPage() {
           <span>
             <strong>Demo mode:</strong> books are catalogued locally in your browser
             (titles, categories and metadata persist). Connect a Supabase backend to
-            parse the file contents into the GraphRAG knowledge graph.
+            extract rubrics and remedies from the file contents.
           </span>
         )}
       </div>

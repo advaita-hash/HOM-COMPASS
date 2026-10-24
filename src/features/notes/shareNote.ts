@@ -43,9 +43,32 @@ export function encodeNote(note: SharedNote): string {
 }
 
 /** Upper bounds for each field of a shared note (characters). */
-const LIMITS = { remedy: 120, body: 20_000, abbr: 40, by: 80, date: 40 } as const;
+export const LIMITS = { remedy: 120, body: 20_000, abbr: 40, by: 80, date: 40 } as const;
 
 const isText = (x: unknown, max: number): x is string => typeof x === 'string' && x.length <= max;
+
+/** Shorten to `max` characters with an ellipsis, without splitting a surrogate pair. */
+function clip(s: string, max: number): string {
+  if (s.length <= max) return s;
+  let cut = s.slice(0, max - 1);
+  if (/[\uD800-\uDBFF]$/.test(cut)) cut = cut.slice(0, -1);
+  return cut + '…';
+}
+
+/**
+ * Fit a note to the limits `decodeNote` enforces, so the app never creates a
+ * link it then refuses to open. Optional fields are shortened or dropped;
+ * returns null when the remedy or body itself is too long (or empty) to share.
+ */
+export function toShareable(note: SharedNote): SharedNote | null {
+  if (!note.remedy.trim() || note.remedy.length > LIMITS.remedy) return null;
+  if (!note.body.trim() || note.body.length > LIMITS.body) return null;
+  const out: SharedNote = { v: 1, remedy: note.remedy, body: note.body };
+  if (note.abbr) out.abbr = clip(note.abbr, LIMITS.abbr);
+  if (note.date && note.date.length <= LIMITS.date) out.date = note.date;
+  if (note.by) out.by = clip(note.by, LIMITS.by);
+  return out;
+}
 
 /**
  * Decode and strictly validate a share token. Every field is checked — a link

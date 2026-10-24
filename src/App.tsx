@@ -244,8 +244,8 @@ export default function App() {
 
       <main className="min-w-0 flex-1 overflow-auto pt-[calc(3.5rem+env(safe-area-inset-top))] lg:pt-0">
         <StorageStatusBanner />
-        {/* Keyed by route: a crash stays on its screen and navigating away recovers. */}
-        <ErrorBoundary key={location.pathname}>
+        {/* Reset by route: a crash stays on its screen and navigating away recovers. */}
+        <ErrorBoundary resetKey={location.pathname}>
           <Routes>
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<DashboardPage />} />

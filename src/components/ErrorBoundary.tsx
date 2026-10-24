@@ -1,8 +1,10 @@
-import { Component, type ErrorInfo, type ReactNode } from 'react';
+import { Component, createRef, type ErrorInfo, type ReactNode } from 'react';
 import { AlertTriangle } from 'lucide-react';
 
 interface Props {
   children: ReactNode;
+  /** When this changes while the panel is showing, the boundary resets (e.g. the route). */
+  resetKey?: unknown;
 }
 
 interface State {
@@ -11,11 +13,12 @@ interface State {
 
 /**
  * Catches a render-time crash in its subtree and shows a recovery panel
- * instead of blanking the whole app. Key it by route (or anything that should
- * reset it) so moving elsewhere starts fresh.
+ * instead of blanking the whole app. Pass the route as `resetKey` so moving
+ * elsewhere recovers without remounting healthy screens on every navigation.
  */
 export class ErrorBoundary extends Component<Props, State> {
   state: State = { error: null };
+  private heading = createRef<HTMLHeadingElement>();
 
   static getDerivedStateFromError(error: unknown): State {
     return { error: error instanceof Error ? error : new Error(String(error)) };
@@ -23,6 +26,15 @@ export class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: unknown, info: ErrorInfo) {
     console.error('Screen crashed:', error, info.componentStack);
+  }
+
+  componentDidUpdate(prevProps: Props, prevState: State) {
+    if (this.state.error && prevProps.resetKey !== this.props.resetKey) {
+      this.setState({ error: null });
+    } else if (this.state.error && !prevState.error) {
+      // The focused element may have just unmounted; start keyboard users at the panel.
+      this.heading.current?.focus();
+    }
   }
 
   private reset = () => this.setState({ error: null });
@@ -35,7 +47,13 @@ export class ErrorBoundary extends Component<Props, State> {
       <div className="flex min-h-full items-center justify-center px-4 py-12">
         <div role="alert" className="card w-full max-w-md p-6 text-center">
           <AlertTriangle className="mx-auto h-8 w-8 text-amber-500" aria-hidden />
-          <h1 className="mt-3 text-lg font-semibold text-ink/90">Something went wrong on this screen.</h1>
+          <h1
+            ref={this.heading}
+            tabIndex={-1}
+            className="mt-3 text-lg font-semibold text-ink/90 focus:outline-none"
+          >
+            Something went wrong on this screen.
+          </h1>
           {error.message && (
             <p className="mt-2 break-words text-xs text-ink/60">{error.message}</p>
           )}

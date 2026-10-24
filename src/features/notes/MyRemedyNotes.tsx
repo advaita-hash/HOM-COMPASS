@@ -8,7 +8,7 @@ import {
   useDeleteRemedyNote,
   useRemedyNotes,
 } from './useCommonRoom';
-import { buildShareUrl, useNoteVisibility } from './shareNote';
+import { buildShareUrl, toShareable, useNoteVisibility } from './shareNote';
 import type { RemedyNoteEntry } from '../../lib/commonRoom';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
@@ -26,7 +26,7 @@ const NO_IDENTIFIERS = 'Don’t include patient names or other identifying detai
 /**
  * One note with its share toggle and link. Creating a link takes a snapshot
  * of the note that anyone with the link can read; it can't be withdrawn.
- * Switching back to private only hides the share option on this device.
+ * "Hide share link" only hides the share option on this device.
  */
 function NoteItem({
   note,
@@ -47,7 +47,8 @@ function NoteItem({
   const [confirmShare, setConfirmShare] = useState(false);
   const cancelShare = useCallback(() => setConfirmShare(false), []);
 
-  const shareUrl = buildShareUrl({
+  // Null when the note is too long to fit in a link the recipient can open.
+  const shareable = toShareable({
     v: 1,
     remedy,
     abbr,
@@ -55,8 +56,10 @@ function NoteItem({
     date: note.visit_date ?? note.created_at,
     by,
   });
+  const shareUrl = shareable ? buildShareUrl(shareable) : null;
 
   async function copy() {
+    if (!shareUrl) return;
     try {
       await navigator.clipboard.writeText(shareUrl);
       setCopied(true);
@@ -86,7 +89,8 @@ function NoteItem({
       <div className="mt-2 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-2">
         <button
           onClick={() => (isPublic ? setPublic(note.id, false) : setConfirmShare(true))}
-          className={`tap inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+          disabled={!isPublic && !shareUrl}
+          className={`tap inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
             isPublic
               ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
               : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
@@ -97,11 +101,16 @@ function NoteItem({
               : 'Create a share link: a snapshot of this note that anyone with the link can read. It can’t be withdrawn later.'
           }
         >
-          {isPublic ? <Globe className="h-3.5 w-3.5" /> : <Lock className="h-3.5 w-3.5" />}
-          {isPublic ? 'Link created' : 'Private — create share link'}
+          {/* The glyph shows the status; the label names what pressing does. */}
+          {isPublic ? <Globe className="h-3.5 w-3.5" aria-hidden /> : <Lock className="h-3.5 w-3.5" aria-hidden />}
+          {isPublic ? 'Hide share link' : 'Create share link'}
         </button>
 
-        {isPublic && (
+        {!shareUrl && (
+          <span className="text-2xs text-ink/60">This note is too long to share as a link.</span>
+        )}
+
+        {isPublic && shareUrl && (
           <>
             <button
               onClick={copy}
@@ -112,13 +121,14 @@ function NoteItem({
             </button>
             <input
               readOnly
+              aria-label="Share link"
               value={shareUrl}
               onFocus={(e) => e.currentTarget.select()}
               className="min-w-0 flex-1 truncate rounded border border-slate-200 bg-slate-50 px-2 py-1 text-2xs text-slate-500"
             />
             <p className="w-full text-2xs leading-relaxed text-ink/60">
               Anyone with this link can read this snapshot of the note. It can’t be withdrawn —
-              switching back to private only hides the link on this device.
+              “Hide share link” only hides it on this device.
             </p>
             <p className="flex w-full items-start gap-1 text-2xs leading-relaxed text-amber-700">
               <AlertTriangle className="mt-px h-3 w-3 shrink-0" aria-hidden />
