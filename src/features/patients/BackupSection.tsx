@@ -118,12 +118,12 @@ export function BackupSection() {
           <h2 id="backup-heading" className="text-base font-semibold text-ink/90">
             Backup
           </h2>
-          <p className="mt-1 text-sm text-ink/60">
+          <p className="mt-1 text-sm text-ink/70">
             Patient records are saved only in this browser on this device. They aren’t uploaded or synced, so
             clearing site data, a private window, or a new browser or device starts empty. Export a backup regularly
             and keep the file somewhere safe — it contains patient details.
           </p>
-          <p role="status" className="mt-2 text-xs text-ink/45">
+          <p role="status" className="mt-2 text-xs text-ink/70">
             {lastBackup ? `Last backup: ${relativeDay(lastBackup, now)}` : 'No backup yet'}
             {justExported && ' · Backup exported, check your downloads'}
           </p>

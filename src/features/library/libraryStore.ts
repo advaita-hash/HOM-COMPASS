@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { safeStorage } from '../../lib/safeStorage';
+import { persistedObject, safeStorage } from '../../lib/safeStorage';
 
 export type BookCategory = 'REPERTORY' | 'MATERIA_MEDICA' | 'OTHER';
 
@@ -41,6 +41,18 @@ interface LibraryState {
   updateBook: (id: string, patch: Partial<Book>) => void;
 }
 
+const BOOK_STRINGS = ['id', 'title', 'author', 'category', 'fileName', 'mimeType', 'status', 'addedAt'] as const;
+
+function isBook(b: unknown): b is Book {
+  if (typeof b !== 'object' || b === null) return false;
+  const o = b as Record<string, unknown>;
+  return (
+    BOOK_STRINGS.every((k) => typeof o[k] === 'string') &&
+    typeof o.sizeBytes === 'number' &&
+    (o.nodeCount === undefined || typeof o.nodeCount === 'number')
+  );
+}
+
 /** Small unique id without external deps (crypto when available). */
 function makeId(): string {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
@@ -69,6 +81,14 @@ export const useLibraryStore = create<LibraryState>()(
           books: get().books.map((b) => (b.id === id ? { ...b, ...patch } : b)),
         }),
     }),
-    { name: 'hom-compass.library', storage: safeStorage() },
+    {
+      name: 'hom-compass.library',
+      storage: safeStorage(),
+      // keep only well-formed book records
+      merge: (persisted, current) => {
+        const raw = persistedObject(persisted).books;
+        return { ...current, books: Array.isArray(raw) ? raw.filter(isBook) : current.books };
+      },
+    },
   ),
 );

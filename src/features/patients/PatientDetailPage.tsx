@@ -57,7 +57,7 @@ function CaseCard({ caseId, onRemoved }: { caseId: string; onRemoved: () => void
           })
         }
         rows={4}
-        placeholder="Anxiety about health&#10;Worse warmth&#10;Craves salt"
+        placeholder="Add symptoms, one per line"
         className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none"
       />
 

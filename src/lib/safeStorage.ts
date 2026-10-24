@@ -11,12 +11,17 @@ import { createJSONStorage, type StateStorage } from 'zustand/middleware';
 // ---------------------------------------------------------------------------
 
 interface StorageHealth {
-  /** Key of the last write that failed, or null while everything saves. */
-  failedKey: string | null;
-  reason: string | null;
+  /**
+   * Every key whose last read or write failed, with a reason for the user.
+   * Tracked per key so one store recovering never hides another that is still
+   * unsaved. '*' is the startup probe.
+   */
+  failed: Record<string, string>;
 }
 
-export const useStorageHealth = create<StorageHealth>(() => ({ failedKey: null, reason: null }));
+export const useStorageHealth = create<StorageHealth>(() => ({ failed: {} }));
+
+export const PROBE_KEY = '*';
 
 function describe(err: unknown): string {
   const name = (err as { name?: string })?.name ?? '';
@@ -26,23 +31,35 @@ function describe(err: unknown): string {
   return 'This browser is blocking storage (private window or site data turned off).';
 }
 
+function markFailed(name: string, err: unknown): void {
+  useStorageHealth.setState((s) => ({ failed: { ...s.failed, [name]: describe(err) } }));
+}
+
+/** A real write succeeded: clear that key, and the probe (storage works). */
+function markOk(name: string): void {
+  const { failed } = useStorageHealth.getState();
+  if (!(name in failed) && !(PROBE_KEY in failed)) return;
+  const rest = { ...failed };
+  delete rest[name];
+  delete rest[PROBE_KEY];
+  useStorageHealth.setState({ failed: rest });
+}
+
 const guarded: StateStorage = {
   getItem: (name) => {
     try {
       return localStorage.getItem(name);
     } catch (err) {
-      useStorageHealth.setState({ failedKey: name, reason: describe(err) });
+      markFailed(name, err);
       return null;
     }
   },
   setItem: (name, value) => {
     try {
       localStorage.setItem(name, value);
-      if (useStorageHealth.getState().failedKey === name) {
-        useStorageHealth.setState({ failedKey: null, reason: null });
-      }
+      markOk(name);
     } catch (err) {
-      useStorageHealth.setState({ failedKey: name, reason: describe(err) });
+      markFailed(name, err);
     }
   },
   removeItem: (name) => {
@@ -59,6 +76,18 @@ export function safeStorage<S>() {
   return createJSONStorage<S>(() => guarded);
 }
 
+/**
+ * The persisted state as a plain object ({} for anything else). For a store's
+ * `merge`, which should copy only fields of the right type from it: storage
+ * can hold anything (hand-edited, damaged, or restored from an older backup),
+ * and zustand's default merge would copy wrong shapes straight into the store.
+ */
+export function persistedObject(persisted: unknown): Record<string, unknown> {
+  return typeof persisted === 'object' && persisted !== null && !Array.isArray(persisted)
+    ? (persisted as Record<string, unknown>)
+    : {};
+}
+
 /** Check once at startup that writes work at all. */
 export function probeStorage(): boolean {
   try {
@@ -67,7 +96,7 @@ export function probeStorage(): boolean {
     localStorage.removeItem(k);
     return true;
   } catch (err) {
-    useStorageHealth.setState({ failedKey: '*', reason: describe(err) });
+    markFailed(PROBE_KEY, err);
     return false;
   }
 }

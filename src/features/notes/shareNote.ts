@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { safeStorage } from '../../lib/safeStorage';
+import { persistedObject, safeStorage } from '../../lib/safeStorage';
 
 // ---------------------------------------------------------------------------
 // Shareable remedy notes — fully client-side, no backend.
@@ -126,6 +126,16 @@ export const useNoteVisibility = create<VisibilityState>()(
         set({ publicIds });
       },
     }),
-    { name: 'hom-compass.note-visibility', storage: safeStorage() },
+    {
+      name: 'hom-compass.note-visibility',
+      storage: safeStorage(),
+      // keep only `id: true` entries
+      merge: (persisted, current) => {
+        const raw = persistedObject(persisted).publicIds;
+        const publicIds: Record<string, true> = {};
+        for (const [id, v] of Object.entries(persistedObject(raw))) if (v === true) publicIds[id] = true;
+        return { ...current, publicIds };
+      },
+    },
   ),
 );

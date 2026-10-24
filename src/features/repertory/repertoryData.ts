@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { Grade, Repertory, RubricRemedy } from './types';
-import { safeStorage } from '../../lib/safeStorage';
+import { persistedObject, safeStorage } from '../../lib/safeStorage';
 
 export interface RepertoryOption {
   id: string;
@@ -35,7 +35,15 @@ interface SelectionState {
 export const useRepertorySelection = create<SelectionState>()(
   persist(
     (set) => ({ id: 'kent', setId: (id) => set({ id }) }),
-    { name: 'hom-compass.repertory', storage: safeStorage() },
+    {
+      name: 'hom-compass.repertory',
+      storage: safeStorage(),
+      // an unknown or damaged id falls back to the default repertory
+      merge: (persisted, current) => {
+        const id = persistedObject(persisted).id;
+        return { ...current, id: REPERTORIES.some((r) => r.id === id) ? (id as string) : current.id };
+      },
+    },
   ),
 );
 

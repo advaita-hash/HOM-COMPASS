@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { safeStorage } from '../../lib/safeStorage';
+import { persistedObject, safeStorage } from '../../lib/safeStorage';
 
 /** Whether the user has dismissed the one-time clinical disclaimer notice. */
 interface DisclaimerAckState {
@@ -12,5 +12,6 @@ export const useDisclaimerAck = create<DisclaimerAckState>()(
   persist((set) => ({ acknowledged: false, acknowledge: () => set({ acknowledged: true }) }), {
     name: 'hom-compass.disclaimer-ack',
     storage: safeStorage(),
+    merge: (persisted, current) => ({ ...current, acknowledged: persistedObject(persisted).acknowledged === true }),
   }),
 );
