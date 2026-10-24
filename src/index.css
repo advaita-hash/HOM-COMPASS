@@ -1,0 +1,199 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Colour tokens (light + dark) are injected by design/tokens.js. */
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    @apply bg-base font-sans text-base text-ink/90 antialiased;
+    margin: 0;
+    /* we draw our own pressed states */
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  ::selection {
+    background: rgb(var(--accent) / 0.22);
+  }
+
+  /* Brand focus ring for keyboard users (follows each element's radius). */
+  :focus-visible {
+    outline: 2px solid rgb(var(--accent));
+    outline-offset: 2px;
+  }
+
+  /* Text fields: hairline at rest, brand border + soft glow on focus. */
+  input:not([type='checkbox']):not([type='radio']):not([type='range']),
+  textarea,
+  select {
+    background-color: rgb(var(--bg-surface));
+    border-color: rgb(var(--ink) / 0.1);
+    transition:
+      border-color 0.3s cubic-bezier(0.25, 1, 0.5, 1),
+      box-shadow 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+  }
+  input:not([type='checkbox']):not([type='radio']):not([type='range']):focus,
+  textarea:focus,
+  select:focus {
+    outline: none;
+    border-color: rgb(var(--accent));
+    box-shadow: 0 0 0 4px rgb(var(--accent) / 0.15);
+  }
+  input:not([type]),
+  input[type='text'],
+  input[type='search'],
+  input[type='email'],
+  input[type='password'],
+  input[type='number'],
+  select {
+    min-height: 44px; /* HIG minimum touch target */
+  }
+  /* Search fields: drop the UA chrome (blue cancel ✕, iOS pill); we draw our own. */
+  input[type='search'] {
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  input[type='search']::-webkit-search-cancel-button,
+  input[type='search']::-webkit-search-decoration {
+    -webkit-appearance: none;
+    display: none;
+  }
+
+  /* Same specificity as Tailwind preflight's rule, which it follows, so it wins.
+     0.45 = the tokens' placeholder level (slate-400): clearly fainter than
+     entered text (0.9) in both themes, yet not lighter than the old grey. */
+  input::placeholder,
+  textarea::placeholder {
+    color: rgb(var(--ink) / 0.45);
+    opacity: 1;
+  }
+
+  input[type='checkbox'],
+  input[type='radio'] {
+    accent-color: rgb(var(--accent));
+  }
+
+  /* Respect Reduce Motion: no springs, no scaling. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer components {
+  /* Standard page column with an 8pt-grid gutter. */
+  .page {
+    @apply mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 md:px-8 md:py-8;
+  }
+
+  /* Card / surface layer: soft elevation + 10% ink hairline. */
+  .card {
+    @apply rounded-2xl border border-ink/10 bg-surface shadow-card;
+  }
+
+  /* Vibrant material for bars, sidebars and sheet headers. */
+  .material {
+    background-color: rgb(var(--bg-surface) / 0.72);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    backdrop-filter: blur(20px) saturate(180%);
+  }
+
+  /* Thick material for controls floating over busy content (tray, toasts). */
+  .material-thick {
+    background-color: rgb(var(--bg-surface) / 0.88);
+    -webkit-backdrop-filter: blur(30px) saturate(180%);
+    backdrop-filter: blur(30px) saturate(180%);
+  }
+
+  /* ---- Buttons ---------------------------------------------------------- */
+  .btn {
+    @apply relative inline-flex min-h-[44px] select-none items-center justify-center gap-2 rounded-[10px] px-4 py-2 text-subhead font-medium leading-5;
+    transition:
+      transform 0.3s cubic-bezier(0.25, 1, 0.5, 1),
+      opacity 0.3s cubic-bezier(0.25, 1, 0.5, 1),
+      background-color 0.3s cubic-bezier(0.25, 1, 0.5, 1),
+      color 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+  }
+  .btn:active:not(:disabled) {
+    transform: scale(0.96);
+    opacity: 0.8;
+    transition-duration: 0.1s;
+  }
+  .btn:disabled {
+    @apply pointer-events-none opacity-40;
+  }
+
+  /* Primary: filled brand. */
+  .btn-primary {
+    @apply btn bg-accent text-on-accent hover:bg-accent-hover;
+  }
+  /* Secondary: translucent brand fill, brand-tinted label. */
+  .btn-secondary {
+    @apply btn bg-accent/[0.12] text-brand-700 hover:bg-accent/[0.18];
+  }
+  /* Borderless: no fill, brand label, luminance wash on hover. */
+  .btn-ghost {
+    @apply btn bg-transparent text-brand-600 hover:bg-accent/[0.08];
+  }
+
+  /* Standalone text field. */
+  .input {
+    @apply min-h-[44px] w-full rounded-lg border border-ink/10 bg-surface px-3 text-subhead text-ink/90;
+  }
+
+  /* ---- Interaction ------------------------------------------------------ */
+  /* Tappable cards / rows: lift on hover (pointer devices), press on tap. */
+  .pressable {
+    transition:
+      transform 0.3s cubic-bezier(0.25, 1, 0.5, 1),
+      opacity 0.3s cubic-bezier(0.25, 1, 0.5, 1),
+      box-shadow 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+  }
+  @media (hover: hover) {
+    .pressable:hover {
+      transform: scale(1.015);
+    }
+  }
+  .pressable:active {
+    transform: scale(0.96);
+    opacity: 0.8;
+    transition-duration: 0.1s;
+  }
+
+  /*
+   * 44×44 hit area for small controls without changing how they look:
+   * an invisible pseudo-element centred on the control, at least 44px.
+   */
+  .tap {
+    position: relative;
+  }
+  .tap::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: max(100%, 44px);
+    height: max(100%, 44px);
+    transform: translate(-50%, -50%);
+  }
+
+  /* Hairline separator (10% ink). */
+  .hairline {
+    border-color: rgb(var(--ink) / 0.1);
+  }
+}
