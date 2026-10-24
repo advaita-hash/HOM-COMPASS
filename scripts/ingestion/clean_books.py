@@ -85,6 +85,7 @@ AE_OE_RULES = [
     (r"\b([Ll])eucorrh(?:aa|eea|ea|cea|a)\b", r"\1eucorrhoea"),
     (r"\b([Oo])torrh(?:aa|eea|ea|a)\b", r"\1torrhoea"),
     (r"\b([Hh])(?:a|ae|e)morrh", r"\1aemorrh"),
+    (r"\b([Hh])oematuria\b", r"\1aematuria"),  # source typo "Hœmaturia"
     (r"\b([Dd])yspn(?:aa|ea|oea|a)\b", r"\1yspnoea"),
     (r"\b([Aa])n(?:a|ae|e)mia\b", r"\1naemia"),
     (r"\boedema\b", "oedema"), (r"\bedema\b", "oedema"),
@@ -98,13 +99,26 @@ TOKEN_FIXES = {
     "jon@sia": "jonesia", "hypere@sthesia": "hyperaesthesia",
 }
 
+# Mis-decoded characters. The Médi-T pages are cp1252, and some of their text
+# reached us decoded as Latin-1, leaving C1 control characters where the œ/Œ
+# ligatures were ("Diarrh\x9ca", "\x8cdema"). Tyler's PDF text layer uses the
+# U+FFFE non-character for its hyphens ("blood￾poisoning").
+ENCODING_FIXES = {"\x9c": "oe", "\x8c": "Oe", "￾": "-", "\t": " ", "\r": " "}
+# Any other C0/C1 control character (newlines are kept: they separate paragraphs).
+CONTROL_CHARS = re.compile(r"[\x00-\x09\x0b-\x1f\x7f-\x9f]")
+
+def fix_encoding(text):
+    for bad, good in ENCODING_FIXES.items():
+        text = text.replace(bad, good)
+    return CONTROL_CHARS.sub("", text)
+
 def preserve_case(src, repl):
     return repl.capitalize() if src[:1].isupper() else repl
 
 def clean_ocr(text):
     if not text:
         return text
-    t = text
+    t = fix_encoding(text)
 
     # 1. Exact token fixes (before @→oe generalisation).
     for bad, good in TOKEN_FIXES.items():
