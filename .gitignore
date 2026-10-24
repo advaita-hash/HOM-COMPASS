@@ -45,3 +45,7 @@ coverage
 *.tsbuildinfo
 vite.config.js
 vite.config.d.ts
+
+# Python bytecode (ingestion scripts)
+__pycache__/
+*.pyc
