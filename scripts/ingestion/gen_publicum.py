@@ -4,8 +4,14 @@ Compact schema (expanded in the app loader):
   { id, title, author, source, note, license, chapters:[...],
     remedies:[fullname,...],           # index = remedy id in `r`
     rubrics:[ [fullpath, [[remIdx,grade],...]], ... ] }
+
+Rubric ids in the app are positional (`k<index>`). Output is cleaned with
+dedupe_kent.py's rules (one entry per remedy per rubric at its highest grade,
+trailing commas trimmed, duplicate paths merged into the first and the later
+slot kept as a `["", []]` tombstone so ids stay stable).
 """
 import json, os
+from dedupe_kent import dedupe_rubrics, live_count
 
 SQL = "/tmp/claude-0/-home-user-HOM-COMPASS/8f717a98-08d9-59a0-b17a-c32a39a7349d/scratchpad/oorep.sql"
 REP = "publicum"
@@ -72,6 +78,12 @@ for rid, path in sorted(rubric_path.items()):
     compact = [[idx_of(remid), w] for remid, w in rems]
     rubrics.append([path, compact])
 
+# 5. clean: duplicate remedies per rubric, trailing commas, duplicate paths
+rubrics, dedupe_report = dedupe_rubrics(rubrics, remedies)
+print("dedupe: trimmed", len(dedupe_report["trimmed"]), "| deduped",
+      len(dedupe_report["deduped"]), "| merged", len(dedupe_report["merged"]),
+      "| retired id aliases:", dedupe_report["aliases"])
+
 # order chapters canonically, unknown ones after, alphabetical
 chap_list = sorted(chapters.keys(),
     key=lambda c: (canon_idx.get(c.lower(), 999), c.lower()))
@@ -85,7 +97,7 @@ rep = {
     "note": "Full, properly-graded English repertory (grades 1–4) from the open OOREP database.",
     "compact": True,
     "chapters": chap_list,
-    "rubricCount": len(rubrics),
+    "rubricCount": live_count(rubrics),
     "remedies": remedies,
     "rubrics": rubrics,
 }
@@ -99,5 +111,5 @@ with open(os.path.join(_OUT,"kent.json"),"w") as f:
 print("rubrics:", len(rubrics), "| remedies used:", len(remedies),
       "| chapters:", len(chap_list))
 print("chapters:", chap_list)
-tot = sum(len(r[1]) for r in rubrics)
+tot = sum(len(r[1]) for r in rubrics)  # tombstones contribute 0
 print("total graded entries:", tot)

@@ -26,9 +26,10 @@ function RemedyChips({
 }) {
   return (
     <div className="mt-1 flex flex-wrap gap-x-2 gap-y-1 text-sm">
-      {rubric.remedies.map((r) => (
+      {rubric.remedies.map((r, i) => (
         <button
-          key={r.name}
+          // position + name: unique even if a source lists a remedy twice
+          key={`${i}:${r.name}`}
           onClick={() => onRemedy(r.name)}
           className={`${GRADE_CLASS[r.grade as Grade]} hover:underline`}
           title={`grade ${r.grade} — Materia Medica support`}

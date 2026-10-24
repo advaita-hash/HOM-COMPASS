@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { Repertory } from './types';
+import type { Grade, Repertory, RubricRemedy } from './types';
 import { safeStorage } from '../../lib/safeStorage';
 
 export interface RepertoryOption {
@@ -40,7 +40,9 @@ export const useRepertorySelection = create<SelectionState>()(
 );
 
 /** Compact on-disk form (remedy dictionary + integer indices) for large
- *  repertories, expanded here into the full Repertory shape. */
+ *  repertories, expanded here into the full Repertory shape. A slot whose path
+ *  is "" is a retired rubric (merged into an earlier duplicate); it is skipped
+ *  but still counts as a position, so every other rubric keeps its id. */
 interface CompactRepertory {
   compact: true;
   id: string;
@@ -54,6 +56,25 @@ interface CompactRepertory {
   rubrics: [string, [number, number][]][];
 }
 
+/** Rubric ids retired when duplicate rubrics were merged, per repertory:
+ *  retired id → surviving id. Saved worksheets are migrated with this
+ *  (see worksheetStore). Kept in sync with scripts/ingestion/dedupe_kent.py. */
+export const RETIRED_RUBRIC_IDS: Record<string, Record<string, string>> = {
+  kent: { k46002: 'k46001', k65312: 'k15312' },
+};
+
+/** One entry per remedy, at its highest listed grade, in first-listed order.
+ *  The source data occasionally lists a remedy twice in the same rubric. */
+function uniqueRemedies(remedies: RubricRemedy[]): RubricRemedy[] {
+  const byName = new Map<string, RubricRemedy>();
+  for (const r of remedies) {
+    const cur = byName.get(r.name);
+    if (!cur) byName.set(r.name, { ...r });
+    else if (r.grade > cur.grade) cur.grade = r.grade;
+  }
+  return [...byName.values()];
+}
+
 function expand(c: CompactRepertory): Repertory {
   // Canonical chapter order (Mind, Vertigo, Head, …) so results follow the
   // repertory schema — Chapter → Rubric → Sub-rubric — not alphabetically.
@@ -64,11 +85,14 @@ function expand(c: CompactRepertory): Repertory {
       ord: i, // source order = true rubric/sub-rubric sequence within a chapter
       chapter: fullpath.split(',')[0].trim(),
       rubric: fullpath,
-      remedies: rems.map(([idx, grade]) => ({
-        name: c.remedies[idx],
-        grade: grade as 1 | 2 | 3 | 4,
-      })),
+      remedies: uniqueRemedies(
+        rems.map(([idx, grade]) => ({
+          name: c.remedies[idx],
+          grade: grade as Grade,
+        })),
+      ),
     }))
+    .filter((r) => r.rubric !== '') // retired slot — index (and so ids) preserved above
     .sort((a, b) => {
       const ca = chapterOrder.get(a.chapter.toLowerCase()) ?? Number.MAX_SAFE_INTEGER;
       const cb = chapterOrder.get(b.chapter.toLowerCase()) ?? Number.MAX_SAFE_INTEGER;
@@ -88,11 +112,19 @@ function expand(c: CompactRepertory): Repertory {
   };
 }
 
+/** Full-form repertories get the same per-rubric remedy de-duplication. */
+function normalise(r: Repertory): Repertory {
+  return {
+    ...r,
+    rubrics: r.rubrics.map((rb) => ({ ...rb, remedies: uniqueRemedies(rb.remedies) })),
+  };
+}
+
 async function fetchRepertory(id: string): Promise<Repertory> {
   const res = await fetch(`${import.meta.env.BASE_URL}repertory/${id}.json`);
   if (!res.ok) throw new Error(`Could not load repertory "${id}" (${res.status})`);
   const data = await res.json();
-  return data.compact ? expand(data as CompactRepertory) : (data as Repertory);
+  return data.compact ? expand(data as CompactRepertory) : normalise(data as Repertory);
 }
 
 export function useRepertory() {
