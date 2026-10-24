@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { safeStorage } from '../../lib/safeStorage';
 
 /**
  * The current case's symptoms, stored as INDIVIDUAL entries (one per line) and
@@ -24,7 +25,7 @@ export const useCaseDraft = create<CaseDraftState>()(
         set({ symptoms: get().symptoms.filter((_, i) => i !== index) }),
       clear: () => set({ symptoms: [] }),
     }),
-    { name: 'hom-compass.casedraft' },
+    { name: 'hom-compass.casedraft', storage: safeStorage() },
   ),
 );
 

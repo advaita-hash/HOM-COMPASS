@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { safeStorage } from '../../lib/safeStorage';
 
 // ---------------------------------------------------------------------------
 // Shareable remedy notes — fully client-side, no backend.
@@ -76,6 +77,6 @@ export const useNoteVisibility = create<VisibilityState>()(
         set({ publicIds });
       },
     }),
-    { name: 'hom-compass.note-visibility' },
+    { name: 'hom-compass.note-visibility', storage: safeStorage() },
   ),
 );

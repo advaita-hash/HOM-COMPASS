@@ -39,6 +39,7 @@ import SharedNotePage from './features/notes/SharedNotePage';
 import ComparePage from './features/compare/ComparePage';
 import { useCompare } from './features/compare/compareStore';
 import { SegmentedControl } from './components/ui/SegmentedControl';
+import { StorageStatusBanner } from './components/StorageStatusBanner';
 import { type Appearance, useAppearance, useApplyAppearance } from './lib/appearance';
 
 // ---------------------------------------------------------------------------
@@ -221,6 +222,7 @@ export default function App() {
       <Sidebar open={menuOpen} onClose={() => setMenuOpen(false)} />
 
       <main className="min-w-0 flex-1 overflow-auto pt-[calc(3.5rem+env(safe-area-inset-top))] lg:pt-0">
+        <StorageStatusBanner />
         <Routes>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<DashboardPage />} />

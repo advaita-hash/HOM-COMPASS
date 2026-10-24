@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { Repertory } from './types';
+import { safeStorage } from '../../lib/safeStorage';
 
 export interface RepertoryOption {
   id: string;
@@ -34,7 +35,7 @@ interface SelectionState {
 export const useRepertorySelection = create<SelectionState>()(
   persist(
     (set) => ({ id: 'kent', setId: (id) => set({ id }) }),
-    { name: 'hom-compass.repertory' },
+    { name: 'hom-compass.repertory', storage: safeStorage() },
   ),
 );
 

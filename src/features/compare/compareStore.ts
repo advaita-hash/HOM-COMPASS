@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { safeStorage } from '../../lib/safeStorage';
 
 // ---------------------------------------------------------------------------
 // Remedies chosen for side-by-side comparison. An item is a remedy *in a
@@ -46,6 +47,6 @@ export const useCompare = create<CompareState>()(
         set({ items: get().items.filter((i) => keyOf(i.book, i.slug) !== keyOf(book, slug)) }),
       clear: () => set({ items: [] }),
     }),
-    { name: 'hom-compass.compare' },
+    { name: 'hom-compass.compare', storage: safeStorage() },
   ),
 );

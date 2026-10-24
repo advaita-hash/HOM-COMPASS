@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { Repertory, RemedyScore, Rubric, WorksheetItem } from './types';
+import { safeStorage } from '../../lib/safeStorage';
 
 interface WorksheetState {
   /** Repertory the current worksheet belongs to (rubric ids are per-repertory). */
@@ -43,7 +44,7 @@ export const useWorksheet = create<WorksheetState>()(
       clear: () => set({ items: [] }),
       has: (rubricId) => get().items.some((i) => i.rubricId === rubricId),
     }),
-    { name: 'hom-compass.worksheet' },
+    { name: 'hom-compass.worksheet', storage: safeStorage() },
   ),
 );
 

@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { safeStorage } from './safeStorage';
 
 // ---------------------------------------------------------------------------
 // Appearance (Light / Dark / Auto), as in Apple's Settings › Display.
@@ -18,6 +19,7 @@ const CHROME = { light: '#f4f9f8', dark: '#0c1d1a' } as const;
 export const useAppearance = create<{ mode: Appearance; setMode: (m: Appearance) => void }>()(
   persist((set) => ({ mode: 'system', setMode: (mode) => set({ mode }) }), {
     name: APPEARANCE_KEY,
+    storage: safeStorage(),
   }),
 );
 

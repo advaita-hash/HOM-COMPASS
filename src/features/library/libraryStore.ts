@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { safeStorage } from '../../lib/safeStorage';
 
 export type BookCategory = 'REPERTORY' | 'MATERIA_MEDICA' | 'OTHER';
 
@@ -68,6 +69,6 @@ export const useLibraryStore = create<LibraryState>()(
           books: get().books.map((b) => (b.id === id ? { ...b, ...patch } : b)),
         }),
     }),
-    { name: 'hom-compass.library' },
+    { name: 'hom-compass.library', storage: safeStorage() },
   ),
 );

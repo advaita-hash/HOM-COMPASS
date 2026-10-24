@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { safeStorage } from '../../lib/safeStorage';
 
 export interface Patient {
   id: string;
@@ -71,6 +72,6 @@ export const usePatients = create<PatientsState>()(
           .cases.filter((c) => c.patient_id === patientId)
           .sort((a, b) => b.visit_date.localeCompare(a.visit_date)),
     }),
-    { name: 'hom-compass.patients' },
+    { name: 'hom-compass.patients', storage: safeStorage() },
   ),
 );
