@@ -7,7 +7,7 @@ import MyRemedyNotes from '../notes/MyRemedyNotes';
 import { RemedyNotepad } from '../notepad/RemedyNotepad';
 import { canonicalName } from '../../lib/remedyName';
 import { REMEDIES } from '../../data/remedies';
-import ABBREV from '../../data/remedyAbbrev.json';
+import { REMEDY_TABLE, resolveRemedy } from '../../lib/remedyResolve';
 import { useRepertoryById } from '../repertory/repertoryData';
 import { useQueries } from '@tanstack/react-query';
 import { BOOKS, bookQueryOptions, findBookRemedy } from '../books/booksIndex';
@@ -23,72 +23,7 @@ import type { Grade } from '../repertory/types';
 // OPD notes link here for every remedy a student mentions.
 // ---------------------------------------------------------------------------
 
-const TABLE = ABBREV as unknown as Record<string, [string] | [string, string[]]>;
-const SAME: Record<string, string> = { kali: 'kalium', natrum: 'natrium', platina: 'platinum', china: 'cinchona' };
-const key = (s: string) =>
-  s
-    .toLowerCase()
-    .normalize('NFKD')
-    .replace(/[^a-z0-9]+/g, ' ')
-    .trim()
-    .split(' ')
-    .map((w) => SAME[w] ?? w)
-    .join(' ');
-
-/** Lookup by full name, abbreviation (with or without its dots) or alternative name. */
-const INDEX = (() => {
-  const m = new Map<string, string>();
-  for (const [name, [abbr, alts = []]] of Object.entries(TABLE)) {
-    for (const k of [abbr, name, ...alts]) if (!m.has(key(k))) m.set(key(k), name);
-  }
-  return m;
-})();
-
-/** Everyday short names whose prefix match would otherwise be a toss-up. */
-const COMMON: Record<string, string> = {
-  nux: 'Nux Vomica',
-  merc: 'Mercurius Solubilis',
-  mercurius: 'Mercurius Solubilis',
-};
-
-/** Every spelling of each remedy as word lists, for word-prefix matching. */
-const SPELLINGS = Object.entries(TABLE).flatMap(([name, [abbr, alts = []]]) =>
-  [name, ...alts].map((s) => ({ name, abbr, words: key(s).split(' ') })),
-);
-
-/**
- * Common names: "Pulsatilla", "Arsenicum", "Nat mur", "Calc carb", "Rhus tox".
- * Each typed word must start the matching word of a full name, in order. When
- * several remedies fit, the classic polychrest wins — the one with the plain
- * Kentian abbreviation ("Puls." over "Puls-n.", "Ars." over "Ars-i.").
- */
-function resolveCommon(k: string): string | undefined {
-  if (COMMON[k] && TABLE[COMMON[k]]) return COMMON[k];
-  const typed = k.split(' ').filter(Boolean);
-  if (!typed.length) return undefined;
-  const hits = SPELLINGS.filter(
-    (s) => s.words.length >= typed.length && typed.every((w, i) => s.words[i].startsWith(w)),
-  );
-  if (!hits.length) return undefined;
-  hits.sort(
-    (a, b) =>
-      Number(a.abbr.includes('-')) - Number(b.abbr.includes('-')) ||
-      a.words.length - b.words.length ||
-      a.abbr.length - b.abbr.length ||
-      a.name.localeCompare(b.name),
-  );
-  return hits[0].name;
-}
-
-export function resolveRemedy(param: string): string | undefined {
-  const k = key(param);
-  return (
-    INDEX.get(k) ??
-    INDEX.get(key(param.replace(/\./g, ''))) ??
-    resolveCommon(k) ??
-    resolveCommon(key(param.replace(/\./g, '')))
-  );
-}
+const TABLE = REMEDY_TABLE;
 
 const GRADE_CLASS: Record<Grade, string> = {
   1: 'text-grade-1',
@@ -212,9 +147,9 @@ export default function RemedyProfilePage() {
             <RemedyNotepad remedyKey={name} remedyName={display} />
           </section>
           <section className="card p-5" aria-labelledby="common-room-heading">
-            <h3 id="common-room-heading" className="mb-3 text-base font-semibold text-ink/90">
+            <h2 id="common-room-heading" className="mb-3 text-lg font-semibold text-ink/90">
               From Common Room
-            </h3>
+            </h2>
             <MyRemedyNotes remedy={name} abbr={abbr} />
           </section>
         </>

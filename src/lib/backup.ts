@@ -1,3 +1,5 @@
+import { NOTEPAD_KEY, cleanNote } from '../features/notepad/notepadStore';
+
 // ---------------------------------------------------------------------------
 // Backup and restore of everything HOM-COMPASS keeps in this browser.
 //
@@ -10,8 +12,6 @@ export const BACKUP_APP = 'hom-compass';
 export const BACKUP_FORMAT = 1;
 export const KEY_PREFIX = 'hom-compass.';
 export const PATIENTS_KEY = 'hom-compass.patients';
-/** The notepad store (src/features/notepad/notepadStore.ts). */
-export const NOTEPAD_KEY = 'hom-compass.notepad';
 export const LAST_BACKUP_KEY = 'hom-compass.last-backup';
 
 /**
@@ -110,13 +110,6 @@ function storeState(entry: unknown): Record<string, unknown> | null {
   return isPlainObject(entry) && isPlainObject(entry.state) ? entry.state : null;
 }
 
-const nonEmpty = (v: unknown) => typeof v === 'string' && v !== '';
-
-/** A note the notepad will keep on rehydrate (the same test as its cleanNote). */
-function isUsableNote(n: unknown): boolean {
-  return isPlainObject(n) && nonEmpty(n.id) && typeof n.body === 'string' && (nonEmpty(n.remedy) || nonEmpty(n.book));
-}
-
 /** Patients and cases in a backup's `hom-compass.patients` entry, notes in its notepad. */
 export function countRecords(data: Record<string, unknown>): BackupCounts {
   const state = storeState(data[PATIENTS_KEY]);
@@ -124,7 +117,7 @@ export function countRecords(data: Record<string, unknown>): BackupCounts {
   return {
     patients: state && Array.isArray(state.patients) ? state.patients.length : 0,
     cases: state && Array.isArray(state.cases) ? state.cases.length : 0,
-    notes: pad ? (Array.isArray(pad.notes) ? pad.notes.filter(isUsableNote).length : 0) : null,
+    notes: pad ? (Array.isArray(pad.notes) ? pad.notes.filter((n) => cleanNote(n) !== null).length : 0) : null,
   };
 }
 

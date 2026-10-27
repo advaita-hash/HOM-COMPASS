@@ -23,6 +23,11 @@ const WORD_ALIAS: Record<string, string> = {
   amylenum: 'amyl',
   thyroidinum: 'thyreoidinum',
   iodum: 'iodium',
+  // Tyler's English / short names
+  silica: 'silicea',
+  colocynth: 'colocynthis',
+  pyrogen: 'pyrogenium',
+  poeonia: 'paeonia', // Tyler "Pœonia"
 };
 
 // Whole-name synonyms: the same medicine under a different binomial. Matched
@@ -39,7 +44,11 @@ const PHRASE_ALIAS: Record<string, string> = {
   'lac vaccinum defloratum': 'lac defloratum',
   'malaria officinalis': 'malaria nosode',
   'hepar sulphuris calcareum': 'hepar sulphur',
+  // after the longer form above: the first matching phrase wins
+  'hepar sulphuris': 'hepar sulphur', // Tyler
   'terebinthiniae oleum': 'terebinthina',
+  'rhus tox': 'rhus toxicodendron', // Tyler "Rhus tox."
+  'phosphorus acid': 'phosphoricum acidum', // Tyler
 };
 
 /** Latin case endings vary by source (carbonicum / carbonica, Adrenalin / -inum). */
@@ -53,6 +62,9 @@ function stem(w: string): string {
 function baseWords(s: string): string[] {
   return s
     .toLowerCase()
+    // ligatures don't decompose under NFKD (Tyler's "Asafœtida", "Pœonia")
+    .replace(/œ/g, 'oe')
+    .replace(/æ/g, 'ae')
     .normalize('NFKD')
     .replace(/[^a-z0-9]+/g, ' ')
     .trim()
@@ -74,6 +86,15 @@ function canonWords(s: string): string[] {
     }
   }
   return joined.split(' ').filter(Boolean);
+}
+
+/**
+ * A remedy name in the form findBookRemedy compares (aliases, spelling and
+ * case endings normalised), so two names are the same medicine's name when
+ * their keys are equal: "Pulsatilla Nigricans" / "Pulsatilla Pratensis".
+ */
+export function bookNameKey(name: string): string {
+  return canonWords(name).join(' ');
 }
 
 const nameIndexCache = new WeakMap<BookData, Map<string, BookRemedy>>();
@@ -140,7 +161,7 @@ export const BOOKS: BookMeta[] = [
     blurb:
       'Characteristic keynotes of the leading remedies, sorted into constitution, mental and physical generals, systems and modalities — plus the bowel nosodes.',
     cover: 'from-art-amber to-art-rose',
-    approxRemedies: 208,
+    approxRemedies: 210,
   },
 ];
 

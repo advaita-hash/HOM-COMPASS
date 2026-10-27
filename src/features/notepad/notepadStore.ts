@@ -15,6 +15,8 @@ import { persistedObject, safeStorage } from '../../lib/safeStorage';
 // ---------------------------------------------------------------------------
 
 export const NOTEPAD_KEY = 'hom-compass.notepad';
+/** Persist version of the saved notepad (also written into backups). */
+export const NOTEPAD_VERSION = 2;
 
 /** A spot inside one book chapter (see places.ts for how it is resolved). */
 export interface NotePlace {
@@ -61,8 +63,12 @@ const newId = () =>
 
 const str = (v: unknown) => (typeof v === 'string' ? v : undefined);
 
-/** Keep only well-formed notes (storage may be damaged or from an old backup). */
-function cleanNote(raw: unknown): PadNote | null {
+/**
+ * Keep only well-formed notes (storage may be damaged or from an old backup).
+ * The backup's restore preview counts notes with this too, so the count it
+ * shows is the number the notepad keeps.
+ */
+export function cleanNote(raw: unknown): PadNote | null {
   const o = persistedObject(raw);
   const id = str(o.id);
   const body = str(o.body);
@@ -94,6 +100,95 @@ function cleanNote(raw: unknown): PadNote | null {
   return note;
 }
 
+// ---- version 1 → 2: remedy keys ---------------------------------------------
+// Version 2 changed how some book chapters are keyed (remedyKey.ts), and split
+// two Allen chapters that had the next monograph run on into them. Notes saved
+// under the old keys are moved so they still show with their remedy.
+
+/** Book-only keys of chapters that now match a repertory remedy. */
+const V1_BOOK_KEYS: Record<string, string> = {
+  'book:boericke:anatherum': 'Anantherum Muricatum',
+  'book:boericke:asclepias-syriaca': 'Asclepias Cornuti',
+  'book:boericke:astacus-fluviatilis': 'Cancer Fluviatilis',
+  'book:boericke:chenopodium-anthelminticum': 'Chenopodium Ambrosioides & Var. Anthelminticum',
+  'book:boericke:condurango': 'Cundurango',
+  'book:boericke:epiphegus': 'Orobanche Ramosa',
+  'book:boericke:illicium': 'Anisum Stellatum',
+  'book:boericke:iodoformum': 'Iodoformium',
+  'book:boericke:kali-permanganicum': 'Kalium Permanganatum',
+  'book:boericke:lycopersicum-esculentum': 'Lycopersicon Esculentum',
+  'book:boericke:pertussin': 'Coqueluchinum',
+  'book:boericke:pinus-sylvestris': 'Pinus Silvestris',
+  'book:boericke:pothos-foetidus': 'Ictodes Foetida',
+  'book:boericke:solidago-virga': 'Solidago Virgaurea',
+  'book:tyler:asafoetida': 'Asa Foetida',
+  'book:tyler:colocynth': 'Colocynthis',
+  'book:tyler:hepar-sulphuris': 'Hepar Sulphur',
+  'book:tyler:phosphorus-acid': 'Phosphoricum Acidum',
+  'book:tyler:poeonia': 'Paeonia Officinalis',
+  'book:tyler:pyrogen': 'Pyrogenium',
+  'book:tyler:rhus-tox': 'Rhus Toxicodendron',
+  'book:tyler:silica': 'Silicea Terra',
+};
+
+/**
+ * Chapters that were keyed to the wrong repertory remedy. `name` is the
+ * remedyName the reader saved, which tells a general note written in that
+ * chapter from one written on the `from` remedy itself.
+ */
+const V1_WRONG_KEYS = [
+  { book: 'allen', slug: 'mercurius', name: 'Mercurius', from: 'Mercurius Aceticus', to: 'Mercurius Solubilis' },
+  { book: 'allen', slug: 'bismuthum', name: 'Bismuthum', from: 'Bismuthum Oxydatum', to: 'Bismutum Subnitricum (+ -o.)' },
+  { book: 'boericke', slug: 'bismuthum', name: 'Bismuthum', from: 'Bismuthum Oxydatum', to: 'Bismutum Subnitricum (+ -o.)' },
+];
+
+/**
+ * Allen chapters whose text ran on into the next monograph: sections from
+ * `sections` on are now the `to` chapter (section i → i - sections).
+ */
+const V1_SPLIT_CHAPTERS = [
+  { book: 'allen', slug: 'lycopodium-clavatum', sections: 14, to: 'lyssinum', remedy: 'Hydrophobinum', name: 'Lyssinum' },
+  {
+    book: 'allen',
+    slug: 'trillium-pendulum',
+    sections: 7,
+    to: 'tuberculinum',
+    remedy: 'Tuberculinum Bovinum Kent',
+    name: 'Tuberculinum',
+  },
+];
+
+/** One saved note re-keyed from version 1 (left as is when nothing applies). */
+export function rekeyV1Note(raw: unknown): unknown {
+  const n = persistedObject(raw);
+  if (n !== raw) return raw;
+  const place = persistedObject(n.place);
+  const out: Record<string, unknown> = { ...n };
+  const remedy = str(n.remedy);
+  if (remedy && V1_BOOK_KEYS[remedy]) out.remedy = V1_BOOK_KEYS[remedy];
+  for (const w of V1_WRONG_KEYS) {
+    if (remedy !== w.from) continue;
+    const here = n.place ? place.book === w.book && place.slug === w.slug : n.remedyName === w.name;
+    if (here) out.remedy = w.to;
+  }
+  for (const c of V1_SPLIT_CHAPTERS) {
+    if (place.book !== c.book || place.slug !== c.slug || typeof place.block !== 'string') continue;
+    const [i, j] = place.block.split('.').map(Number);
+    if (!Number.isInteger(i) || !Number.isInteger(j) || i < c.sections) continue;
+    out.place = { ...place, slug: c.to, block: `${i - c.sections}.${j}` };
+    out.remedy = c.remedy;
+    out.remedyName = c.name;
+  }
+  return out;
+}
+
+/** Saved notepad state from `version` brought up to NOTEPAD_VERSION. */
+export function migrateNotepad(persisted: unknown, version: number): unknown {
+  const state = persistedObject(persisted);
+  if (version >= 2 || !Array.isArray(state.notes)) return persisted;
+  return { ...state, notes: state.notes.map(rekeyV1Note) };
+}
+
 export const useNotepad = create<NotepadState>()(
   persist(
     (set, get) => ({
@@ -113,7 +208,8 @@ export const useNotepad = create<NotepadState>()(
     {
       name: NOTEPAD_KEY,
       storage: safeStorage(),
-      version: 1,
+      version: NOTEPAD_VERSION,
+      migrate: (persisted, version) => migrateNotepad(persisted, version) as NotepadState,
       merge: (persisted, current) => {
         const raw = persistedObject(persisted).notes;
         const notes = Array.isArray(raw) ? raw.map(cleanNote).filter((n): n is PadNote => !!n) : [];
