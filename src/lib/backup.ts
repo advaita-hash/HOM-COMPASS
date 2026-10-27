@@ -10,6 +10,8 @@ export const BACKUP_APP = 'hom-compass';
 export const BACKUP_FORMAT = 1;
 export const KEY_PREFIX = 'hom-compass.';
 export const PATIENTS_KEY = 'hom-compass.patients';
+/** The notepad store (src/features/notepad/notepadStore.ts). */
+export const NOTEPAD_KEY = 'hom-compass.notepad';
 export const LAST_BACKUP_KEY = 'hom-compass.last-backup';
 
 /**
@@ -53,6 +55,8 @@ export interface Backup {
 export interface BackupCounts {
   patients: number;
   cases: number;
+  /** Notepad notes, or null when the backup has no notepad (made before notes existed). */
+  notes: number | null;
 }
 
 export type ParseResult = { ok: true; backup: Backup; counts: BackupCounts } | { ok: false; error: string };
@@ -101,13 +105,26 @@ export function buildBackup(
   return { app: BACKUP_APP, format: BACKUP_FORMAT, exportedAt: now.toISOString(), data };
 }
 
-/** Patients and cases inside a backup's `hom-compass.patients` entry. */
+/** A saved store's `state`, or null when the entry isn't one. */
+function storeState(entry: unknown): Record<string, unknown> | null {
+  return isPlainObject(entry) && isPlainObject(entry.state) ? entry.state : null;
+}
+
+const nonEmpty = (v: unknown) => typeof v === 'string' && v !== '';
+
+/** A note the notepad will keep on rehydrate (the same test as its cleanNote). */
+function isUsableNote(n: unknown): boolean {
+  return isPlainObject(n) && nonEmpty(n.id) && typeof n.body === 'string' && (nonEmpty(n.remedy) || nonEmpty(n.book));
+}
+
+/** Patients and cases in a backup's `hom-compass.patients` entry, notes in its notepad. */
 export function countRecords(data: Record<string, unknown>): BackupCounts {
-  const entry = data[PATIENTS_KEY];
-  const state = isPlainObject(entry) && isPlainObject(entry.state) ? entry.state : null;
+  const state = storeState(data[PATIENTS_KEY]);
+  const pad = storeState(data[NOTEPAD_KEY]);
   return {
     patients: state && Array.isArray(state.patients) ? state.patients.length : 0,
     cases: state && Array.isArray(state.cases) ? state.cases.length : 0,
+    notes: pad ? (Array.isArray(pad.notes) ? pad.notes.filter(isUsableNote).length : 0) : null,
   };
 }
 

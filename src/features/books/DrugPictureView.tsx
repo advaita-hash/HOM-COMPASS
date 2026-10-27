@@ -5,6 +5,7 @@ import {
   Brain,
   Leaf,
   Sparkles,
+  StickyNote,
   UserRound,
 } from 'lucide-react';
 import { type DrugPicture, distill } from './drugPicture';
@@ -68,8 +69,24 @@ export function RemedyHeading({
   );
 }
 
+/** The reader's notepad, summarised above the portrait. */
+export interface PortraitNotes {
+  count: number;
+  remedyName: string;
+  onOpen: () => void;
+  onFullText: () => void;
+}
+
 /** Auto-distilled drug picture (constitution + portrait) for a book remedy. */
-export function DrugPictureView({ remedy, common }: { remedy: BookRemedy; common: string | null }) {
+export function DrugPictureView({
+  remedy,
+  common,
+  notes,
+}: {
+  remedy: BookRemedy;
+  common: string | null;
+  notes?: PortraitNotes;
+}) {
   const dp: DrugPicture = useMemo(() => distill(remedy.text), [remedy.text]);
   const empty =
     dp.constitution.length +
@@ -86,6 +103,29 @@ export function DrugPictureView({ remedy, common }: { remedy: BookRemedy; common
         <Sparkles className="h-3 w-3" /> Auto-distilled portrait — see “Full text” for the
         complete drug picture.
       </p>
+
+      {notes && (
+        <div className="mb-4 rounded-xl bg-amber-50 px-3 py-2 text-sm text-ink/80">
+          <p className="flex flex-wrap items-center gap-x-1">
+            <StickyNote className="h-4 w-4 shrink-0 text-amber-700" aria-hidden />
+            <span>
+              {notes.count === 0
+                ? `No notes on ${notes.remedyName} yet`
+                : `${notes.count} ${notes.count === 1 ? 'note' : 'notes'} on ${notes.remedyName}`}
+            </span>
+            <span aria-hidden>·</span>
+            <button type="button" onClick={notes.onOpen} className="tap font-semibold text-brand-700 hover:underline">
+              Open notes
+            </button>
+          </p>
+          <p className="mt-1 text-xs text-ink/70">
+            <button type="button" onClick={notes.onFullText} className="tap font-medium text-brand-700 hover:underline">
+              Switch to Full text
+            </button>{' '}
+            to pin notes to a passage.
+          </p>
+        </div>
+      )}
 
       {empty ? (
         <p className="text-sm text-slate-500">

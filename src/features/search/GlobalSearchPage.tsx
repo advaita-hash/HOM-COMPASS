@@ -1,17 +1,21 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { BookText, FlaskConical, Loader2, Search } from 'lucide-react';
+import { BookText, FlaskConical, Loader2, Search, StickyNote } from 'lucide-react';
 import { REMEDIES } from '../../data/remedies';
 import { useQueries } from '@tanstack/react-query';
 import { BOOKS, bookQueryOptions } from '../books/booksIndex';
 import { useRepertory } from '../repertory/repertoryData';
 import { canonicalName } from '../../lib/remedyName';
+import { useNotepad, type PadNote } from '../notepad/notepadStore';
+import { bookLabel, noteHref, noteTitle } from '../notepad/links';
+import { placeLabel } from '../notepad/places';
 
 function snippet(text: string, q: string, len = 140): string {
+  if (text.length <= len) return text;
   const i = text.toLowerCase().indexOf(q);
-  if (i < 0) return text.slice(0, len) + '…';
-  const start = Math.max(0, i - len / 2);
-  return (start > 0 ? '…' : '') + text.slice(start, start + len).trim() + '…';
+  // centre the match, but never leave the window short at the end
+  const start = i < 0 ? 0 : Math.max(0, Math.min(i - len / 2, text.length - len));
+  return (start > 0 ? '…' : '') + text.slice(start, start + len).trim() + (start + len < text.length ? '…' : '');
 }
 
 function Highlight({ text, q }: { text: string; q: string }) {
@@ -36,6 +40,26 @@ export default function GlobalSearchPage() {
   });
   const { data: rep } = useRepertory();
   const loading = active && books.some((b) => b.isLoading);
+  const notes = useNotepad((s) => s.notes);
+
+  // The practitioner's own notes: their words, or the passage a note is pinned to.
+  // Every match is counted; only the newest 20 are shown.
+  const noteHits = useMemo(() => {
+    const out: { note: PadNote; snip: string; inQuote: boolean }[] = [];
+    if (!active) return { shown: out, total: 0 };
+    let total = 0;
+    for (const n of [...notes].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))) {
+      const body = n.body.replace(/\s+/g, ' ').trim();
+      const quote = n.place?.quote;
+      let hit: (typeof out)[number];
+      if (body.toLowerCase().includes(q)) hit = { note: n, snip: snippet(body, q), inQuote: false };
+      else if (quote?.toLowerCase().includes(q)) hit = { note: n, snip: `“${snippet(quote, q)}”`, inQuote: true };
+      else continue;
+      total++;
+      if (out.length < 20) out.push(hit);
+    }
+    return { shown: out, total };
+  }, [q, active, notes]);
 
   const curated = useMemo(() => {
     if (!active) return [];
@@ -85,7 +109,7 @@ export default function GlobalSearchPage() {
         <div>
           <h1 className="text-2xl font-semibold text-slate-800">Search</h1>
           <p className="text-sm text-slate-500">
-            Across materia medica, reference books and the repertory.
+            Across your notes, materia medica, reference books and the repertory.
           </p>
         </div>
       </header>
@@ -100,6 +124,39 @@ export default function GlobalSearchPage() {
           className="w-full rounded-lg border border-slate-200 bg-surface py-3 pl-10 pr-3 text-sm focus:outline-none"
         />
       </div>
+
+      {active && noteHits.total > 0 && (
+        <section className="mb-6">
+          <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-ink/70">
+            Your notes ({noteHits.total}
+            {noteHits.total > noteHits.shown.length && `, showing ${noteHits.shown.length}`})
+          </h2>
+          <div className="space-y-2">
+            {noteHits.shown.map(({ note, snip, inQuote }) => (
+              <Link key={note.id} to={noteHref(note)} className="card block p-3 pressable">
+                <div className="flex items-center gap-2 text-sm font-medium text-slate-800">
+                  <StickyNote className="h-4 w-4 shrink-0 text-amber-600" aria-hidden />
+                  <span className="min-w-0 truncate">{noteTitle(note)}</span>
+                  {note.place && (
+                    <span className="shrink-0 text-2xs uppercase tracking-wide text-ink/70">
+                      {bookLabel(note.place.book)}
+                    </span>
+                  )}
+                </div>
+                {note.place && (
+                  // the matched quote is shown below, so don't repeat it here
+                  <p className="mt-1 truncate text-xs text-ink/70">
+                    Pinned · {inQuote ? (note.place.section ?? 'Passage') : placeLabel(note.place)}
+                  </p>
+                )}
+                <p className="mt-1 break-words text-xs text-ink/70">
+                  <Highlight text={snip} q={q} />
+                </p>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       {!active && (
         <p className="text-sm text-slate-400">Type at least two characters to search.</p>
