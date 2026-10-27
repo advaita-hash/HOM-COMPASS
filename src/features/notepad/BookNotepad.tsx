@@ -2,12 +2,13 @@ import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronRight, StickyNote } from 'lucide-react';
 import { EmptyState } from '../../components/ui/EmptyState';
-import { NoteCard, noteHref } from './NoteCard';
+import { NoteCard } from './NoteCard';
+import { bookLabel, chapterHref, noteHref } from './links';
 import { NoteComposer } from './NoteComposer';
 import { type PadNote, isGeneralBookNote, useBookPad, useNotepad } from './notepadStore';
 import { remedyKeyLabel } from './remedyKey';
 import { canonicalName } from '../../lib/remedyName';
-import { ListHeading, bookLabel, useScrollToNote } from './RemedyNotepad';
+import { ListHeading, useScrollToNote } from './RemedyNotepad';
 import { Announcer } from './notepadUi';
 
 /**
@@ -88,7 +89,7 @@ export function BookNotepad({
               {groups.map((g) => (
                 <div key={g.slug}>
                   <Link
-                    to={`/books/${bookId}/${g.slug}?notes=remedy`}
+                    to={chapterHref(bookId, g.slug)}
                     className="tap -mx-1 mb-1 inline-flex min-h-[32px] items-center gap-1 rounded-md px-1 font-serif text-base font-semibold text-brand-700 hover:bg-accent/[0.08]"
                   >
                     {g.name}
@@ -103,7 +104,7 @@ export function BookNotepad({
                         showInText={
                           current && current.slug === g.slug
                             ? { onClick: () => current.onShowInText(n) }
-                            : { to: noteHref(n)! }
+                            : { to: noteHref(n) }
                         }
                       />
                     ))}

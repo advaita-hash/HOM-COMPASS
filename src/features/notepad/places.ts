@@ -55,22 +55,36 @@ export interface PlaceOption {
 export function placesOf(blocks: TextBlock[]): PlaceOption[] {
   const starts = blocks.filter((b) => b.sectionStart);
   if (starts.length < 2) return [];
-  const seen = new Set<string>();
+  const seen = new Map<string, number>();
   const out: PlaceOption[] = [];
   starts.forEach((b, i) => {
     const label = b.section ?? (i === 0 ? 'Introduction' : `Paragraph ${i + 1}`);
-    // repeated labels get a number so the picker stays unambiguous
-    const unique = seen.has(label) ? `${label} (${i + 1})` : label;
-    seen.add(label);
-    out.push({ key: b.key, label: unique });
+    // a repeated label is numbered by occurrence ("Throat (2)"), so the
+    // picker stays unambiguous
+    const nth = (seen.get(label) ?? 0) + 1;
+    seen.set(label, nth);
+    out.push({ key: b.key, label: nth > 1 ? `${label} (${nth})` : label });
   });
   return out;
 }
 
 const QUOTE_MAX = 280;
 const CONTEXT = 32;
+const WORD_CHAR = /[\p{L}\p{N}]/u;
 
-/** Build a passage pin from a selection [start, end) inside one block. */
+/** Passages built from a selection longer than QUOTE_MAX (see wasShortened). */
+const shortened = new WeakSet<NotePlace>();
+
+/**
+ * True when `place` came from placeFromSelection and keeps only the start of a
+ * longer selection, so the UI can say so. Not stored with the note.
+ */
+export const wasShortened = (place: NotePlace) => shortened.has(place);
+
+/**
+ * Build a passage pin from a selection [start, end) inside one block. A long
+ * selection keeps its first QUOTE_MAX characters, cut back to a word boundary.
+ */
 export function placeFromSelection(
   book: string,
   slug: string,
@@ -83,8 +97,17 @@ export function placeFromSelection(
   while (s < e && /\s/.test(block.text[s])) s++;
   while (e > s && /\s/.test(block.text[e - 1])) e--;
   if (e - s < 2) return null;
-  if (e - s > QUOTE_MAX) e = s + QUOTE_MAX;
-  return {
+  const long = e - s > QUOTE_MAX;
+  if (long) {
+    const t = block.text;
+    e = s + QUOTE_MAX;
+    // never end part-way through a word, nor on the space before the next one
+    while (e > s && WORD_CHAR.test(t[e - 1]) && WORD_CHAR.test(t[e] ?? '')) e--;
+    while (e > s && /\s/.test(t[e - 1])) e--;
+    // a single 280+ character token: nothing better than the plain cut
+    if (e - s < 2) e = s + QUOTE_MAX;
+  }
+  const place: NotePlace = {
     book,
     slug,
     block: block.key,
@@ -93,6 +116,8 @@ export function placeFromSelection(
     prefix: block.text.slice(Math.max(0, s - CONTEXT), s),
     suffix: block.text.slice(e, e + CONTEXT),
   };
+  if (long) shortened.add(place);
+  return place;
 }
 
 /** Build a section pin. */
@@ -125,8 +150,10 @@ function contextScore(text: string, at: number, len: number, place: NotePlace): 
 
 /**
  * Find a pinned place again in the current text: the quote (scored by its
- * context, preferring the original block and section), else the section,
- * else the original block. Null when the place no longer exists.
+ * context, preferring the original block and section); for a section pin, its
+ * own block while that still starts the same section (a chapter can repeat a
+ * heading), else the first section with its label, else the original block.
+ * Null when the place no longer exists.
  */
 export function resolvePlace(blocks: TextBlock[], place: NotePlace): ResolvedPlace | null {
   if (place.quote) {
@@ -144,6 +171,8 @@ export function resolvePlace(blocks: TextBlock[], place: NotePlace): ResolvedPla
     return null;
   }
   if (place.section) {
+    const own = blocks.find((x) => x.key === place.block);
+    if (own?.sectionStart && own.section === place.section) return { key: own.key };
     const b = blocks.find((x) => x.sectionStart && x.section === place.section);
     if (b) return { key: b.key };
   }

@@ -2,7 +2,7 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { X } from 'lucide-react';
 import { SegmentedControl } from '../../components/ui/SegmentedControl';
 import type { NotePlace } from './notepadStore';
-import type { PlaceOption } from './places';
+import { type PlaceOption, wasShortened } from './places';
 import { drafts, useAnnounce } from './notepadUi';
 
 /** What the composer needs to offer "In this chapter". */
@@ -50,6 +50,8 @@ export function NoteComposer({
   const [where, setWhere] = useState<Where>(chapter?.pending ? 'chapter' : 'general');
   const [section, setSection] = useState('');
   const pending = chapter?.pending ?? null;
+  // a selection longer than a quote keeps only its first words
+  const cut = !!pending && wasShortened(pending);
 
   // a freshly selected passage switches to "In this chapter" and starts writing
   useEffect(() => {
@@ -100,13 +102,25 @@ export function NoteComposer({
             <div className="mt-3">
               {pending ? (
                 <div className="flex items-start gap-2 rounded-lg bg-amber-100 py-2 pl-3 pr-1">
-                  <p className="min-w-0 flex-1 py-1 text-sm text-ink/90">
-                    <span className="sr-only">Pinned to the passage </span>
-                    <span className="line-clamp-3 break-words font-serif">“{pending.quote}”</span>
-                  </p>
+                  <div className="min-w-0 flex-1 py-1 text-sm text-ink/90">
+                    <p>
+                      <span className="sr-only">Pinned to the passage </span>
+                      <span className="line-clamp-3 break-words font-serif">
+                        “{pending.quote}
+                        {cut ? '…' : ''}”
+                      </span>
+                    </p>
+                    {cut && (
+                      <p className="mt-1 text-xs text-ink/70">Long selection: the note is pinned to its first words.</p>
+                    )}
+                  </div>
                   <button
                     type="button"
-                    onClick={chapter.clearPending}
+                    onClick={() => {
+                      // the button goes away; carry on in the text box
+                      chapter.clearPending();
+                      textRef.current?.focus();
+                    }}
                     className="tap flex h-8 shrink-0 items-center gap-1 rounded-md px-2 text-sm font-medium text-brand-700 hover:bg-ink/[0.06]"
                   >
                     <X className="h-4 w-4" /> Remove
