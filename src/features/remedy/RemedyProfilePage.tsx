@@ -37,6 +37,8 @@ export default function RemedyProfilePage() {
   const { name: param = '' } = useParams();
   const [search, setSearch] = useSearchParams();
   const tab = search.get('tab') === 'notes' ? 'notes' : 'repertory';
+  // ?note=<id> (from Search / My notes) scrolls to and highlights that note
+  const focusNote = search.get('note');
   const setTab = (t: 'repertory' | 'notes') => setSearch(t === 'notes' ? { tab: 'notes' } : {}, { replace: true });
   const name = resolveRemedy(decodeURIComponent(param));
   const { data: rep, isLoading, error } = useRepertoryById('kent');
@@ -144,7 +146,7 @@ export default function RemedyProfilePage() {
             <h2 id="notepad-heading" className="mb-3 text-lg font-semibold text-ink/90">
               Notepad
             </h2>
-            <RemedyNotepad remedyKey={name} remedyName={display} />
+            <RemedyNotepad remedyKey={name} remedyName={display} focusId={focusNote} />
           </section>
           <section className="card p-5" aria-labelledby="common-room-heading">
             <h2 id="common-room-heading" className="mb-3 text-lg font-semibold text-ink/90">
