@@ -3,6 +3,7 @@ import { X } from 'lucide-react';
 import { SegmentedControl } from '../../components/ui/SegmentedControl';
 import type { NotePlace } from './notepadStore';
 import type { PlaceOption } from './places';
+import { drafts, useAnnounce } from './notepadUi';
 
 /** What the composer needs to offer "In this chapter". */
 export interface ComposerChapter {
@@ -20,21 +21,32 @@ type Where = 'general' | 'chapter';
 /**
  * New note. With a chapter it asks where the note goes: about the remedy in
  * general, or pinned in this chapter (to the selected passage or a section).
+ * Unsaved words are kept for the session under `draftKey`, so closing the
+ * notepad half-way through a note doesn't lose it. Give the composer a React
+ * key per chapter so the section choice starts afresh.
  */
 export function NoteComposer({
   chapter,
   generalLabel = 'General',
   placeholder,
+  draftKey,
   onSave,
 }: {
   chapter?: ComposerChapter;
   generalLabel?: string;
   placeholder?: string;
+  draftKey: string;
   onSave: (body: string, place?: NotePlace) => void;
 }) {
   const id = useId();
   const textRef = useRef<HTMLTextAreaElement>(null);
-  const [body, setBody] = useState('');
+  const announce = useAnnounce();
+  const [body, setBodyState] = useState(() => drafts.get(`new:${draftKey}`) ?? '');
+  const setBody = (b: string) => {
+    if (b) drafts.set(`new:${draftKey}`, b);
+    else drafts.delete(`new:${draftKey}`);
+    setBodyState(b);
+  };
   const [where, setWhere] = useState<Where>(chapter?.pending ? 'chapter' : 'general');
   const [section, setSection] = useState('');
   const pending = chapter?.pending ?? null;
@@ -51,16 +63,19 @@ export function NoteComposer({
   const canSave = body.trim().length > 0 && (where === 'general' || !!place);
   const dirty = body.length > 0 || !!pending;
 
+  // Save and Cancel disable or disappear once used: keep focus in the text box
   const reset = () => {
     setBody('');
     setSection('');
     chapter?.clearPending();
+    textRef.current?.focus();
   };
 
   const save = () => {
     if (!canSave) return;
     onSave(body.trim(), place ?? undefined);
     reset();
+    announce('Note saved');
   };
 
   return (
@@ -130,10 +145,13 @@ export function NoteComposer({
       <textarea
         id={`${id}-body`}
         ref={textRef}
+        data-composer-input
         value={body}
         onChange={(e) => setBody(e.target.value)}
         onKeyDown={(e) => {
           if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) save();
+          // Escape must not close a sheet around a note being written
+          else if (e.key === 'Escape' && body.trim()) e.stopPropagation();
         }}
         rows={3}
         placeholder={placeholder}

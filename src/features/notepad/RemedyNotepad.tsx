@@ -6,6 +6,7 @@ import { NoteCard, noteHref } from './NoteCard';
 import { NoteComposer } from './NoteComposer';
 import { type NotePlace, type PadNote, useChapterPad, useNotepad, useRemedyPad } from './notepadStore';
 import { type TextBlock, placeFromSection, placesOf, resolvePlace } from './places';
+import { Announcer } from './notepadUi';
 
 /** The book chapter the notepad is open beside (the reader). */
 export interface NotepadChapter {
@@ -31,13 +32,14 @@ export function ListHeading({ children, count }: { children: ReactNode; count: n
   );
 }
 
-/** Scroll a highlighted note into view once its list has rendered. */
+/** Scroll a highlighted note into view once its list has rendered, and focus it. */
 export function useScrollToNote(focusId: string | null | undefined) {
   const root = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!focusId) return;
     const t = window.setTimeout(() => {
-      const el = root.current?.querySelector(`[data-note-id="${CSS.escape(focusId)}"]`);
+      const el = root.current?.querySelector<HTMLElement>(`[data-note-id="${CSS.escape(focusId)}"]`);
+      el?.focus({ preventScroll: true });
       el?.scrollIntoView({ block: 'center', behavior: 'smooth' });
     }, 120);
     return () => window.clearTimeout(t);
@@ -93,97 +95,103 @@ export function RemedyNotepad({
   const total = lists.here.length + lists.lost.length + lists.general.length + lists.elsewhere.length;
 
   const save = (body: string, place?: NotePlace) => add({ body, remedy: remedyKey, remedyName, ...(place ? { place } : {}) });
+  // one draft per chapter; keyed so a new chapter starts with a fresh section choice
+  const draftKey = chapter ? `remedy:${remedyKey}@${chapter.book}/${chapter.slug}` : `remedy:${remedyKey}`;
 
   return (
     // own stacking context: the segmented controls inside must not rise above a
     // sheet's sticky header
-    <div ref={root} className="relative z-0">
-      <NoteComposer
-        placeholder={`Your note on ${remedyName}`}
-        onSave={save}
-        chapter={
-          chapter && {
-            places,
-            pending: chapter.pending,
-            clearPending: chapter.clearPending,
-            sectionPlace: (key) => {
-              const b = chapter.blocks.find((x) => x.key === key);
-              return b ? placeFromSection(chapter.book, chapter.slug, b) : null;
-            },
-          }
-        }
-      />
-
-      {total === 0 && (
-        <EmptyState
-          className="!py-8"
-          icon={StickyNote}
-          title="No notes yet"
-          description={
-            chapter
-              ? 'Write a note above about the remedy in general, or select words in Full text and tap “Add note” to pin one to a passage.'
-              : `Write a note above about ${remedyName} in general. To pin a note to a passage, open the remedy in a reference book and select words in Full text.`
+    <div ref={root} data-notepad className="relative z-0">
+      <Announcer>
+        <NoteComposer
+          key={draftKey}
+          draftKey={draftKey}
+          placeholder={`Your note on ${remedyName}`}
+          onSave={save}
+          chapter={
+            chapter && {
+              places,
+              pending: chapter.pending,
+              clearPending: chapter.clearPending,
+              sectionPlace: (key) => {
+                const b = chapter.blocks.find((x) => x.key === key);
+                return b ? placeFromSection(chapter.book, chapter.slug, b) : null;
+              },
+            }
           }
         />
-      )}
 
-      {lists.here.length > 0 && (
-        <section aria-label="In this chapter">
-          <ListHeading count={lists.here.length}>In this chapter</ListHeading>
-          <ul className="space-y-2">
-            {lists.here.map((n) => (
-              <NoteCard
-                key={n.id}
-                note={n}
-                highlighted={n.id === focusId}
-                showInText={{ onClick: () => chapter!.onShowInText(n) }}
-              />
-            ))}
-          </ul>
-        </section>
-      )}
+        {total === 0 && (
+          <EmptyState
+            className="!py-8"
+            icon={StickyNote}
+            title="No notes yet"
+            description={
+              chapter
+                ? 'Write a note above about the remedy in general, or select words in Full text and tap “Add note” to pin one to a passage.'
+                : `Write a note above about ${remedyName} in general. To pin a note to a passage, open the remedy in a reference book and select words in Full text.`
+            }
+          />
+        )}
 
-      {lists.general.length > 0 && (
-        <section aria-label="General">
-          <ListHeading count={lists.general.length}>General</ListHeading>
-          <ul className="space-y-2">
-            {lists.general.map((n) => (
-              <NoteCard key={n.id} note={n} highlighted={n.id === focusId} />
-            ))}
-          </ul>
-        </section>
-      )}
+        {lists.here.length > 0 && (
+          <section aria-label="In this chapter">
+            <ListHeading count={lists.here.length}>In this chapter</ListHeading>
+            <ul className="space-y-2">
+              {lists.here.map((n) => (
+                <NoteCard
+                  key={n.id}
+                  note={n}
+                  highlighted={n.id === focusId}
+                  showInText={{ onClick: () => chapter!.onShowInText(n) }}
+                />
+              ))}
+            </ul>
+          </section>
+        )}
 
-      {lists.elsewhere.length > 0 && (
-        <section aria-label={chapter ? 'In other chapters' : 'In books'}>
-          <ListHeading count={lists.elsewhere.length}>{chapter ? 'In other chapters' : 'In books'}</ListHeading>
-          <ul className="space-y-2">
-            {lists.elsewhere.map((n) => (
-              <NoteCard
-                key={n.id}
-                note={n}
-                source={bookLabel(n.place!.book)}
-                highlighted={n.id === focusId}
-                showInText={{ to: noteHref(n)! }}
-              />
-            ))}
-          </ul>
-        </section>
-      )}
+        {lists.general.length > 0 && (
+          <section aria-label="General">
+            <ListHeading count={lists.general.length}>General</ListHeading>
+            <ul className="space-y-2">
+              {lists.general.map((n) => (
+                <NoteCard key={n.id} note={n} highlighted={n.id === focusId} />
+              ))}
+            </ul>
+          </section>
+        )}
 
-      {lists.lost.length > 0 && (
-        <section aria-label="Place not found">
-          <ListHeading count={lists.lost.length}>Place not found</ListHeading>
-          <p className="mb-2 text-xs text-ink/70">
-            The text these notes were pinned to has changed. The notes are kept with the words they were pinned to.
-          </p>
-          <ul className="space-y-2">
-            {lists.lost.map((n) => (
-              <NoteCard key={n.id} note={n} highlighted={n.id === focusId} />
-            ))}
-          </ul>
-        </section>
-      )}
+        {lists.elsewhere.length > 0 && (
+          <section aria-label={chapter ? 'In other chapters' : 'In books'}>
+            <ListHeading count={lists.elsewhere.length}>{chapter ? 'In other chapters' : 'In books'}</ListHeading>
+            <ul className="space-y-2">
+              {lists.elsewhere.map((n) => (
+                <NoteCard
+                  key={n.id}
+                  note={n}
+                  source={bookLabel(n.place!.book)}
+                  highlighted={n.id === focusId}
+                  showInText={{ to: noteHref(n)! }}
+                />
+              ))}
+            </ul>
+          </section>
+        )}
+
+        {lists.lost.length > 0 && (
+          <section aria-label="Place not found">
+            <ListHeading count={lists.lost.length}>Place not found</ListHeading>
+            <p className="mb-2 text-xs text-ink/70">
+              The text these notes were pinned to has changed. The notes are kept with the words they were pinned to.
+            </p>
+            <ul className="space-y-2">
+              {lists.lost.map((n) => (
+                <NoteCard key={n.id} note={n} highlighted={n.id === focusId} />
+              ))}
+            </ul>
+          </section>
+        )}
+      </Announcer>
     </div>
   );
 }

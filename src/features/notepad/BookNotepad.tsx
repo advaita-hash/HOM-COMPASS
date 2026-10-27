@@ -8,6 +8,7 @@ import { type PadNote, isGeneralBookNote, useBookPad, useNotepad } from './notep
 import { remedyKeyLabel } from './remedyKey';
 import { canonicalName } from '../../lib/remedyName';
 import { ListHeading, bookLabel, useScrollToNote } from './RemedyNotepad';
+import { Announcer } from './notepadUi';
 
 /**
  * Notepad for a book: general notes about the book, then every note pinned
@@ -51,61 +52,68 @@ export function BookNotepad({
   return (
     // own stacking context: the segmented controls inside must not rise above a
     // sheet's sticky header
-    <div ref={root} className="relative z-0">
-      <NoteComposer placeholder={`Your note on ${label}`} onSave={(body) => add({ body, book: bookId })} />
-
-      {general.length + pinned === 0 && (
-        <EmptyState
-          className="!py-8"
-          icon={StickyNote}
-          title="No notes on this book yet"
-          description="Write a note above about the book as a whole. Notes you pin to a remedy’s text in this book are gathered here too."
+    <div ref={root} data-notepad className="relative z-0">
+      <Announcer>
+        <NoteComposer
+          key={bookId}
+          draftKey={`book:${bookId}`}
+          placeholder={`Your note on ${label}`}
+          onSave={(body) => add({ body, book: bookId })}
         />
-      )}
 
-      {general.length > 0 && (
-        <section aria-label="About this book">
-          <ListHeading count={general.length}>About this book</ListHeading>
-          <ul className="space-y-2">
-            {general.map((n) => (
-              <NoteCard key={n.id} note={n} highlighted={n.id === focusId} />
-            ))}
-          </ul>
-        </section>
-      )}
+        {general.length + pinned === 0 && (
+          <EmptyState
+            className="!py-8"
+            icon={StickyNote}
+            title="No notes on this book yet"
+            description="Write a note above about the book as a whole. Notes you pin to a remedy’s text in this book are gathered here too."
+          />
+        )}
 
-      {pinned > 0 && (
-        <section aria-label="Pinned in this book">
-          <ListHeading count={pinned}>Pinned in this book</ListHeading>
-          <div className="space-y-4">
-            {groups.map((g) => (
-              <div key={g.slug}>
-                <Link
-                  to={`/books/${bookId}/${g.slug}?notes=remedy`}
-                  className="tap -mx-1 mb-1 inline-flex min-h-[32px] items-center gap-1 rounded-md px-1 font-serif text-base font-semibold text-brand-700 hover:bg-accent/[0.08]"
-                >
-                  {g.name}
-                  <ChevronRight className="h-4 w-4" aria-hidden />
-                </Link>
-                <ul className="space-y-2">
-                  {g.list.map((n) => (
-                    <NoteCard
-                      key={n.id}
-                      note={n}
-                      highlighted={n.id === focusId}
-                      showInText={
-                        current && current.slug === g.slug
-                          ? { onClick: () => current.onShowInText(n) }
-                          : { to: noteHref(n)! }
-                      }
-                    />
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
+        {general.length > 0 && (
+          <section aria-label="About this book">
+            <ListHeading count={general.length}>About this book</ListHeading>
+            <ul className="space-y-2">
+              {general.map((n) => (
+                <NoteCard key={n.id} note={n} highlighted={n.id === focusId} />
+              ))}
+            </ul>
+          </section>
+        )}
+
+        {pinned > 0 && (
+          <section aria-label="Pinned in this book">
+            <ListHeading count={pinned}>Pinned in this book</ListHeading>
+            <div className="space-y-4">
+              {groups.map((g) => (
+                <div key={g.slug}>
+                  <Link
+                    to={`/books/${bookId}/${g.slug}?notes=remedy`}
+                    className="tap -mx-1 mb-1 inline-flex min-h-[32px] items-center gap-1 rounded-md px-1 font-serif text-base font-semibold text-brand-700 hover:bg-accent/[0.08]"
+                  >
+                    {g.name}
+                    <ChevronRight className="h-4 w-4" aria-hidden />
+                  </Link>
+                  <ul className="space-y-2">
+                    {g.list.map((n) => (
+                      <NoteCard
+                        key={n.id}
+                        note={n}
+                        highlighted={n.id === focusId}
+                        showInText={
+                          current && current.slug === g.slug
+                            ? { onClick: () => current.onShowInText(n) }
+                            : { to: noteHref(n)! }
+                        }
+                      />
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+      </Announcer>
     </div>
   );
 }

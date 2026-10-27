@@ -206,13 +206,13 @@ export default function RemedyProfilePage() {
       {tab === 'notes' ? (
         <>
           <section className="card p-5" aria-labelledby="notepad-heading">
-            <h2 id="notepad-heading" className="mb-3 text-lg font-semibold">
+            <h2 id="notepad-heading" className="mb-3 text-lg font-semibold text-ink/90">
               Notepad
             </h2>
             <RemedyNotepad remedyKey={name} remedyName={display} />
           </section>
           <section className="card p-5" aria-labelledby="common-room-heading">
-            <h3 id="common-room-heading" className="mb-3 text-base font-semibold">
+            <h3 id="common-room-heading" className="mb-3 text-base font-semibold text-ink/90">
               From Common Room
             </h3>
             <MyRemedyNotes remedy={name} abbr={abbr} />

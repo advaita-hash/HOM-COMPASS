@@ -1,5 +1,5 @@
 import { Fragment, type ReactNode, type RefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { ChevronLeft, List, Loader2, NotebookPen, Search, StickyNote, X } from 'lucide-react';
 import { getBookMeta, useBook } from './booksIndex';
 import { DrugPictureView, RemedyHeading } from './DrugPictureView';
@@ -14,14 +14,17 @@ import { useCompare } from '../compare/compareStore';
 import {
   type NotePlace,
   type PadNote,
+  isGeneralBookNote,
+  isGeneralRemedyNote,
   useBookPad,
   useChapterPad,
   useNotepad,
   useRemedyPad,
 } from '../notepad/notepadStore';
 import { type TextBlock, blocksOf, placeFromSelection, placeLabel, resolvePlace } from '../notepad/places';
-import { remedyKeyForBookRemedy } from '../notepad/remedyKey';
+import { isRepertoryKey, remedyKeyForBookRemedy } from '../notepad/remedyKey';
 import { RemedyNotepad } from '../notepad/RemedyNotepad';
+import { noteHref } from '../notepad/NoteCard';
 import { BookNotepad } from '../notepad/BookNotepad';
 import { useTextSelection } from '../notepad/useTextSelection';
 
@@ -31,13 +34,40 @@ import { useTextSelection } from '../notepad/useTextSelection';
 //                   the note shown beside it (general notes open the notepad)
 //   ?notes=remedy   open the notepad on "This remedy"
 //   ?notes=book     open the notepad on "This book"
-// Each param is removed once acted on, so refresh/back doesn't reopen it.
+// Each param is removed once acted on, so refresh/back doesn't reopen it. A
+// ?note= for a note that belongs to another chapter, remedy or book is sent
+// on to that note's own page.
 // ---------------------------------------------------------------------------
 
 /** Notes pinned in one block: passages (character ranges) and whole sections. */
 interface BlockPins {
   ranges: { start: number; end: number; notes: PadNote[] }[];
   section: PadNote[];
+}
+
+/** Where a note lives when it isn't in the chapter or book being read. */
+function noteHome(n: PadNote): string | undefined {
+  if (n.place) return noteHref(n);
+  if (n.remedy && isRepertoryKey(n.remedy)) return `/remedy/${encodeURIComponent(n.remedy)}?tab=notes`;
+  if (n.remedy?.startsWith('book:')) {
+    // a chapter that matches no repertory remedy: book:<book>:<slug>
+    const [, book, ...slug] = n.remedy.split(':');
+    return `/books/${book}/${slug.join(':')}?note=${encodeURIComponent(n.id)}`;
+  }
+  if (n.book) return `/books/${n.book}?note=${encodeURIComponent(n.id)}`;
+  return undefined;
+}
+
+const WORD_CHAR = /[\p{L}\p{N}]/u;
+
+/** Widen [start, end) so it doesn't begin or end part-way through a word. */
+function snapToWords(text: string, start: number, end: number): [number, number] {
+  let s = Math.min(start, end);
+  let e = Math.max(start, end);
+  const inWord = (i: number) => i > 0 && i < text.length && WORD_CHAR.test(text[i - 1]) && WORD_CHAR.test(text[i]);
+  while (inWord(s)) s--;
+  while (inWord(e)) e++;
+  return [s, e];
 }
 
 const firstWords = (body: string, n = 6) => {
@@ -228,6 +258,7 @@ function pinsFor(blocks: TextBlock[], notes: PadNote[]): Map<string, BlockPins> 
 export default function BookReaderPage() {
   const { bookId, remedySlug } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const meta = getBookMeta(bookId);
   const { data: book, isLoading, isError, error } = useBook(bookId);
   const [query, setQuery] = useState(searchParams.get('q') ?? '');
@@ -285,6 +316,14 @@ export default function BookReaderPage() {
   const compareCount = useCompare((s) => s.items.length);
   const textRef = useRef<HTMLDivElement>(null);
   const scrollerRef = useRef<HTMLDivElement>(null);
+  /** Inside the sheet, to find its heading. */
+  const sheetBodyRef = useRef<HTMLDivElement>(null);
+  /** The toolbar "Notes" button: where focus returns when the opener is gone. */
+  const notesButtonRef = useRef<HTMLButtonElement>(null);
+  /** What had focus when the sheet opened; it gets focus back on close. */
+  const openerRef = useRef<HTMLElement | null>(null);
+  /** The ?note= last sent on to the note's own page. */
+  const redirectedRef = useRef<string | null>(null);
 
   /** Opened on "This remedy" (from the toolbar, a marker or a link). */
   const [openedOnRemedy, setOpenedOnRemedy] = useState(false);
@@ -299,18 +338,25 @@ export default function BookReaderPage() {
   );
 
   const openNotes = (tab: 'remedy' | 'book', focus: string | null = null) => {
+    if (!notesTab && document.activeElement !== document.body) openerRef.current = document.activeElement as HTMLElement;
     setPeekId(null);
     setFocusNote(focus);
     setNotesTab(tab);
     setOpenedOnRemedy(tab === 'remedy');
   };
+  // A passage waiting for its note (and the words typed for it, see
+  // NoteComposer) outlive the sheet, so a stray tap on the backdrop loses
+  // nothing; a new chapter clears it.
   const closeNotes = useCallback(() => {
     setNotesTab(null);
     setFocusNote(null);
     setMarkerIds([]);
-    setPending(null);
+    const back = openerRef.current;
+    openerRef.current = null;
+    window.setTimeout(() => (back?.isConnected ? back : notesButtonRef.current)?.focus({ preventScroll: true }), 0);
   }, []);
   const showInText = useCallback((n: PadNote) => {
+    openerRef.current = null;
     setNotesTab(null);
     setFocusNote(null);
     setMarkerIds([]);
@@ -338,17 +384,27 @@ export default function BookReaderPage() {
     if ((noteId || which === 'remedy') && !selected) return; // wait for the chapter
     if (noteId) {
       const n = useNotepad.getState().notes.find((x) => x.id === noteId);
-      const here = n?.place && n.place.book === bookId && n.place.slug === selected!.slug;
+      const here = !!n?.place && n.place.book === bookId && n.place.slug === selected!.slug;
+      const generalHere =
+        !!n && ((!!remedyKey && isGeneralRemedyNote(n, remedyKey)) || (!!bookId && isGeneralBookNote(n, bookId)));
+      const home = n && !here && !generalHere ? noteHome(n) : undefined;
+      // not on this page: go to the note's own place (once, in case that
+      // place no longer exists and leads back here)
+      if (home && redirectedRef.current !== noteId) {
+        redirectedRef.current = noteId;
+        navigate(home, { replace: true });
+        return;
+      }
       if (n && here && resolvePlace(blocks, n.place!)) {
         setNotesTab(null);
         setView('full');
         setPeekId(n.id);
         setScrollTo({ id: n.id });
-      } else if (n) {
+      } else if (n && (here || generalHere)) {
         // general notes, and pins whose place is gone, are shown in the notepad
         setPeekId(null);
         setFocusNote(n.id);
-        const tab = here || (n.remedy && n.remedy === remedyKey && !n.place) ? 'remedy' : 'book';
+        const tab = here || n.remedy ? 'remedy' : 'book';
         setNotesTab(tab);
         setOpenedOnRemedy(tab === 'remedy');
       }
@@ -362,22 +418,64 @@ export default function BookReaderPage() {
     next.delete('note');
     next.delete('notes');
     setSearchParams(next, { replace: true });
-  }, [searchParams, setSearchParams, selected, bookId, blocks, remedyKey]);
+  }, [searchParams, setSearchParams, selected, bookId, blocks, remedyKey, navigate]);
 
-  // bring a pinned note's place into view once Full text has rendered it
+  // bring a pinned note's place into view once Full text has rendered it, and
+  // put focus on its marker (keyboard users carry on reading from there)
   useEffect(() => {
     if (!scrollTo || view !== 'full') return;
     const t = window.setTimeout(() => {
-      const el = scrollerRef.current?.querySelector(`[data-notes~="${CSS.escape(scrollTo.id)}"]`);
+      const sel = `[data-notes~="${CSS.escape(scrollTo.id)}"]`;
+      const el = scrollerRef.current?.querySelector(sel);
       el?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      scrollerRef.current?.querySelector<HTMLElement>(`button${sel}`)?.focus({ preventScroll: true });
     }, 80);
     return () => window.clearTimeout(t);
   }, [scrollTo, view, slug]);
 
+  // focus moves into the sheet when it opens: onto the note it was opened for,
+  // the composer (a passage to write about), or else the sheet's heading
+  const sheetOpen = notesTab !== null;
+  useEffect(() => {
+    if (!sheetOpen || focusNote || pending) return;
+    const heading = sheetBodyRef.current?.closest('[role="dialog"]')?.querySelector<HTMLElement>('h2');
+    if (!heading) return;
+    heading.tabIndex = -1;
+    heading.focus({ preventScroll: true });
+    // focusNote and pending are read only at the moment the sheet opens
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sheetOpen]);
+
+  // ...and Tab stays inside it (the page behind is aria-hidden in spirit)
+  useEffect(() => {
+    if (!sheetOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      const sheet = sheetBodyRef.current?.closest<HTMLElement>('[role="dialog"]');
+      // the delete confirmation keeps its own focus
+      if (e.key !== 'Tab' || !sheet || document.querySelector('[role="alertdialog"]')) return;
+      const all = [
+        ...sheet.querySelectorAll<HTMLElement>('a[href], button, select, textarea, input, [tabindex]:not([tabindex="-1"])'),
+      ].filter((el) => !el.matches(':disabled') && el.getClientRects().length > 0);
+      if (!all.length) return;
+      const [first, last] = [all[0], all[all.length - 1]];
+      const at = document.activeElement;
+      // b comes after a in the document
+      const follows = (a: Node, b: Node) => !!(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
+      const out = !at || !sheet.contains(at);
+      if (e.shiftKey ? out || at === first || follows(at, first) : out || at === last || follows(last, at)) {
+        e.preventDefault();
+        (e.shiftKey ? last : first).focus();
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [sheetOpen]);
+
   const toPlace = useCallback(
     (key: string, start: number, end: number) => {
       const b = blocks.find((x) => x.key === key);
-      return b && bookId && slug ? placeFromSelection(bookId, slug, b, start, end) : null;
+      // whole words only, as in Apple Books: a pin never splits a word
+      return b && bookId && slug ? placeFromSelection(bookId, slug, b, ...snapToWords(b.text, start, end)) : null;
     },
     [blocks, bookId, slug],
   );
@@ -510,6 +608,7 @@ export default function BookReaderPage() {
               {/* Notes and Compare — on top of every remedy, in every book */}
               <div className="ml-auto flex items-center gap-2">
                 <button
+                  ref={notesButtonRef}
                   type="button"
                   onClick={() => openNotes('remedy')}
                   className="btn-secondary"
@@ -562,8 +661,8 @@ export default function BookReaderPage() {
       </div>
       <CompareTray />
 
-      {/* "Add note" for the selected words: below the selection, clear of the
-          native callout above it */}
+      {/* "Add note" for the selected words (placed by useTextSelection: below
+          the selection on touch, clear of the native callout) */}
       {selection && (
         <button
           type="button"
@@ -623,7 +722,7 @@ export default function BookReaderPage() {
           onClose={closeNotes}
         >
           {/* own stacking context, so the segmented controls stay under the sheet's sticky header */}
-          <div className="relative z-0">
+          <div ref={sheetBodyRef} className="relative z-0">
           {remedyTab && (
             <SegmentedControl
               className="mb-4"

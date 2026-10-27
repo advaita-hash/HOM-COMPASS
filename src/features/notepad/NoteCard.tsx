@@ -1,16 +1,33 @@
-import { forwardRef, useCallback, useEffect, useId, useState } from 'react';
+import { forwardRef, useCallback, useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import { MapPin, Pencil, Trash2 } from 'lucide-react';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { type PadNote, useNotepad } from './notepadStore';
 import { placeLabel } from './places';
+import { drafts, useAnnounce } from './notepadUi';
 
 export const fmtDate = (iso: string) =>
   new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
 
 /** Where "Show in text" goes: a callback inside the reader, a link elsewhere. */
 export type ShowInText = { onClick: () => void } | { to: string };
+
+/**
+ * After a card goes away, the card that took its place (or the one before
+ * it, or the composer when the list is empty), so focus stays in the notepad.
+ */
+function focusAfterRemoving(card: HTMLElement | null) {
+  const root = card?.closest('[data-notepad]');
+  if (!root || !card) return () => {};
+  const cards = [...root.querySelectorAll<HTMLElement>('[data-note-id]')];
+  const i = cards.indexOf(card);
+  const id = (cards[i + 1] ?? cards[i - 1])?.getAttribute('data-note-id');
+  return () => {
+    const next = id ? root.querySelector<HTMLElement>(`[data-note-id="${CSS.escape(id)}"]`) : null;
+    (next ?? root.querySelector<HTMLElement>('[data-composer-input]'))?.focus({ preventScroll: !!next });
+  };
+}
 
 /** Deep link to a pinned note in the reader (see the URL contract in BookReaderPage). */
 export const noteHref = (n: PadNote) =>
@@ -36,10 +53,32 @@ export const NoteCard = forwardRef<
 >(function NoteCard({ note, source, showInText, highlighted = false, hidePlace = false }, ref) {
   const update = useNotepad((s) => s.update);
   const remove = useNotepad((s) => s.remove);
-  const [draft, setDraft] = useState<string | null>(null);
+  const announce = useAnnounce();
+  // an edit in progress survives the sheet being dismissed (kept for the session)
+  const draftKey = `edit:${note.id}`;
+  const [draft, setDraftState] = useState<string | null>(() => drafts.get(draftKey) ?? null);
+  const setDraft = (d: string | null) => {
+    if (d === null) drafts.delete(draftKey);
+    else drafts.set(draftKey, d);
+    setDraftState(d);
+  };
   const [confirm, setConfirm] = useState(false);
   const cancelDelete = useCallback(() => setConfirm(false), []);
   const editId = useId();
+  const cardRef = useRef<HTMLLIElement | null>(null);
+  const editButton = useRef<HTMLButtonElement>(null);
+  const editBox = useRef<HTMLTextAreaElement>(null);
+  /** Where focus goes on the next render: into the edit box, or back to Edit. */
+  const refocus = useRef<'box' | 'button' | null>(null);
+
+  useEffect(() => {
+    const box = editBox.current;
+    if (refocus.current === 'box' && box) {
+      box.focus();
+      box.setSelectionRange(box.value.length, box.value.length);
+    } else if (refocus.current === 'button') editButton.current?.focus();
+    refocus.current = null;
+  }, [draft]);
 
   // Escape cancels the delete without also closing a sheet around the card
   // (both listen on window; this runs first, on document)
@@ -61,16 +100,37 @@ export const NoteCard = forwardRef<
     `${edited ? 'Edited' : 'Added'} ${fmtDate(note.updatedAt)}`,
   ].filter(Boolean);
 
-  const save = () => {
-    if (draft === null || !draft.trim()) return;
-    if (draft !== note.body) update(note.id, draft.trim());
+  const startEdit = () => {
+    refocus.current = 'box';
+    setDraft(note.body);
+  };
+  const stopEdit = () => {
+    refocus.current = 'button';
     setDraft(null);
   };
+  const save = () => {
+    if (draft === null || !draft.trim()) return;
+    if (draft.trim() !== note.body) {
+      update(note.id, draft.trim());
+      announce('Note saved');
+    }
+    stopEdit();
+  };
+
+  // brand-700 on the amber wash of a highlighted card: brand-600 falls under
+  // 4.5:1 there in dark mode
+  const action = `btn-ghost px-3 text-sm ${highlighted ? 'text-brand-700' : ''}`;
 
   return (
     <li
-      ref={ref}
+      ref={(el) => {
+        cardRef.current = el;
+        if (typeof ref === 'function') ref(el);
+        else if (ref) ref.current = el;
+      }}
       data-note-id={note.id}
+      // focus lands here when a neighbouring card is deleted
+      tabIndex={-1}
       className={`rounded-xl border p-3 transition-shadow ${
         highlighted ? 'border-amber-400 bg-amber-50 ring-2 ring-amber-400/50' : 'border-ink/10 bg-surface'
       }`}
@@ -84,20 +144,20 @@ export const NoteCard = forwardRef<
           </label>
           <textarea
             id={editId}
-            autoFocus
+            ref={editBox}
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === 'Escape') {
                 e.stopPropagation();
-                setDraft(null);
+                stopEdit();
               } else if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) save();
             }}
             rows={Math.min(10, Math.max(3, draft.split('\n').length + 1))}
             className="input resize-y py-2"
           />
           <div className="mt-2 flex justify-end gap-2">
-            <button type="button" className="btn-ghost" onClick={() => setDraft(null)}>
+            <button type="button" className="btn-ghost" onClick={stopEdit}>
               Cancel
             </button>
             <button
@@ -118,15 +178,15 @@ export const NoteCard = forwardRef<
         <div className="-mb-2 -ml-3 mt-1 flex flex-wrap items-center">
           {showInText &&
             ('to' in showInText ? (
-              <Link to={showInText.to} className="btn-ghost px-3 text-sm">
+              <Link to={showInText.to} className={action}>
                 <MapPin className="h-4 w-4" /> Show in text
               </Link>
             ) : (
-              <button type="button" onClick={showInText.onClick} className="btn-ghost px-3 text-sm">
+              <button type="button" onClick={showInText.onClick} className={action}>
                 <MapPin className="h-4 w-4" /> Show in text
               </button>
             ))}
-          <button type="button" onClick={() => setDraft(note.body)} className="btn-ghost px-3 text-sm">
+          <button ref={editButton} type="button" onClick={startEdit} className={action}>
             <Pencil className="h-4 w-4" /> Edit
           </button>
           <button
@@ -150,8 +210,13 @@ export const NoteCard = forwardRef<
             destructive
             onCancel={cancelDelete}
             onConfirm={() => {
+              const refocusNext = focusAfterRemoving(cardRef.current);
               setConfirm(false);
               remove(note.id);
+              drafts.delete(draftKey);
+              announce('Note deleted');
+              // after the dialog has handed focus back to the (now gone) Delete button
+              window.setTimeout(refocusNext, 0);
             }}
           />,
           document.body,
