@@ -22,9 +22,9 @@ import {
   useRemedyPad,
 } from '../notepad/notepadStore';
 import { type TextBlock, blocksOf, placeFromSelection, placeLabel, resolvePlace } from '../notepad/places';
-import { isRepertoryKey, remedyKeyForBookRemedy } from '../notepad/remedyKey';
+import { remedyKeyForBookRemedy } from '../notepad/remedyKey';
 import { RemedyNotepad } from '../notepad/RemedyNotepad';
-import { noteHref } from '../notepad/NoteCard';
+import { noteHref } from '../notepad/links';
 import { BookNotepad } from '../notepad/BookNotepad';
 import { useTextSelection } from '../notepad/useTextSelection';
 
@@ -36,7 +36,7 @@ import { useTextSelection } from '../notepad/useTextSelection';
 //   ?notes=book     open the notepad on "This book"
 // Each param is removed once acted on, so refresh/back doesn't reopen it. A
 // ?note= for a note that belongs to another chapter, remedy or book is sent
-// on to that note's own page.
+// on to that note's own page (links.ts noteHref).
 // ---------------------------------------------------------------------------
 
 /** Notes pinned in one block: passages (character ranges) and whole sections. */
@@ -45,29 +45,52 @@ interface BlockPins {
   section: PadNote[];
 }
 
-/** Where a note lives when it isn't in the chapter or book being read. */
-function noteHome(n: PadNote): string | undefined {
-  if (n.place) return noteHref(n);
-  if (n.remedy && isRepertoryKey(n.remedy)) return `/remedy/${encodeURIComponent(n.remedy)}?tab=notes`;
-  if (n.remedy?.startsWith('book:')) {
-    // a chapter that matches no repertory remedy: book:<book>:<slug>
-    const [, book, ...slug] = n.remedy.split(':');
-    return `/books/${book}/${slug.join(':')}?note=${encodeURIComponent(n.id)}`;
-  }
-  if (n.book) return `/books/${n.book}?note=${encodeURIComponent(n.id)}`;
-  return undefined;
-}
-
 const WORD_CHAR = /[\p{L}\p{N}]/u;
+/** Joins two words into one: weather-cock, child's. */
+const JOINER = /['’\-‐]/;
+/** Closes a phrase; a pin takes it in so its marker follows it. */
+const CLOSING = /[.,;:!?)\]’”"']/;
 
-/** Widen [start, end) so it doesn't begin or end part-way through a word. */
+/**
+ * Widen [start, end) so it doesn't begin or end part-way through a word
+ * (hyphenated and apostrophe words count as one), and take in the punctuation
+ * that closes the last word, so the marker never lands between them.
+ */
 function snapToWords(text: string, start: number, end: number): [number, number] {
   let s = Math.min(start, end);
   let e = Math.max(start, end);
-  const inWord = (i: number) => i > 0 && i < text.length && WORD_CHAR.test(text[i - 1]) && WORD_CHAR.test(text[i]);
+  const w = (i: number) => i >= 0 && i < text.length && WORD_CHAR.test(text[i]);
+  // the boundary before i falls inside a word
+  const inWord = (i: number) =>
+    i > 0 &&
+    i < text.length &&
+    ((w(i - 1) && w(i)) || (JOINER.test(text[i]) && w(i - 1) && w(i + 1)) || (JOINER.test(text[i - 1]) && w(i - 2) && w(i)));
   while (inWord(s)) s--;
   while (inWord(e)) e++;
+  if (e > s && w(e - 1)) {
+    let k = e;
+    while (k < text.length && CLOSING.test(text[k])) k++;
+    // only where the phrase really ends ("irresolute." but not the "e." of "e.g.")
+    if (k > e && (k === text.length || /[\s—–]/.test(text[k]))) e = k;
+  }
   return [s, e];
+}
+
+/** Last reading view, so a reload stays on Full text (this tab only). */
+const VIEW_KEY = 'reader.view';
+function readView(): 'portrait' | 'full' {
+  try {
+    return window.sessionStorage.getItem(VIEW_KEY) === 'full' ? 'full' : 'portrait';
+  } catch {
+    return 'portrait';
+  }
+}
+function saveView(v: 'portrait' | 'full') {
+  try {
+    window.sessionStorage.setItem(VIEW_KEY, v);
+  } catch {
+    // storage blocked: the view just isn't remembered
+  }
 }
 
 const firstWords = (body: string, n = 6) => {
@@ -80,10 +103,13 @@ function NoteMarker({
   notes,
   active,
   onOpen,
+  at = 'end',
 }: {
   notes: PadNote[];
   active: boolean;
   onOpen: (notes: PadNote[]) => void;
+  /** 'start': opens a block, spaced from the text after it; 'end': follows words, spaced from them only. */
+  at?: 'start' | 'end';
 }) {
   const label =
     notes.length === 1 ? `Note: ${firstWords(notes[0].body)}` : `${notes.length} notes: ${firstWords(notes[0].body)}`;
@@ -95,7 +121,7 @@ function NoteMarker({
       aria-label={label}
       title={label}
       onClick={() => onOpen(notes)}
-      className={`tap mx-1 inline-flex h-6 select-none items-center gap-1 rounded-full px-2 align-text-bottom font-sans text-2xs font-semibold normal-case tracking-normal text-amber-800 transition-colors hover:bg-amber-200 ${
+      className={`tap ${at === 'start' ? 'mr-1' : 'ml-1'} inline-flex h-6 select-none items-center gap-1 rounded-full px-2 align-text-bottom font-sans text-2xs font-semibold normal-case tracking-normal text-amber-800 transition-colors hover:bg-amber-200 ${
         active ? 'bg-amber-200 ring-2 ring-amber-400' : 'bg-amber-100'
       }`}
     >
@@ -129,7 +155,13 @@ function PinnedText({
   const out: ReactNode[] = [];
   if (sectionMarker && pins?.section.length) {
     out.push(
-      <NoteMarker key="section" notes={pins.section} active={pins.section.some((n) => active.has(n.id))} onOpen={onOpen} />,
+      <NoteMarker
+        key="section"
+        at="start"
+        notes={pins.section}
+        active={pins.section.some((n) => active.has(n.id))}
+        onOpen={onOpen}
+      />,
     );
   }
   for (let k = 0; k < cuts.length - 1; k++) {
@@ -262,7 +294,11 @@ export default function BookReaderPage() {
   const meta = getBookMeta(bookId);
   const { data: book, isLoading, isError, error } = useBook(bookId);
   const [query, setQuery] = useState(searchParams.get('q') ?? '');
-  const [view, setView] = useState<'portrait' | 'full'>('portrait');
+  const [view, setViewState] = useState<'portrait' | 'full'>(readView);
+  const setView = useCallback((v: 'portrait' | 'full') => {
+    saveView(v);
+    setViewState(v);
+  }, []);
   // On phone/tablet the remedy index and the reader can't sit side by side, so
   // the list collapses once a remedy is chosen (tap "All remedies" to reopen).
   // Desktop (lg+) always shows both.
@@ -316,8 +352,14 @@ export default function BookReaderPage() {
   const compareCount = useCompare((s) => s.items.length);
   const textRef = useRef<HTMLDivElement>(null);
   const scrollerRef = useRef<HTMLDivElement>(null);
+  /** The note card floating beside its place. */
+  const peekRef = useRef<HTMLDivElement>(null);
+  /** Its height, kept clear under the text so it never covers the last lines. */
+  const [peekHeight, setPeekHeight] = useState(0);
   /** Inside the sheet, to find its heading. */
   const sheetBodyRef = useRef<HTMLDivElement>(null);
+  /** Wraps the Drug picture / Full text control. */
+  const readingViewRef = useRef<HTMLDivElement>(null);
   /** The toolbar "Notes" button: where focus returns when the opener is gone. */
   const notesButtonRef = useRef<HTMLButtonElement>(null);
   /** What had focus when the sheet opened; it gets focus back on close. */
@@ -364,6 +406,27 @@ export default function BookReaderPage() {
     setPeekId(n.id);
     setScrollTo({ id: n.id });
   }, []);
+  /** Put focus on the marker of a note in the text, else on the toolbar Notes button. */
+  const focusMarker = useCallback((id: string) => {
+    window.setTimeout(() => {
+      const m = scrollerRef.current?.querySelector<HTMLElement>(`button[data-notes~="${CSS.escape(id)}"]`);
+      (m ?? notesButtonRef.current)?.focus({ preventScroll: true });
+    }, 0);
+  }, []);
+  /** Close the note shown beside its place; focus goes back to its marker. */
+  const closePeek = useCallback(() => {
+    if (!peekId) return;
+    setPeekId(null);
+    if (document.activeElement === document.body || peekRef.current?.contains(document.activeElement)) {
+      focusMarker(peekId);
+    }
+  }, [peekId, focusMarker]);
+  /** Keyboard: to the reader's first control (the reading view). */
+  const focusReader = useCallback(() => {
+    const first =
+      readingViewRef.current?.querySelector<HTMLElement>('[aria-checked="true"]') ?? notesButtonRef.current ?? scrollerRef.current;
+    first?.focus();
+  }, []);
   const onOpenMarker = (notes: PadNote[]) => {
     openNotes('remedy', notes[0].id);
     setMarkerIds(notes.map((n) => n.id));
@@ -387,7 +450,7 @@ export default function BookReaderPage() {
       const here = !!n?.place && n.place.book === bookId && n.place.slug === selected!.slug;
       const generalHere =
         !!n && ((!!remedyKey && isGeneralRemedyNote(n, remedyKey)) || (!!bookId && isGeneralBookNote(n, bookId)));
-      const home = n && !here && !generalHere ? noteHome(n) : undefined;
+      const home = n && !here && !generalHere ? noteHref(n) : undefined;
       // not on this page: go to the note's own place (once, in case that
       // place no longer exists and leads back here)
       if (home && redirectedRef.current !== noteId) {
@@ -433,15 +496,39 @@ export default function BookReaderPage() {
     return () => window.clearTimeout(t);
   }, [scrollTo, view, slug]);
 
+  // the note beside its place: Escape closes it, and the reader keeps room
+  // for it below the text
+  const peekShown = !!peek && !notesTab;
+  useEffect(() => {
+    if (!peekShown) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !document.querySelector('[role="alertdialog"]')) closePeek();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [peekShown, closePeek]);
+  useEffect(() => {
+    const el = peekRef.current;
+    if (!peekShown || !el) {
+      setPeekHeight(0);
+      return;
+    }
+    const measure = () => setPeekHeight(el.offsetHeight);
+    measure();
+    if (typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [peekShown]);
+
   // focus moves into the sheet when it opens: onto the note it was opened for,
   // the composer (a passage to write about), or else the sheet's heading
+  // (focusable by script only, see Sheet)
   const sheetOpen = notesTab !== null;
   useEffect(() => {
     if (!sheetOpen || focusNote || pending) return;
     const heading = sheetBodyRef.current?.closest('[role="dialog"]')?.querySelector<HTMLElement>('h2');
-    if (!heading) return;
-    heading.tabIndex = -1;
-    heading.focus({ preventScroll: true });
+    heading?.focus({ preventScroll: true });
     // focusNote and pending are read only at the moment the sheet opens
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sheetOpen]);
@@ -519,7 +606,7 @@ export default function BookReaderPage() {
         <button
           type="button"
           onClick={() => openNotes('book')}
-          className="btn-ghost -mr-3 shrink-0 px-3"
+          className="btn-ghost -mr-3 min-w-[44px] shrink-0 px-3"
           aria-label={`Book notes${bookNotes.length ? `, ${bookNotes.length}` : ''}`}
         >
           <NotebookPen className="h-4 w-4" />
@@ -535,11 +622,32 @@ export default function BookReaderPage() {
             listOpen ? 'flex' : 'hidden'
           } w-full shrink-0 flex-col border-r border-slate-200 bg-slate-50 lg:flex lg:w-64`}
         >
+          {/* keyboard: past the long remedy index, straight to the text
+              (desktop only; on phones the index and the reader don't share the screen) */}
+          {selected && (
+            <button
+              type="button"
+              onClick={focusReader}
+              className="btn-secondary sr-only hidden lg:inline-flex lg:focus:not-sr-only lg:focus:mx-3 lg:focus:mt-3"
+            >
+              Skip to {canonicalName(selected.name)}
+            </button>
+          )}
           <div className="relative p-3">
             <Search className="pointer-events-none absolute left-6 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => {
+                // Enter opens the first match
+                const first = filtered[0];
+                if (e.key !== 'Enter' || !first) return;
+                e.preventDefault();
+                setListOpen(false);
+                navigate(`/books/${bookId}/${first.slug}`);
+                window.setTimeout(focusReader, 0);
+              }}
+              aria-label={`Search remedies in ${meta.label}`}
               placeholder="Search remedies…"
               className="w-full rounded-lg border border-slate-200 bg-surface py-2 pl-9 pr-3 text-sm focus:outline-none"
             />
@@ -581,9 +689,19 @@ export default function BookReaderPage() {
         {/* Reader — hidden on mobile while the list is open */}
         <div
           ref={scrollerRef}
+          tabIndex={-1}
+          aria-label="Reader"
           className={`${
             listOpen ? 'hidden' : 'block'
-          } min-h-0 flex-1 overflow-auto bg-surface px-6 pb-28 pt-6 md:px-10 lg:block`}
+          } min-h-0 flex-1 overflow-auto bg-surface px-6 pb-28 pt-6 focus:outline-none md:px-10 lg:block`}
+          // room under the text for the note card floating above it
+          style={
+            peekHeight
+              ? {
+                  paddingBottom: `calc(max(16px, env(safe-area-inset-bottom)) + ${peekHeight + 24 + (compareCount ? 72 : 0)}px)`,
+                }
+              : undefined
+          }
         >
           {isError && (
             <p className="text-sm text-red-600">
@@ -596,15 +714,17 @@ export default function BookReaderPage() {
               <button onClick={() => setListOpen(true)} className="btn-secondary lg:hidden">
                 <List className="h-4 w-4" /> All remedies
               </button>
-              <SegmentedControl
-                ariaLabel="Reading view"
-                value={view}
-                onChange={setView}
-                options={[
-                  { value: 'portrait', label: 'Drug picture' },
-                  { value: 'full', label: 'Full text' },
-                ]}
-              />
+              <div ref={readingViewRef}>
+                <SegmentedControl
+                  ariaLabel="Reading view"
+                  value={view}
+                  onChange={setView}
+                  options={[
+                    { value: 'portrait', label: 'Drug picture' },
+                    { value: 'full', label: 'Full text' },
+                  ]}
+                />
+              </div>
               {/* Notes and Compare — on top of every remedy, in every book */}
               <div className="ml-auto flex items-center gap-2">
                 <button
@@ -632,7 +752,12 @@ export default function BookReaderPage() {
                     count: remedyCount,
                     remedyName,
                     onOpen: () => openNotes('remedy'),
-                    onFullText: () => setView('full'),
+                    onFullText: () => {
+                      // the button goes away with the drug picture: keep focus
+                      // on the reading view, now on Full text
+                      setView('full');
+                      window.setTimeout(() => readingViewRef.current?.querySelector<HTMLElement>('[aria-checked="true"]')?.focus(), 0);
+                    },
                   }}
                 />
               ) : (
@@ -688,6 +813,7 @@ export default function BookReaderPage() {
           style={{ bottom: `calc(max(16px, env(safe-area-inset-bottom)) + ${compareCount ? 72 : 0}px)` }}
         >
           <div
+            ref={peekRef}
             role="status"
             className="material-thick pointer-events-auto w-full max-w-xl animate-dialog-in rounded-2xl border border-ink/10 p-3 shadow-elevated"
           >
@@ -699,7 +825,7 @@ export default function BookReaderPage() {
               </div>
               <button
                 type="button"
-                onClick={() => setPeekId(null)}
+                onClick={closePeek}
                 aria-label="Close note"
                 className="tap flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-ink/[0.06] text-ink/70 transition-colors hover:bg-ink/10 hover:text-ink/90"
               >

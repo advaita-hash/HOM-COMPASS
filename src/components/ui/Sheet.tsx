@@ -52,16 +52,18 @@ export function Sheet({
           </div>
           <div className="flex items-start gap-3 px-5 py-3">
             <div className="min-w-0 flex-1">
-              <h2 id={titleId} className="font-serif text-xl font-semibold text-ink/90">
+              {/* focusable by script only (where a screen reader starts reading
+                  when the sheet opens); no ring on a heading that isn't a Tab stop */}
+              <h2 id={titleId} tabIndex={-1} className="font-serif text-xl font-semibold text-ink/90 focus:outline-none">
                 {title}
               </h2>
-              {subtitle && <p className="text-xs text-ink/60">{subtitle}</p>}
+              {subtitle && <p className="text-xs text-ink/70">{subtitle}</p>}
             </div>
             <button
               type="button"
               onClick={onClose}
               aria-label="Close"
-              className="tap flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-ink/[0.06] text-ink/60 transition-colors hover:bg-ink/10 hover:text-ink/90"
+              className="tap flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-ink/[0.06] text-ink/70 transition-colors hover:bg-ink/10 hover:text-ink/90"
             >
               <X className="h-4 w-4" strokeWidth={2.5} />
             </button>

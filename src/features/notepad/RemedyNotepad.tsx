@@ -1,8 +1,8 @@
 import { type ReactNode, useEffect, useMemo, useRef } from 'react';
 import { StickyNote } from 'lucide-react';
 import { EmptyState } from '../../components/ui/EmptyState';
-import { getBookMeta } from '../books/booksIndex';
-import { NoteCard, noteHref } from './NoteCard';
+import { NoteCard } from './NoteCard';
+import { bookLabel, noteHref } from './links';
 import { NoteComposer } from './NoteComposer';
 import { type NotePlace, type PadNote, useChapterPad, useNotepad, useRemedyPad } from './notepadStore';
 import { type TextBlock, placeFromSection, placesOf, resolvePlace } from './places';
@@ -19,8 +19,6 @@ export interface NotepadChapter {
   /** Close the notepad and show a note pinned in this chapter. */
   onShowInText: (note: PadNote) => void;
 }
-
-export const bookLabel = (id: string) => getBookMeta(id)?.label ?? id;
 
 /** Small uppercase list heading with a count. */
 export function ListHeading({ children, count }: { children: ReactNode; count: number }) {
@@ -171,7 +169,7 @@ export function RemedyNotepad({
                   note={n}
                   source={bookLabel(n.place!.book)}
                   highlighted={n.id === focusId}
-                  showInText={{ to: noteHref(n)! }}
+                  showInText={{ to: noteHref(n) }}
                 />
               ))}
             </ul>

@@ -16,12 +16,12 @@ Output text format (rendered by the reader as headings + bullet lists):
   "<Section>\\n• keynote\\n• keynote\\n\\n<Section>\\n…"
 
 Usage:  python3 scripts/ingestion/gen_allen.py "Allens Keynotes.pdf" public/books/allen.json
+        python3 scripts/ingestion/gen_allen.py allen-pages.json public/books/allen.json
+        (the second form reads a cached text layer: a JSON list of page strings)
 """
 import json
 import re
 import sys
-
-import pypdfium2 as pdfium
 
 MAIN = (19, 342)
 SUPPLEMENT = (343, 421)
@@ -51,11 +51,22 @@ TITLE_FIX = {
     "electrictas": "Electricitas",
     "adrenalinum (sarcode)": "Adrenalinum",
     "provings of the x-ray": "X-Ray",
+    # one monograph for both preparations (Allen's footnote: Fincke/Swan's
+    # Tuberculinum and Heath's Bacillinum); filed under the usual name
+    "tuberculinum – bacillinum": "Tuberculinum",
 }
 # a second title the edition prints mid-monograph → append to the named remedy
 MERGE_INTO = {"electricity": "electricitas"}
 
-TITLE_RE = re.compile(r"[A-Z][A-Z \-–’'.]+[A-Z](?:\s*\([A-Za-z ]+\))?|BACILLUS NO\. “7” \(PATERSON\)")
+# A title may carry a footnote mark ("LYSSINUM1", "TUBERCULINUM – BACILLINUM*");
+# without it the monograph would run on into the previous remedy's chapter.
+# The mark must follow a word of 4+ letters, so formulas under a title
+# ("HNO3", "HPO3") are not mistaken for titles.
+FOOTNOTE_MARK = r"[0-9*†]"
+TITLE_RE = re.compile(
+    r"(?:[A-Z][A-Z \-–’'.]+[A-Z](?:\s*\([A-Za-z ]+\))?|BACILLUS NO\. “7” \(PATERSON\))"
+    r"(?:(?<=[A-Z]{4})" + FOOTNOTE_MARK + ")?"
+)
 FORMULA_RE = re.compile(r"^[()A-Z][A-Za-z0-9(). ]*$")  # C3H3 / (NO2 / ) O3 / CH6H5CO. OH
 LABEL_RE = re.compile(r"^[A-Z][A-Za-z\- ]{2,30}:\s")  # "Aggravation: …", "Compare: …"
 
@@ -71,6 +82,7 @@ def heading_of(line: str):
 
 
 def title_case(s: str) -> str:
+    s = re.sub(FOOTNOTE_MARK + "+$", "", s).strip()
     fixed = TITLE_FIX.get(s.lower())
     if fixed:
         return fixed
@@ -167,9 +179,23 @@ def render_body(body, prose=False):
     return "\n\n".join(out)
 
 
-def build(pdf_path):
-    pdf = pdfium.PdfDocument(pdf_path)
-    pages = [pdf[i].get_textpage().get_text_range().replace("\r", "") for i in range(len(pdf))]
+def read_pages(src):
+    """Page texts from the PDF, or from a JSON list of page strings (a cached
+    text layer, so the book can be rebuilt without the PDF)."""
+    if src.lower().endswith(".json"):
+        with open(src, encoding="utf-8") as f:
+            pages = json.load(f)
+        if not (isinstance(pages, list) and all(isinstance(p, str) for p in pages)):
+            sys.exit(f"{src}: expected a JSON list of page strings")
+        return [p.replace("\r", "") for p in pages]
+    import pypdfium2 as pdfium  # only needed when reading the PDF itself
+
+    pdf = pdfium.PdfDocument(src)
+    return [pdf[i].get_textpage().get_text_range().replace("\r", "") for i in range(len(pdf))]
+
+
+def build(src):
+    pages = read_pages(src)
     remedies, seen = [], set()
 
     def add(title, meta, body, prose=False):

@@ -4,6 +4,9 @@ import { colors, darkVariant, grid, tokensPlugin } from './design/tokens.js';
 export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   darkMode: darkVariant,
+  // hover styles only where a pointer can hover: a tapped button on a phone
+  // must not keep its hover wash (taps get the :active press instead)
+  future: { hoverOnlyWhenSupported: true },
   theme: {
     // Brand-driven semantic palette (see design/tokens.js). Replaces the
     // default palette entirely — no System Blue, no fixed Apple greys.

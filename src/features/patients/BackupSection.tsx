@@ -2,10 +2,9 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Download, HardDrive, TriangleAlert, Upload } from 'lucide-react';
 import { usePatients } from './patientsStore';
-import { useNotepad } from '../notepad/notepadStore';
+import { NOTEPAD_KEY, NOTEPAD_VERSION, useNotepad } from '../notepad/notepadStore';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import {
-  NOTEPAD_KEY,
   PATIENTS_KEY,
   browserStorage,
   buildBackup,
@@ -52,6 +51,7 @@ export function BackupSection() {
   const { hash, key: locationKey } = useLocation();
   const sectionRef = useRef<HTMLElement>(null);
   const patientCount = usePatients((s) => s.patients.length);
+  const noteCount = useNotepad((s) => s.notes.length);
   const [lastBackup, setLastBackup] = useState<Date | null>(() => readLastBackup(browserStorage()));
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState<{ backup: Backup; counts: BackupCounts } | null>(null);
@@ -63,8 +63,9 @@ export function BackupSection() {
   }, [hash, locationKey]);
 
   const now = new Date();
+  // anything worth keeping: patient records or notes
   const overdue =
-    patientCount > 0 && (!lastBackup || now.getTime() - lastBackup.getTime() > REMIND_AFTER_DAYS * DAY_MS);
+    (patientCount > 0 || noteCount > 0) && (!lastBackup || now.getTime() - lastBackup.getTime() > REMIND_AFTER_DAYS * DAY_MS);
 
   function exportBackup() {
     setError(null);
@@ -75,7 +76,7 @@ export function BackupSection() {
       const { notes } = useNotepad.getState();
       const backup = buildBackup(browserStorage(), {
         [PATIENTS_KEY]: { state: { patients, cases }, version: 1 },
-        [NOTEPAD_KEY]: { state: { notes }, version: 1 },
+        [NOTEPAD_KEY]: { state: { notes }, version: NOTEPAD_VERSION },
       });
       downloadBackup(backup);
       const at = new Date(backup.exportedAt);

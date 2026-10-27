@@ -29,10 +29,6 @@ function focusAfterRemoving(card: HTMLElement | null) {
   };
 }
 
-/** Deep link to a pinned note in the reader (see the URL contract in BookReaderPage). */
-export const noteHref = (n: PadNote) =>
-  n.place ? `/books/${n.place.book}/${n.place.slug}?note=${encodeURIComponent(n.id)}` : undefined;
-
 /**
  * One note: its words, a quiet line saying where it is pinned and when it was
  * written, and Edit / Delete (plus "Show in text" for pinned notes). Editing

@@ -62,7 +62,7 @@ export function SegmentedControl<T extends string | number>({
             title={o.title}
             onClick={() => onChange(o.value)}
             className={`tap relative z-10 flex h-9 min-w-0 items-center justify-center gap-2 rounded-md px-3 text-sm transition-colors duration-300 ease-spring ${
-              active ? 'font-semibold text-ink/90' : 'font-medium text-ink/60 hover:text-ink/90'
+              active ? 'font-semibold text-ink/90' : 'font-medium text-ink/70 hover:text-ink/90'
             }`}
           >
             <span className="truncate">{o.label}</span>
