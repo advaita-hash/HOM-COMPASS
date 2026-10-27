@@ -11,8 +11,10 @@ import { bookLabel, noteHref, noteTitle } from '../notepad/links';
 import { placeLabel } from '../notepad/places';
 
 function snippet(text: string, q: string, len = 140): string {
+  if (text.length <= len) return text;
   const i = text.toLowerCase().indexOf(q);
-  const start = i < 0 ? 0 : Math.max(0, i - len / 2);
+  // centre the match, but never leave the window short at the end
+  const start = i < 0 ? 0 : Math.max(0, Math.min(i - len / 2, text.length - len));
   return (start > 0 ? '…' : '') + text.slice(start, start + len).trim() + (start + len < text.length ? '…' : '');
 }
 
@@ -41,18 +43,22 @@ export default function GlobalSearchPage() {
   const notes = useNotepad((s) => s.notes);
 
   // The practitioner's own notes: their words, or the passage a note is pinned to.
+  // Every match is counted; only the newest 20 are shown.
   const noteHits = useMemo(() => {
-    if (!active) return [];
-    const out: { note: PadNote; snip: string }[] = [];
+    const out: { note: PadNote; snip: string; inQuote: boolean }[] = [];
+    if (!active) return { shown: out, total: 0 };
+    let total = 0;
     for (const n of [...notes].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))) {
       const body = n.body.replace(/\s+/g, ' ').trim();
       const quote = n.place?.quote;
-      if (body.toLowerCase().includes(q)) out.push({ note: n, snip: snippet(body, q) });
-      else if (quote?.toLowerCase().includes(q)) out.push({ note: n, snip: `“${snippet(quote, q)}”` });
+      let hit: (typeof out)[number];
+      if (body.toLowerCase().includes(q)) hit = { note: n, snip: snippet(body, q), inQuote: false };
+      else if (quote?.toLowerCase().includes(q)) hit = { note: n, snip: `“${snippet(quote, q)}”`, inQuote: true };
       else continue;
-      if (out.length >= 20) break;
+      total++;
+      if (out.length < 20) out.push(hit);
     }
-    return out;
+    return { shown: out, total };
   }, [q, active, notes]);
 
   const curated = useMemo(() => {
@@ -119,16 +125,17 @@ export default function GlobalSearchPage() {
         />
       </div>
 
-      {active && noteHits.length > 0 && (
+      {active && noteHits.total > 0 && (
         <section className="mb-6">
-          <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
-            Your notes ({noteHits.length})
+          <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-ink/70">
+            Your notes ({noteHits.total}
+            {noteHits.total > noteHits.shown.length && `, showing ${noteHits.shown.length}`})
           </h2>
           <div className="space-y-2">
-            {noteHits.map(({ note, snip }) => (
+            {noteHits.shown.map(({ note, snip, inQuote }) => (
               <Link key={note.id} to={noteHref(note)} className="card block p-3 pressable">
                 <div className="flex items-center gap-2 text-sm font-medium text-slate-800">
-                  <StickyNote className="h-4 w-4 shrink-0 text-amber-600" />
+                  <StickyNote className="h-4 w-4 shrink-0 text-amber-600" aria-hidden />
                   <span className="min-w-0 truncate">{noteTitle(note)}</span>
                   {note.place && (
                     <span className="shrink-0 text-2xs uppercase tracking-wide text-ink/70">
@@ -137,9 +144,12 @@ export default function GlobalSearchPage() {
                   )}
                 </div>
                 {note.place && (
-                  <p className="mt-1 truncate text-xs text-ink/70">Pinned · {placeLabel(note.place)}</p>
+                  // the matched quote is shown below, so don't repeat it here
+                  <p className="mt-1 truncate text-xs text-ink/70">
+                    Pinned · {inQuote ? (note.place.section ?? 'Passage') : placeLabel(note.place)}
+                  </p>
                 )}
-                <p className="mt-1 text-xs text-slate-500">
+                <p className="mt-1 break-words text-xs text-ink/70">
                   <Highlight text={snip} q={q} />
                 </p>
               </Link>

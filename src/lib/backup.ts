@@ -110,6 +110,13 @@ function storeState(entry: unknown): Record<string, unknown> | null {
   return isPlainObject(entry) && isPlainObject(entry.state) ? entry.state : null;
 }
 
+const nonEmpty = (v: unknown) => typeof v === 'string' && v !== '';
+
+/** A note the notepad will keep on rehydrate (the same test as its cleanNote). */
+function isUsableNote(n: unknown): boolean {
+  return isPlainObject(n) && nonEmpty(n.id) && typeof n.body === 'string' && (nonEmpty(n.remedy) || nonEmpty(n.book));
+}
+
 /** Patients and cases in a backup's `hom-compass.patients` entry, notes in its notepad. */
 export function countRecords(data: Record<string, unknown>): BackupCounts {
   const state = storeState(data[PATIENTS_KEY]);
@@ -117,7 +124,7 @@ export function countRecords(data: Record<string, unknown>): BackupCounts {
   return {
     patients: state && Array.isArray(state.patients) ? state.patients.length : 0,
     cases: state && Array.isArray(state.cases) ? state.cases.length : 0,
-    notes: pad ? (Array.isArray(pad.notes) ? pad.notes.length : 0) : null,
+    notes: pad ? (Array.isArray(pad.notes) ? pad.notes.filter(isUsableNote).length : 0) : null,
   };
 }
 

@@ -2,8 +2,10 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Download, HardDrive, TriangleAlert, Upload } from 'lucide-react';
 import { usePatients } from './patientsStore';
+import { useNotepad } from '../notepad/notepadStore';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import {
+  NOTEPAD_KEY,
   PATIENTS_KEY,
   browserStorage,
   buildBackup,
@@ -70,7 +72,11 @@ export function BackupSection() {
     try {
       // Export what's on screen, even if the last save to storage failed.
       const { patients, cases } = usePatients.getState();
-      const backup = buildBackup(browserStorage(), { [PATIENTS_KEY]: { state: { patients, cases }, version: 1 } });
+      const { notes } = useNotepad.getState();
+      const backup = buildBackup(browserStorage(), {
+        [PATIENTS_KEY]: { state: { patients, cases }, version: 1 },
+        [NOTEPAD_KEY]: { state: { notes }, version: 1 },
+      });
       downloadBackup(backup);
       const at = new Date(backup.exportedAt);
       recordLastBackup(browserStorage(), at);
@@ -176,8 +182,11 @@ export function BackupSection() {
         message={
           pending && (
             <>
-              This backup from {formatDate(new Date(pending.backup.exportedAt))} has {describeCounts(pending.counts)}.
-              Patients, cases, notes and settings in this backup replace the ones on this device. This can’t be undone.
+              This backup from {formatDate(new Date(pending.backup.exportedAt))} has {describeCounts(pending.counts)}.{' '}
+              {pending.counts.notes !== null
+                ? 'Patients, cases, notes and settings in this backup replace the ones on this device.'
+                : 'Patients, cases and settings in this backup replace the ones on this device. Your notes on this device are kept.'}{' '}
+              This can’t be undone.
             </>
           )
         }
