@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ChevronLeft, FlaskConical, Loader2, Search } from 'lucide-react';
+import { ChevronLeft, FlaskConical, Loader2, NotebookPen, Search } from 'lucide-react';
 import { SearchX } from 'lucide-react';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { REMEDIES, getRemedyById } from '../../data/remedies';
@@ -11,6 +11,8 @@ import { BOOKS, bookQueryOptions } from '../books/booksIndex';
 import { commonNameFor } from '../books/commonName';
 import { canonicalName } from '../../lib/remedyName';
 import { SegmentedControl } from '../../components/ui/SegmentedControl';
+import { RemedyNotepad } from '../notepad/RemedyNotepad';
+import { remedyKeyForCurated } from '../notepad/remedyKey';
 
 type Source = 'Curated' | (typeof BOOKS)[number]['label'];
 
@@ -187,6 +189,12 @@ export default function MateriaMedicaPage() {
         <ChevronLeft className="h-4 w-4" /> Back to Materia Medica
       </Link>
       <RemedyDetail remedy={remedy} />
+      <section className="card mt-5 p-5" aria-labelledby="notepad-heading">
+        <h2 id="notepad-heading" className="mb-3 flex items-center gap-2 text-lg font-semibold text-ink/90">
+          <NotebookPen className="h-5 w-5 text-brand-600" aria-hidden /> Notepad
+        </h2>
+        <RemedyNotepad remedyKey={remedyKeyForCurated(remedy)} remedyName={remedy.name} />
+      </section>
       <div className="mt-5">
         <BookCrossLinks remedyName={remedy.name} />
       </div>

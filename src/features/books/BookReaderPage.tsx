@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react';
+import { Fragment, type ReactNode, type RefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
-import { ChevronLeft, List, Loader2, Search } from 'lucide-react';
+import { ChevronLeft, List, Loader2, NotebookPen, Search, StickyNote, X } from 'lucide-react';
 import { getBookMeta, useBook } from './booksIndex';
 import { DrugPictureView, RemedyHeading } from './DrugPictureView';
 import { canonicalName } from '../../lib/remedyName';
@@ -8,50 +8,226 @@ import type { BookRemedy } from './types';
 import { parseSections } from './sections';
 import { commonNameFor } from './commonName';
 import { SegmentedControl } from '../../components/ui/SegmentedControl';
+import { Sheet } from '../../components/ui/Sheet';
 import { CompareButton, CompareTray } from '../compare/CompareControls';
+import { useCompare } from '../compare/compareStore';
+import {
+  type NotePlace,
+  type PadNote,
+  useBookPad,
+  useChapterPad,
+  useNotepad,
+  useRemedyPad,
+} from '../notepad/notepadStore';
+import { type TextBlock, blocksOf, placeFromSelection, placeLabel, resolvePlace } from '../notepad/places';
+import { remedyKeyForBookRemedy } from '../notepad/remedyKey';
+import { RemedyNotepad } from '../notepad/RemedyNotepad';
+import { BookNotepad } from '../notepad/BookNotepad';
+import { useTextSelection } from '../notepad/useTextSelection';
 
-function RemedyText({ remedy, common }: { remedy: BookRemedy; common: string | null }) {
+// ---------------------------------------------------------------------------
+// Notes in the reader. URL contract (other pages link here):
+//   ?note=<id>      open the note's chapter in Full text at its place, with
+//                   the note shown beside it (general notes open the notepad)
+//   ?notes=remedy   open the notepad on "This remedy"
+//   ?notes=book     open the notepad on "This book"
+// Each param is removed once acted on, so refresh/back doesn't reopen it.
+// ---------------------------------------------------------------------------
+
+/** Notes pinned in one block: passages (character ranges) and whole sections. */
+interface BlockPins {
+  ranges: { start: number; end: number; notes: PadNote[] }[];
+  section: PadNote[];
+}
+
+const firstWords = (body: string, n = 6) => {
+  const w = body.trim().split(/\s+/);
+  return w.slice(0, n).join(' ') + (w.length > n ? '…' : '');
+};
+
+/** Small inline button marking pinned notes; not part of the block's text. */
+function NoteMarker({
+  notes,
+  active,
+  onOpen,
+}: {
+  notes: PadNote[];
+  active: boolean;
+  onOpen: (notes: PadNote[]) => void;
+}) {
+  const label =
+    notes.length === 1 ? `Note: ${firstWords(notes[0].body)}` : `${notes.length} notes: ${firstWords(notes[0].body)}`;
+  return (
+    <button
+      type="button"
+      data-note-ui
+      data-notes={notes.map((n) => n.id).join(' ')}
+      aria-label={label}
+      title={label}
+      onClick={() => onOpen(notes)}
+      className={`tap mx-1 inline-flex h-6 select-none items-center gap-1 rounded-full px-2 align-text-bottom font-sans text-2xs font-semibold normal-case tracking-normal text-amber-800 transition-colors hover:bg-amber-200 ${
+        active ? 'bg-amber-200 ring-2 ring-amber-400' : 'bg-amber-100'
+      }`}
+    >
+      <StickyNote className="h-3.5 w-3.5" aria-hidden strokeWidth={2.25} />
+      {notes.length > 1 && <span className="tabular-nums">{notes.length}</span>}
+    </button>
+  );
+}
+
+/**
+ * One block's text with its pinned passages highlighted, each followed by
+ * its marker. `labelLen` chars at the start render bold (Allen's "Label: ").
+ */
+function PinnedText({
+  text,
+  labelLen,
+  pins,
+  sectionMarker,
+  active,
+  onOpen,
+}: {
+  text: string;
+  labelLen: number;
+  pins?: BlockPins;
+  sectionMarker: boolean;
+  active: Set<string>;
+  onOpen: (notes: PadNote[]) => void;
+}) {
+  const ranges = pins?.ranges ?? [];
+  const cuts = [...new Set([0, text.length, labelLen, ...ranges.flatMap((r) => [r.start, r.end])])].sort((a, b) => a - b);
+  const out: ReactNode[] = [];
+  if (sectionMarker && pins?.section.length) {
+    out.push(
+      <NoteMarker key="section" notes={pins.section} active={pins.section.some((n) => active.has(n.id))} onOpen={onOpen} />,
+    );
+  }
+  for (let k = 0; k < cuts.length - 1; k++) {
+    const [a, b] = [cuts[k], cuts[k + 1]];
+    let node: ReactNode = text.slice(a, b);
+    if (b <= labelLen) node = <strong className="font-semibold text-slate-800">{node}</strong>;
+    const cover = ranges.filter((r) => r.start <= a && r.end >= b);
+    if (cover.length) {
+      const ids = cover.flatMap((r) => r.notes.map((n) => n.id));
+      node = (
+        <mark
+          data-notes={ids.join(' ')}
+          className={`rounded-sm text-inherit [-webkit-box-decoration-break:clone] [box-decoration-break:clone] ${
+            ids.some((id) => active.has(id)) ? 'bg-amber-200' : 'bg-amber-100'
+          }`}
+        >
+          {node}
+        </mark>
+      );
+    }
+    out.push(<Fragment key={a}>{node}</Fragment>);
+    const ending = ranges.filter((r) => r.end === b);
+    if (ending.length) {
+      const notes = ending.flatMap((r) => r.notes);
+      out.push(<NoteMarker key={`m${b}`} notes={notes} active={notes.some((n) => active.has(n.id))} onOpen={onOpen} />);
+    }
+  }
+  return <>{out}</>;
+}
+
+/**
+ * Full text. Every paragraph / keynote is a block with data-block="i.j",
+ * one-to-one with blocksOf(remedy.text), so selections and pinned notes can be
+ * mapped onto the text.
+ */
+function RemedyText({
+  remedy,
+  common,
+  pins,
+  active,
+  onOpenNotes,
+  textRef,
+}: {
+  remedy: BookRemedy;
+  common: string | null;
+  pins: Map<string, BlockPins>;
+  active: Set<string>;
+  onOpenNotes: (notes: PadNote[]) => void;
+  textRef: RefObject<HTMLDivElement>;
+}) {
   const sections = useMemo(() => parseSections(remedy.text), [remedy.text]);
   return (
     <article className="prose-sm max-w-none">
       <RemedyHeading remedy={remedy} common={common} />
-      <div className="mt-4 space-y-4 font-serif text-subhead leading-relaxed text-slate-700">
-        {sections.map(({ heading, items }, i) => (
-          <section key={i} aria-label={heading ?? undefined}>
-            {heading && (
-              <h3 className="mb-2 mt-6 font-sans text-xs font-semibold uppercase tracking-wide text-brand-600">
-                {heading}
-              </h3>
-            )}
-            {items.some((it) => it.bullet) ? (
-              <ul className="space-y-2">
-                {items.map((it, j) => (
-                  <li key={j} className="flex gap-3">
-                    <span aria-hidden className="mt-[0.6em] h-1.5 w-1.5 shrink-0 rounded-full bg-brand-500/60" />
-                    <span>
-                      {it.label && <strong className="font-semibold text-slate-800">{it.label}: </strong>}
-                      {it.text}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <div className="space-y-3">
-                {items.map((it, j) => (
-                  <p key={j}>{it.text}</p>
-                ))}
-              </div>
-            )}
-          </section>
-        ))}
+      <div ref={textRef} className="mt-4 space-y-4 font-serif text-subhead leading-relaxed text-slate-700">
+        {sections.map(({ heading, items }, i) => {
+          const headPins = heading ? pins.get(`${i}.0`)?.section ?? [] : [];
+          const text = (j: number) => {
+            const it = items[j];
+            const label = it.label ? `${it.label}: ` : '';
+            return (
+              <PinnedText
+                text={label + it.text}
+                labelLen={label.length}
+                pins={pins.get(`${i}.${j}`)}
+                sectionMarker={!heading || j !== 0}
+                active={active}
+                onOpen={onOpenNotes}
+              />
+            );
+          };
+          return (
+            <section key={i} aria-label={heading ?? undefined}>
+              {heading && (
+                <h3 className="mb-2 mt-6 font-sans text-xs font-semibold uppercase tracking-wide text-brand-600">
+                  {heading}
+                  {headPins.length > 0 && (
+                    <NoteMarker notes={headPins} active={headPins.some((n) => active.has(n.id))} onOpen={onOpenNotes} />
+                  )}
+                </h3>
+              )}
+              {items.some((it) => it.bullet) ? (
+                <ul className="space-y-2">
+                  {items.map((_, j) => (
+                    <li key={j} className="flex gap-3">
+                      <span aria-hidden className="mt-[0.6em] h-1.5 w-1.5 shrink-0 rounded-full bg-brand-500/60" />
+                      <span data-block={`${i}.${j}`}>{text(j)}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <div className="space-y-3">
+                  {items.map((_, j) => (
+                    <p key={j} data-block={`${i}.${j}`}>
+                      {text(j)}
+                    </p>
+                  ))}
+                </div>
+              )}
+            </section>
+          );
+        })}
       </div>
     </article>
   );
 }
 
+/** Group a chapter's pinned notes by the block they resolve to. */
+function pinsFor(blocks: TextBlock[], notes: PadNote[]): Map<string, BlockPins> {
+  const m = new Map<string, BlockPins>();
+  for (const n of notes) {
+    const at = n.place && resolvePlace(blocks, n.place);
+    if (!at) continue;
+    const bp = m.get(at.key) ?? { ranges: [], section: [] };
+    if (at.start === undefined || at.end === undefined) bp.section.push(n);
+    else {
+      const same = bp.ranges.find((r) => r.start === at.start && r.end === at.end);
+      if (same) same.notes.push(n);
+      else bp.ranges.push({ start: at.start, end: at.end, notes: [n] });
+    }
+    m.set(at.key, bp);
+  }
+  return m;
+}
+
 export default function BookReaderPage() {
   const { bookId, remedySlug } = useParams();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const meta = getBookMeta(bookId);
   const { data: book, isLoading, isError, error } = useBook(bookId);
   const [query, setQuery] = useState(searchParams.get('q') ?? '');
@@ -80,6 +256,146 @@ export default function BookReaderPage() {
     ? commonNameFor(bookId ?? '', selected, bookId === 'boericke' ? book : boericke.data)
     : null;
 
+  // ---- notes ---------------------------------------------------------------
+  const slug = selected?.slug;
+  const remedyKey = book && selected ? remedyKeyForBookRemedy(book, selected) : undefined;
+  const remedyName = selected ? canonicalName(selected.name) : '';
+  const blocks = useMemo(() => (selected ? blocksOf(selected.text) : []), [selected]);
+  const chapterNotes = useChapterPad(bookId, slug);
+  const remedyNotes = useRemedyPad(remedyKey);
+  const bookNotes = useBookPad(bookId);
+  const remedyCount = useMemo(
+    () => new Set([...remedyNotes, ...chapterNotes].map((n) => n.id)).size,
+    [remedyNotes, chapterNotes],
+  );
+  const pins = useMemo(() => pinsFor(blocks, chapterNotes), [blocks, chapterNotes]);
+
+  /** Which notepad tab is open in the sheet (null: closed). */
+  const [notesTab, setNotesTab] = useState<'remedy' | 'book' | null>(null);
+  /** Note to scroll to and highlight inside the sheet. */
+  const [focusNote, setFocusNote] = useState<string | null>(null);
+  /** Notes whose marker was tapped (emphasised in the text while the sheet is open). */
+  const [markerIds, setMarkerIds] = useState<string[]>([]);
+  /** Selected passage waiting for its note. */
+  const [pending, setPending] = useState<NotePlace | null>(null);
+  /** Note shown beside its place after "Show in text" or a ?note= link. */
+  const [peekId, setPeekId] = useState<string | null>(null);
+  const [scrollTo, setScrollTo] = useState<{ id: string } | null>(null);
+  const peek = useNotepad((s) => (peekId ? s.notes.find((n) => n.id === peekId) : undefined));
+  const compareCount = useCompare((s) => s.items.length);
+  const textRef = useRef<HTMLDivElement>(null);
+  const scrollerRef = useRef<HTMLDivElement>(null);
+
+  /** Opened on "This remedy" (from the toolbar, a marker or a link). */
+  const [openedOnRemedy, setOpenedOnRemedy] = useState(false);
+  // "This remedy" needs a chosen chapter: one in the URL, or the one on screen
+  // when the notepad was opened on it (before a pick, the book's first chapter
+  // shows on desktop but the phone shows the remedy list)
+  const remedyTab = !!(selected && remedyKey && (remedySlug || openedOnRemedy));
+
+  const active = useMemo(
+    () => new Set(peek ? [peek.id] : notesTab ? markerIds : []),
+    [peek, notesTab, markerIds],
+  );
+
+  const openNotes = (tab: 'remedy' | 'book', focus: string | null = null) => {
+    setPeekId(null);
+    setFocusNote(focus);
+    setNotesTab(tab);
+    setOpenedOnRemedy(tab === 'remedy');
+  };
+  const closeNotes = useCallback(() => {
+    setNotesTab(null);
+    setFocusNote(null);
+    setMarkerIds([]);
+    setPending(null);
+  }, []);
+  const showInText = useCallback((n: PadNote) => {
+    setNotesTab(null);
+    setFocusNote(null);
+    setMarkerIds([]);
+    setView('full');
+    setPeekId(n.id);
+    setScrollTo({ id: n.id });
+  }, []);
+  const onOpenMarker = (notes: PadNote[]) => {
+    openNotes('remedy', notes[0].id);
+    setMarkerIds(notes.map((n) => n.id));
+  };
+
+  // a new chapter starts clean
+  useEffect(() => {
+    setPending(null);
+    setPeekId(null);
+    setMarkerIds([]);
+  }, [bookId, slug]);
+
+  // URL contract (see the top of this file)
+  useEffect(() => {
+    const noteId = searchParams.get('note');
+    const which = searchParams.get('notes');
+    if (!noteId && !which) return;
+    if ((noteId || which === 'remedy') && !selected) return; // wait for the chapter
+    if (noteId) {
+      const n = useNotepad.getState().notes.find((x) => x.id === noteId);
+      const here = n?.place && n.place.book === bookId && n.place.slug === selected!.slug;
+      if (n && here && resolvePlace(blocks, n.place!)) {
+        setNotesTab(null);
+        setView('full');
+        setPeekId(n.id);
+        setScrollTo({ id: n.id });
+      } else if (n) {
+        // general notes, and pins whose place is gone, are shown in the notepad
+        setPeekId(null);
+        setFocusNote(n.id);
+        const tab = here || (n.remedy && n.remedy === remedyKey && !n.place) ? 'remedy' : 'book';
+        setNotesTab(tab);
+        setOpenedOnRemedy(tab === 'remedy');
+      }
+    } else if (which === 'remedy' || which === 'book') {
+      setPeekId(null);
+      setFocusNote(null);
+      setNotesTab(which);
+      setOpenedOnRemedy(which === 'remedy');
+    }
+    const next = new URLSearchParams(searchParams);
+    next.delete('note');
+    next.delete('notes');
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams, selected, bookId, blocks, remedyKey]);
+
+  // bring a pinned note's place into view once Full text has rendered it
+  useEffect(() => {
+    if (!scrollTo || view !== 'full') return;
+    const t = window.setTimeout(() => {
+      const el = scrollerRef.current?.querySelector(`[data-notes~="${CSS.escape(scrollTo.id)}"]`);
+      el?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    }, 80);
+    return () => window.clearTimeout(t);
+  }, [scrollTo, view, slug]);
+
+  const toPlace = useCallback(
+    (key: string, start: number, end: number) => {
+      const b = blocks.find((x) => x.key === key);
+      return b && bookId && slug ? placeFromSelection(bookId, slug, b, start, end) : null;
+    },
+    [blocks, bookId, slug],
+  );
+  const { selection, clear: clearSelection } = useTextSelection(
+    textRef,
+    scrollerRef,
+    view === 'full' && !notesTab,
+    toPlace,
+  );
+
+  const chapter = useMemo(
+    () =>
+      bookId && slug
+        ? { book: bookId, slug, blocks, pending, clearPending: () => setPending(null), onShowInText: showInText }
+        : undefined,
+    [bookId, slug, blocks, pending, showInText],
+  );
+
   if (!meta) {
     return (
       <div className="p-8">
@@ -94,12 +410,24 @@ export default function BookReaderPage() {
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <div className="border-b border-slate-200 bg-surface px-6 py-4">
-        <Link to="/books" className="mb-1 inline-flex items-center gap-1 text-xs text-slate-500 hover:text-brand-600">
-          <ChevronLeft className="h-3.5 w-3.5" /> Reference Books
-        </Link>
-        <h1 className="font-serif text-xl font-semibold text-slate-800">{meta.title}</h1>
-        <p className="text-xs text-brand-600">{meta.author}</p>
+      <div className="flex items-start gap-3 border-b border-slate-200 bg-surface px-6 py-4">
+        <div className="min-w-0 flex-1">
+          <Link to="/books" className="mb-1 inline-flex items-center gap-1 text-xs text-slate-500 hover:text-brand-600">
+            <ChevronLeft className="h-3.5 w-3.5" /> Reference Books
+          </Link>
+          <h1 className="font-serif text-xl font-semibold text-slate-800">{meta.title}</h1>
+          <p className="text-xs text-brand-600">{meta.author}</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => openNotes('book')}
+          className="btn-ghost -mr-3 shrink-0 px-3"
+          aria-label={`Book notes${bookNotes.length ? `, ${bookNotes.length}` : ''}`}
+        >
+          <NotebookPen className="h-4 w-4" />
+          <span className="hidden sm:inline">Book notes</span>
+          {bookNotes.length > 0 && <span className="text-xs tabular-nums text-ink/70">{bookNotes.length}</span>}
+        </button>
       </div>
 
       <div className="flex min-h-0 flex-1">
@@ -154,6 +482,7 @@ export default function BookReaderPage() {
 
         {/* Reader — hidden on mobile while the list is open */}
         <div
+          ref={scrollerRef}
           className={`${
             listOpen ? 'hidden' : 'block'
           } min-h-0 flex-1 overflow-auto bg-surface px-6 pb-28 pt-6 md:px-10 lg:block`}
@@ -178,15 +507,44 @@ export default function BookReaderPage() {
                   { value: 'full', label: 'Full text' },
                 ]}
               />
-              {/* Compare — on top of every remedy, in every book */}
-              <div className="ml-auto">
+              {/* Notes and Compare — on top of every remedy, in every book */}
+              <div className="ml-auto flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => openNotes('remedy')}
+                  className="btn-secondary"
+                  aria-label={`Notes, ${remedyCount} on this remedy`}
+                >
+                  <StickyNote className="h-4 w-4" /> Notes
+                  {remedyCount > 0 && (
+                    <span className="min-w-[20px] rounded-full bg-accent px-1 text-center text-2xs font-semibold leading-5 tabular-nums text-on-accent">
+                      {remedyCount}
+                    </span>
+                  )}
+                </button>
                 <CompareButton book={bookId!} slug={selected.slug} name={selected.name} />
               </div>
               </div>
               {view === 'portrait' ? (
-                <DrugPictureView remedy={selected} common={common} />
+                <DrugPictureView
+                  remedy={selected}
+                  common={common}
+                  notes={{
+                    count: remedyCount,
+                    remedyName,
+                    onOpen: () => openNotes('remedy'),
+                    onFullText: () => setView('full'),
+                  }}
+                />
               ) : (
-                <RemedyText remedy={selected} common={common} />
+                <RemedyText
+                  remedy={selected}
+                  common={common}
+                  pins={pins}
+                  active={active}
+                  onOpenNotes={onOpenMarker}
+                  textRef={textRef}
+                />
               )}
               {/* attribution for the edition the text comes from */}
               {book?.source && (
@@ -203,6 +561,97 @@ export default function BookReaderPage() {
         </div>
       </div>
       <CompareTray />
+
+      {/* "Add note" for the selected words: below the selection, clear of the
+          native callout above it */}
+      {selection && (
+        <button
+          type="button"
+          // keep the selection when clicked with a mouse
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => {
+            setPending(selection.place);
+            openNotes('remedy');
+            window.getSelection()?.removeAllRanges();
+            clearSelection();
+          }}
+          style={{ left: selection.x, top: selection.y }}
+          className="material-thick fixed z-40 inline-flex h-11 -translate-x-1/2 animate-fade-in items-center gap-2 whitespace-nowrap rounded-full border border-ink/10 px-4 text-subhead font-semibold text-brand-600 shadow-elevated"
+        >
+          <StickyNote className="h-4 w-4" /> Add note
+        </button>
+      )}
+
+      {/* The note beside its place, after "Show in text" or a ?note= link */}
+      {peek && !notesTab && (
+        <div
+          className="pointer-events-none fixed inset-x-0 z-30 flex justify-center px-4 lg:left-60"
+          style={{ bottom: `calc(max(16px, env(safe-area-inset-bottom)) + ${compareCount ? 72 : 0}px)` }}
+        >
+          <div
+            role="status"
+            className="material-thick pointer-events-auto w-full max-w-xl animate-dialog-in rounded-2xl border border-ink/10 p-3 shadow-elevated"
+          >
+            <div className="flex items-start gap-3">
+              <StickyNote className="mt-1 h-4 w-4 shrink-0 text-amber-700" aria-hidden />
+              <div className="min-w-0 flex-1">
+                <p className="line-clamp-4 whitespace-pre-wrap break-words text-subhead text-ink/90">{peek.body}</p>
+                {peek.place && <p className="mt-1 truncate text-xs text-ink/70">{placeLabel(peek.place)}</p>}
+              </div>
+              <button
+                type="button"
+                onClick={() => setPeekId(null)}
+                aria-label="Close note"
+                className="tap flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-ink/[0.06] text-ink/70 transition-colors hover:bg-ink/10 hover:text-ink/90"
+              >
+                <X className="h-4 w-4" strokeWidth={2.5} />
+              </button>
+            </div>
+            <div className="-mb-2 mt-1 flex justify-end">
+              <button type="button" onClick={() => openNotes('remedy', peek.id)} className="btn-ghost px-3 text-sm">
+                Open in notes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {notesTab && (
+        <Sheet
+          title="Notes"
+          subtitle={notesTab === 'remedy' && remedyTab ? `${remedyName} · ${meta.label}` : meta.title}
+          onClose={closeNotes}
+        >
+          {/* own stacking context, so the segmented controls stay under the sheet's sticky header */}
+          <div className="relative z-0">
+          {remedyTab && (
+            <SegmentedControl
+              className="mb-4"
+              fullWidth
+              ariaLabel="Notes on"
+              value={notesTab}
+              onChange={(t) => {
+                setFocusNote(null);
+                setNotesTab(t);
+              }}
+              options={[
+                { value: 'remedy', label: `This remedy (${remedyCount})` },
+                { value: 'book', label: `This book (${bookNotes.length})` },
+              ]}
+            />
+          )}
+          {notesTab === 'remedy' && selected && remedyKey ? (
+            <RemedyNotepad remedyKey={remedyKey} remedyName={remedyName} chapter={chapter} focusId={focusNote} />
+          ) : (
+            <BookNotepad
+              bookId={bookId!}
+              focusId={focusNote}
+              current={slug ? { slug, onShowInText: showInText } : undefined}
+            />
+          )}
+          </div>
+        </Sheet>
+      )}
     </div>
   );
 }

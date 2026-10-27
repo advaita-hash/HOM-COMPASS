@@ -4,6 +4,7 @@ import { ArrowLeft, BookText, FlaskConical, Loader2, NotebookPen, SearchX } from
 import { EmptyState } from '../../components/ui/EmptyState';
 import { SegmentedControl } from '../../components/ui/SegmentedControl';
 import MyRemedyNotes from '../notes/MyRemedyNotes';
+import { RemedyNotepad } from '../notepad/RemedyNotepad';
 import { canonicalName } from '../../lib/remedyName';
 import { REMEDIES } from '../../data/remedies';
 import ABBREV from '../../data/remedyAbbrev.json';
@@ -203,10 +204,20 @@ export default function RemedyProfilePage() {
       />
 
       {tab === 'notes' ? (
-        <section className="card p-5">
-          <h2 className="mb-3 text-lg font-semibold">My notes on {abbr}</h2>
-          <MyRemedyNotes remedy={name} abbr={abbr} />
-        </section>
+        <>
+          <section className="card p-5" aria-labelledby="notepad-heading">
+            <h2 id="notepad-heading" className="mb-3 text-lg font-semibold">
+              Notepad
+            </h2>
+            <RemedyNotepad remedyKey={name} remedyName={display} />
+          </section>
+          <section className="card p-5" aria-labelledby="common-room-heading">
+            <h3 id="common-room-heading" className="mb-3 text-base font-semibold">
+              From Common Room
+            </h3>
+            <MyRemedyNotes remedy={name} abbr={abbr} />
+          </section>
+        </>
       ) : (
       <section className="card p-5">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
