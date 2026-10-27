@@ -58,7 +58,7 @@ const NAV: readonly { to: string; label: string; icon: typeof Search; demo?: tru
   { to: '/analysis', label: 'Cases', icon: Activity },
   { to: '/materia-medica', label: 'Materia Medica', icon: FlaskConical },
   { to: '/compare', label: 'Compare', icon: Columns3 },
-  { to: '/my-notes', label: 'My remedy notes', icon: NotebookPen },
+  { to: '/my-notes', label: 'My notes', icon: NotebookPen },
   { to: '/books', label: 'Reference Books', icon: BookText },
   { to: '/library', label: 'Library', icon: Library },
   // Built from the 55-rubric sample repertory, not the full Kent repertory.

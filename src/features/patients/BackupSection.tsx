@@ -23,6 +23,13 @@ function plural(n: number, word: string): string {
   return `${n} ${word}${n === 1 ? '' : 's'}`;
 }
 
+/** "3 patients, 5 cases and 12 notes" (notes only when the backup has a notepad). */
+function describeCounts(c: BackupCounts): string {
+  const parts = [plural(c.patients, 'patient'), plural(c.cases, 'case')];
+  if (c.notes !== null) parts.push(plural(c.notes, 'note'));
+  return `${parts.slice(0, -1).join(', ')} and ${parts[parts.length - 1]}`;
+}
+
 function formatDate(d: Date): string {
   return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 }
@@ -119,9 +126,9 @@ export function BackupSection() {
             Backup
           </h2>
           <p className="mt-1 text-sm text-ink/70">
-            Patient records are saved only in this browser on this device. They aren’t uploaded or synced, so
-            clearing site data, a private window, or a new browser or device starts empty. Export a backup regularly
-            and keep the file somewhere safe — it contains patient details.
+            Patient records and your notes are saved only in this browser on this device. They aren’t uploaded or
+            synced, so clearing site data, a private window, or a new browser or device starts empty. Export a backup
+            regularly and keep the file somewhere safe — it contains patient details.
           </p>
           <p role="status" className="mt-2 text-xs text-ink/70">
             {lastBackup ? `Last backup: ${relativeDay(lastBackup, now)}` : 'No backup yet'}
@@ -169,9 +176,8 @@ export function BackupSection() {
         message={
           pending && (
             <>
-              This backup from {formatDate(new Date(pending.backup.exportedAt))} has{' '}
-              {plural(pending.counts.patients, 'patient')} and {plural(pending.counts.cases, 'case')}. Patients, cases and settings in
-              this backup replace the ones on this device. This can’t be undone.
+              This backup from {formatDate(new Date(pending.backup.exportedAt))} has {describeCounts(pending.counts)}.
+              Patients, cases, notes and settings in this backup replace the ones on this device. This can’t be undone.
             </>
           )
         }

@@ -1,6 +1,19 @@
 import { Link } from 'react-router-dom';
-import { BookOpen, Library as LibraryIcon } from 'lucide-react';
+import { BookOpen, Library as LibraryIcon, StickyNote } from 'lucide-react';
+import { useBookPad } from '../notepad/notepadStore';
 import { BOOKS } from './booksIndex';
+
+/** "3 notes" on a book's card, when the practitioner has notes in it. */
+function BookNoteCount({ book }: { book: string }) {
+  const n = useBookPad(book).length;
+  if (!n) return null;
+  return (
+    <span className="flex items-center gap-1 text-ink/70">
+      <StickyNote className="h-3.5 w-3.5 text-amber-600" aria-hidden />
+      {n} {n === 1 ? 'note' : 'notes'}
+    </span>
+  );
+}
 
 /** Catalogue of bundled reference materia medica. */
 export default function BooksPage() {
@@ -34,8 +47,9 @@ export default function BooksPage() {
               </h2>
               <p className="text-xs font-medium text-brand-600">{book.author}</p>
               <p className="mt-2 line-clamp-3 text-sm text-slate-600">{book.blurb}</p>
-              <p className="mt-3 text-xs text-slate-400">
-                ~{book.approxRemedies} remedies
+              <p className="mt-3 flex items-center justify-between gap-2 text-xs text-slate-400">
+                <span>~{book.approxRemedies} remedies</span>
+                <BookNoteCount book={book.id} />
               </p>
             </div>
           </Link>
