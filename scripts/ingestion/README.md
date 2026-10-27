@@ -78,7 +78,22 @@ text layer, so no OCR is needed:
 python3 -m pip install pypdfium2
 python3 scripts/ingestion/gen_allen.py "Allens Keynotes.pdf" public/books/allen.json
 python3 scripts/ingestion/clean_books.py   # shared spelling normalisation
+python3 scripts/ingestion/check_books.py   # must report 0 errors
 ```
+
+The PDF isn't kept in the repo. The script also accepts the cached text layer
+instead, as a JSON list of page strings (one per PDF page, 0-based), and then
+doesn't need `pypdfium2`:
+
+```bash
+python3 scripts/ingestion/gen_allen.py allen-pages.json public/books/allen.json
+```
+
+Remedy titles are ALL-CAPS lines. Some carry a footnote mark (`LYSSINUM1`,
+`TUBERCULINUM – BACILLINUM*`); the mark is accepted and dropped from the name,
+otherwise that monograph runs on into the previous remedy's chapter. After a
+change to the title rules, diff the old and new `allen.json` and check that
+only the intended chapters changed.
 
 The script keeps Allen's own classification: each remedy's `text` is
 `"<Section>\n• keynote\n• keynote\n\n<Section>\n…"`, which the reader renders
