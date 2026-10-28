@@ -148,7 +148,7 @@ is stored.
 
 **Prerequisite:** `pickDaily` must sort slugs by code point rather than
 `localeCompare`. Otherwise the remedy depends on the browser's language (the
-ROTD review found this for lt/lv/cs/sk/et/cy). A separate fix is in progress.
+ROTD review found this for lt/lv/cs/sk/et/cy). Done in commit 0bd3207.
 
 ### 1.7 Accessibility requirements
 
@@ -308,11 +308,15 @@ Metrics are computed by the owner from aggregates, not shown in the app.
 - **Board effect:** change in weekly study days per student after opting in
   compared with before.
 - **Guardrails:**
-  - board opt-out rate (alarm above 15%);
+  - board opt-out rate (alarm above 15%). Opting out deletes the opt-in row,
+    so this needs `remedy_board_optin_events` (append-only, written by the
+    opt-in/opt-out RPCs, readable only by the service role) or a pilot survey;
   - notification-disable rate;
   - comeback rate.
 - **Pilot exit:** keep the board if opt-outs stay below 15% and the week-4
   habit rate is no worse than in classes without the board.
+- The Phase 1 "meaning" and "learning" numbers stay on the device, so during
+  the pilot they come from a short survey, not from the database.
 
 ---
 
@@ -369,7 +373,8 @@ About 2–3 days.
   remedy and the time on the server.
 - Every function has `set search_path = ''` and fully qualified names.
 - `auth.uid()` is wrapped as `(select auth.uid())` in policies.
-- Every object has a comment marking HOM-COMPASS as its owner.
+- Every new table, function and trigger gets a `comment on … is 'HOM-COMPASS: …'`
+  marking HOM-COMPASS as its owner (add these when the final SQL is written).
 
 ### A.1 Migration A: schedule and study log
 
@@ -481,8 +486,11 @@ end $$;
 ```
 
 What this allows: an honest client is exact. A dishonest client that lies
-about its offset gains at most about one day of slack, and it can never log
-more than 3 days back or write a future date beyond its claimed local day.
+about its offset gains up to about 8.5 hours for an Indian student and at most
+two calendar days in the worst case (offsets span −12 h to +14 h). It can never
+log more than 3 days back, never a date beyond its claimed local day, and never
+more than 7 days in a week. To tighten this, accept only the user's stored or
+last-seen offset.
 
 ### A.2 Migration A: opt-in, cleanup on leaving, history deletion
 
@@ -520,8 +528,9 @@ begin
   where o.user_id = old.user_id and o.group_id = old.group_id;
   return old;
 end $$;
+-- also on UPDATE: an admin can move a member row to another group or user
 create trigger group_members_drop_remedy_optin
-  after delete on public.group_members
+  after delete or update of group_id, user_id on public.group_members
   for each row execute function public.remedy_optin_on_leave();
 
 -- "Delete my study history" (settings). Account deletion already cascades.
@@ -652,8 +661,11 @@ Notes:
   do not reveal whether a group exists.
 - The "studied today" figure uses the India date, which suits Indian
   classes.
-- The finest detail a classmate can see is a weekly count for this week and
-  last week. No per-day data is exposed.
+- The finest detail shown is a weekly count for this week and last week. A
+  classmate who checks every day could infer which days an opted-in student
+  studied (the count and "studied today" are live). Only opted-in students are
+  affected; showing "studied today" only from 8 opted-in members, or rounded,
+  reduces this.
 
 ### A.4 Migration A: grants (this project's default ACLs grant anon directly)
 
@@ -713,7 +725,10 @@ grant execute on function public.log_remedy_study(date, int),
 -- HOM-COMPASS's own web-push subscriptions (its own origin and service worker).
 create table public.hom_push_subscriptions (
   user_id    uuid not null references public.profiles(id) on delete cascade,
-  endpoint   text not null check (endpoint ~ '^https://' and char_length(endpoint) <= 1000),
+  -- only real push services, so the sender can't be pointed at arbitrary URLs
+  endpoint   text not null check (
+    char_length(endpoint) <= 1000 and endpoint ~ '^https://(fcm\.googleapis\.com|[a-z0-9.-]+\.push\.apple\.com|updates\.push\.services\.mozilla\.com|[a-z0-9.-]+\.notify\.windows\.com)/'
+  ),
   p256dh     text not null check (char_length(p256dh) <= 200),
   auth       text not null check (char_length(auth) <= 100),
   created_at timestamptz not null default now(),
@@ -780,7 +795,9 @@ grant execute on function public.set_remedy_reminder(boolean, time, text, text) 
 
 **How reminders are sent:**
 - A new `pg_cron` job (proposed name `hom-remedy-reminders`) runs every 15
-  minutes and calls a new HOM-COMPASS edge function through `pg_net`.
+  minutes and calls a new HOM-COMPASS edge function through `pg_net`. The call
+  carries a shared secret kept in Supabase Vault; the function rejects any
+  request without it.
 - The edge function picks students who have reminders enabled and whose
   local time has passed `remind_at`. It skips anyone who already has a
   reminder-log row or a study-log row for their local date.
@@ -795,7 +812,9 @@ grant execute on function public.set_remedy_reminder(boolean, time, text, text) 
 ### A.7 Tests to pass on a Supabase branch before production
 
 Run these as pgTAP (`create extension pgtap` on the **branch only**) or as a
-SQL script. Each case runs in a transaction with:
+SQL script. Cases that call the date helper `remedy_local_today` with a fixed
+`p_now` run as `postgres` (its EXECUTE is revoked from `authenticated`); every
+other case runs in a transaction with:
 
 ```sql
 set local role authenticated;
@@ -893,7 +912,9 @@ Each decision has a proposed default. The plan above assumes these defaults.
 3. **Catch-up.** *Proposed:* any past day in the current cycle. It counts for
    coverage and the personal total only.
 4. **Whose board.** *Proposed:* existing Common Room class groups, opt-in per
-   group, offered after 3 studied days.
+   group, offered after 3 studied days. Common Room's `groups` table has no
+   type column, so any group (not only a class) could host a board. Is that
+   intended?
 5. **Board format.** *Proposed:*
    - weekly "days of 7" only;
    - shared ranks, no tie-breaks, rank numbers in the top half only;

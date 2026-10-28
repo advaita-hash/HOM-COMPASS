@@ -43,7 +43,8 @@ function splitSentences(text: string): string[] {
   return text
     .replace(/\s+/g, ' ')
     .split(/(?<=[.!?”"])\s+(?=[A-Z“"])/)
-    .map((s) => s.trim())
+    // Boericke's "Ears. — Skin within…" reads as "Ears: Skin within…" in a list
+    .map((s) => s.trim().replace(/^([A-Z][A-Za-z ,&'’()-]{1,40}?)\.\s*[—–-]+\s*/, '$1: '))
     .filter((s) => s.length >= 24 && s.length <= 320);
 }
 
