@@ -416,17 +416,6 @@ export const REMEDIES: Remedy[] = [
   },
 ];
 
-/**
- * Deterministically pick the "Remedy of the Day" from the day of the year, so
- * every clinician sees the same remedy on a given date and it rotates daily.
- */
-export function remedyOfTheDay(date: Date = new Date()): Remedy {
-  const startOfYear = Date.UTC(date.getUTCFullYear(), 0, 0);
-  const today = Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
-  const dayOfYear = Math.floor((today - startOfYear) / 86_400_000);
-  return REMEDIES[dayOfYear % REMEDIES.length];
-}
-
 export function getRemedyById(id: string): Remedy | undefined {
   return REMEDIES.find((r) => r.id === id);
 }

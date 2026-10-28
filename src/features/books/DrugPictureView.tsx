@@ -82,10 +82,16 @@ export function DrugPictureView({
   remedy,
   common,
   notes,
+  showHeading = true,
+  caption,
 }: {
   remedy: BookRemedy;
   common: string | null;
   notes?: PortraitNotes;
+  /** Off where the page already shows the remedy's name above. */
+  showHeading?: boolean;
+  /** Replaces the default note about the reader's "Full text" view. */
+  caption?: string;
 }) {
   const dp: DrugPicture = useMemo(() => distill(remedy.text), [remedy.text]);
   const empty =
@@ -98,10 +104,10 @@ export function DrugPictureView({
 
   return (
     <article className="max-w-none">
-      <RemedyHeading remedy={remedy} common={common} />
-      <p className="mb-4 mt-1 inline-flex items-center gap-1 text-2xs text-slate-400">
-        <Sparkles className="h-3 w-3" /> Auto-distilled portrait — see “Full text” for the
-        complete drug picture.
+      {showHeading && <RemedyHeading remedy={remedy} common={common} />}
+      <p className="mb-4 mt-1 inline-flex items-center gap-1 text-2xs text-ink/70">
+        <Sparkles className="h-3 w-3" aria-hidden />{' '}
+        {caption ?? 'Auto-distilled portrait — see “Full text” for the complete drug picture.'}
       </p>
 
       {notes && (

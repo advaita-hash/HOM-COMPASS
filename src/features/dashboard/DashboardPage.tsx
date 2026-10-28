@@ -9,7 +9,11 @@ import {
   Library,
   Sparkles,
 } from 'lucide-react';
-import { REMEDIES, remedyOfTheDay } from '../../data/remedies';
+import { REMEDIES } from '../../data/remedies';
+import { canonicalName } from '../../lib/remedyName';
+import { distill } from '../books/drugPicture';
+import { commonNameFor } from '../books/commonName';
+import { DAILY_BOOK, localDayNumber, openingLede, useDailyRemedy } from '../remedy/dailyRemedy';
 import { BOOKS } from '../books/booksIndex';
 import { useLibraryStore } from '../library/libraryStore';
 import { DISCLAIMER } from '../../components/ClinicalDisclaimer';
@@ -46,7 +50,14 @@ function StatCard({
 
 export default function DashboardPage() {
   const today = useMemo(() => new Date(), []);
-  const remedy = useMemo(() => remedyOfTheDay(today), [today]);
+  const { book, pick } = useDailyRemedy(localDayNumber(today));
+  const remedy = pick?.remedy;
+  // three short keynotes from Boericke's own text for the hero chips
+  const keynotes = useMemo(() => {
+    if (!remedy) return [];
+    const dp = distill(remedy.text);
+    return [...dp.mind, ...dp.generals, ...dp.constitution, ...dp.worse].slice(0, 3);
+  }, [remedy]);
   const bookCount = useLibraryStore((s) => s.books.length);
   const disclaimerAck = useDisclaimerAck((s) => s.acknowledged);
   const acknowledgeDisclaimer = useDisclaimerAck((s) => s.acknowledge);
@@ -93,24 +104,34 @@ export default function DashboardPage() {
                 Remedy of the Day
               </span>
             </div>
-            <div className="mt-2 flex items-baseline gap-2">
-              <h2 className="font-serif text-3xl font-bold">{remedy.name}</h2>
-              <span className="text-sm text-white/70">{remedy.commonName}</span>
-            </div>
-            <p className="mt-2 font-serif text-subhead italic leading-relaxed text-white/95">
-              “{remedy.essence}”
-            </p>
-            <ul className="mt-3 flex flex-wrap gap-2">
-              {remedy.keynotes.slice(0, 3).map((k, i) => (
-                <li
-                  key={i}
-                  className="inline-flex items-center gap-1 rounded-full bg-white/15 px-3 py-1 text-xs"
-                >
-                  <Sparkles className="h-3 w-3" />
-                  {k.length > 42 ? `${k.slice(0, 42)}…` : k}
-                </li>
-              ))}
-            </ul>
+            {remedy && book ? (
+              <>
+                <div className="mt-2 flex flex-wrap items-baseline gap-x-2">
+                  <h2 className="font-serif text-3xl font-bold">{canonicalName(remedy.name)}</h2>
+                  {commonNameFor(DAILY_BOOK, remedy, book) && (
+                    <span className="text-sm text-white/80">{commonNameFor(DAILY_BOOK, remedy, book)}</span>
+                  )}
+                </div>
+                <p className="mt-2 font-serif text-subhead italic leading-relaxed text-white/95">
+                  “{openingLede(remedy)}”
+                </p>
+                {keynotes.length > 0 && (
+                  <ul className="mt-3 flex flex-wrap gap-2">
+                    {keynotes.map((k, i) => (
+                      <li
+                        key={i}
+                        className="inline-flex items-center gap-1 rounded-full bg-white/15 px-3 py-1 text-xs"
+                      >
+                        <Sparkles className="h-3 w-3" aria-hidden />
+                        {k.length > 42 ? `${k.slice(0, 42).trimEnd()}…` : k}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </>
+            ) : (
+              <p className="mt-2 font-serif text-2xl text-white/90">Opening today’s remedy from Boericke…</p>
+            )}
           </div>
           <div className="inline-flex items-center gap-1 self-start rounded-lg bg-white/15 px-3 py-2 text-sm font-medium md:self-center">
             Study now
