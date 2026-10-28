@@ -20,7 +20,18 @@ import { CompareButton, CompareTray } from '../compare/CompareControls';
 import { chapterHref } from '../notepad/links';
 import { useRemedyPad } from '../notepad/notepadStore';
 import { isRepertoryKey, remedyKeyForBookRemedy, remedyKeyForCurated } from '../notepad/remedyKey';
-import { DAILY_BOOK, dateOfDay, dayOfIso, isoOfDay, localDayNumber, openingLede, pickDaily, useDailyRemedy } from './dailyRemedy';
+import {
+  DAILY_BOOK,
+  dateOfDay,
+  dayOfIso,
+  isoOfDay,
+  openingLede,
+  pickDaily,
+  runInSegments,
+  stripChapterOpening,
+  useDailyRemedy,
+  useLocalDay,
+} from './dailyRemedy';
 
 /** Short chapters read better whole than as a distilled portrait. */
 const SHORT_CHAPTER = 900;
@@ -31,7 +42,8 @@ const SHORT_CHAPTER = 900;
  */
 export default function RemedyOfTheDayPage() {
   const [params, setParams] = useSearchParams();
-  const today = useMemo(() => localDayNumber(new Date()), []);
+  // moves on at local midnight, so a tab left open overnight shows the new day
+  const today = useLocalDay();
   // only today and earlier days can be opened
   const requested = dayOfIso(params.get('date'));
   const day = requested !== null && requested <= today ? requested : today;
@@ -56,6 +68,17 @@ export default function RemedyOfTheDayPage() {
     () => (remedy ? remedy.text.length < SHORT_CHAPTER || isEmptyPortrait(remedy.text) : false),
     [remedy],
   );
+  // a short chapter shown whole, without the name header its first paragraph repeats
+  const chapterParagraphs = useMemo(
+    () =>
+      remedy
+        ? remedy.text
+            .split(/\n{2,}/)
+            .map((p, i) => (i === 0 ? stripChapterOpening(remedy, p) : p.trim()))
+            .filter(Boolean)
+        : [],
+    [remedy],
+  );
   const tomorrow = useMemo(() => (book ? pickDaily(book, today + 1).remedy : undefined), [book, today]);
 
   return (
@@ -64,12 +87,12 @@ export default function RemedyOfTheDayPage() {
         <div>
           <div className="flex items-center gap-2 text-brand-600">
             <CalendarDays className="h-4 w-4" aria-hidden />
-            <span className="text-xs font-semibold uppercase tracking-wide">Remedy of the Day</span>
+            <h1 className="text-xs font-semibold uppercase tracking-wide">Remedy of the Day</h1>
           </div>
-          <h1 className="mt-1 text-sm text-ink/70">
-            {dateLabel}
+          <p className="mt-1 text-sm text-ink/70">
+            <time dateTime={isoOfDay(day)}>{dateLabel}</time>
             {!isToday && <span className="sr-only"> (an earlier day)</span>}
-          </h1>
+          </p>
         </div>
         <nav aria-label="Choose a day" className="flex items-center gap-1">
           <button type="button" onClick={() => goTo(day - 1)} className="btn-ghost px-3" aria-label="Previous day">
@@ -112,8 +135,18 @@ export default function RemedyOfTheDayPage() {
             {short ? (
               // a few lines in Boericke: show them all instead of a quote
               <div className="mt-4 space-y-3 font-serif text-subhead leading-relaxed text-ink/80">
-                {remedy.text.split(/\n{2,}/).map((p, i) => (
-                  <p key={i}>{p}</p>
+                {chapterParagraphs.map((p, i) => (
+                  <p key={i}>
+                    {runInSegments(p).map((seg, j) =>
+                      seg.label ? (
+                        <strong key={j} className="font-semibold text-ink/90">
+                          {seg.label}{' '}
+                        </strong>
+                      ) : (
+                        <span key={j}>{seg.text}</span>
+                      ),
+                    )}
+                  </p>
                 ))}
               </div>
             ) : (

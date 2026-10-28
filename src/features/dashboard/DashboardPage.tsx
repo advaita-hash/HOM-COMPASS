@@ -13,7 +13,7 @@ import { REMEDIES } from '../../data/remedies';
 import { canonicalName } from '../../lib/remedyName';
 import { distill } from '../books/drugPicture';
 import { commonNameFor } from '../books/commonName';
-import { DAILY_BOOK, localDayNumber, openingLede, useDailyRemedy } from '../remedy/dailyRemedy';
+import { DAILY_BOOK, dateOfDay, openingLede, useDailyRemedy, useLocalDay } from '../remedy/dailyRemedy';
 import { BOOKS } from '../books/booksIndex';
 import { useLibraryStore } from '../library/libraryStore';
 import { DISCLAIMER } from '../../components/ClinicalDisclaimer';
@@ -41,7 +41,7 @@ function StatCard({
         </div>
         <div>
           <div className="text-2xl font-semibold text-slate-800">{value}</div>
-          <div className="text-xs text-slate-500">{label}</div>
+          <div className="text-xs text-ink/70">{label}</div>
         </div>
       </div>
     </Link>
@@ -49,8 +49,9 @@ function StatCard({
 }
 
 export default function DashboardPage() {
-  const today = useMemo(() => new Date(), []);
-  const { book, pick } = useDailyRemedy(localDayNumber(today));
+  // moves on at local midnight, so a tab left open overnight shows the new day
+  const today = useLocalDay();
+  const { book, pick, isError } = useDailyRemedy(today);
   const remedy = pick?.remedy;
   // three short keynotes from Boericke's own text for the hero chips
   const keynotes = useMemo(() => {
@@ -62,7 +63,7 @@ export default function DashboardPage() {
   const disclaimerAck = useDisclaimerAck((s) => s.acknowledged);
   const acknowledgeDisclaimer = useDisclaimerAck((s) => s.acknowledge);
 
-  const dateLabel = today.toLocaleDateString(undefined, {
+  const dateLabel = dateOfDay(today).toLocaleDateString(undefined, {
     weekday: 'long',
     month: 'long',
     day: 'numeric',
@@ -72,7 +73,7 @@ export default function DashboardPage() {
     <div className="mx-auto max-w-5xl p-6 md:p-8">
       <header className="mb-6">
         <h1 className="text-2xl font-semibold text-slate-800">Dashboard</h1>
-        <p className="text-sm text-slate-500">{dateLabel}</p>
+        <p className="text-sm text-ink/70">{dateLabel}</p>
       </header>
 
       {/* One-time clinical disclaimer (the sidebar keeps a short version visible). */}
@@ -98,7 +99,7 @@ export default function DashboardPage() {
       >
         <div className="flex flex-col gap-4 p-6 md:flex-row md:items-center md:justify-between">
           <div className="max-w-2xl">
-            <div className="flex items-center gap-2 text-white/80">
+            <div className="flex items-center gap-2 text-white">
               <CalendarDays className="h-4 w-4" />
               <span className="text-xs font-medium uppercase tracking-wide">
                 Remedy of the Day
@@ -109,10 +110,10 @@ export default function DashboardPage() {
                 <div className="mt-2 flex flex-wrap items-baseline gap-x-2">
                   <h2 className="font-serif text-3xl font-bold">{canonicalName(remedy.name)}</h2>
                   {commonNameFor(DAILY_BOOK, remedy, book) && (
-                    <span className="text-sm text-white/80">{commonNameFor(DAILY_BOOK, remedy, book)}</span>
+                    <span className="text-sm text-white">{commonNameFor(DAILY_BOOK, remedy, book)}</span>
                   )}
                 </div>
-                <p className="mt-2 font-serif text-subhead italic leading-relaxed text-white/95">
+                <p className="mt-2 font-serif text-subhead italic leading-relaxed text-white">
                   “{openingLede(remedy)}”
                 </p>
                 {keynotes.length > 0 && (
@@ -120,7 +121,7 @@ export default function DashboardPage() {
                     {keynotes.map((k, i) => (
                       <li
                         key={i}
-                        className="inline-flex items-center gap-1 rounded-full bg-white/15 px-3 py-1 text-xs"
+                        className="inline-flex items-center gap-1 rounded-full bg-black/20 px-3 py-1 text-xs"
                       >
                         <Sparkles className="h-3 w-3" aria-hidden />
                         {k.length > 42 ? `${k.slice(0, 42).trimEnd()}…` : k}
@@ -129,11 +130,15 @@ export default function DashboardPage() {
                   </ul>
                 )}
               </>
+            ) : isError ? (
+              <p className="mt-2 font-serif text-2xl text-white">
+                Today’s remedy couldn’t load from Boericke. Open Remedy of the Day to try again.
+              </p>
             ) : (
-              <p className="mt-2 font-serif text-2xl text-white/90">Opening today’s remedy from Boericke…</p>
+              <p className="mt-2 font-serif text-2xl text-white">Opening today’s remedy from Boericke…</p>
             )}
           </div>
-          <div className="inline-flex items-center gap-1 self-start rounded-lg bg-white/15 px-3 py-2 text-sm font-medium md:self-center">
+          <div className="inline-flex items-center gap-1 self-start rounded-lg bg-black/20 px-3 py-2 text-sm font-medium md:self-center">
             Study now
             <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
           </div>
@@ -155,14 +160,14 @@ export default function DashboardPage() {
             <Library className="h-5 w-5 text-brand-600" />
             <div>
               <div className="text-sm font-medium text-slate-800">Upload a book</div>
-              <div className="text-xs text-slate-500">Add a repertory or materia medica</div>
+              <div className="text-xs text-ink/70">Add a repertory or materia medica</div>
             </div>
           </Link>
           <Link to="/materia-medica" className="card flex items-center gap-3 p-4 pressable">
             <FlaskConical className="h-5 w-5 text-brand-600" />
             <div>
               <div className="text-sm font-medium text-slate-800">Browse Materia Medica</div>
-              <div className="text-xs text-slate-500">Study remedy profiles</div>
+              <div className="text-xs text-ink/70">Study remedy profiles</div>
             </div>
           </Link>
         </div>

@@ -28,7 +28,7 @@ function Section({
     <div className="card p-4">
       <div className="mb-2 flex items-center gap-2">
         <Icon className={`h-4 w-4 ${accent}`} />
-        <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+        <h3 className="text-xs font-semibold uppercase tracking-wide text-ink/70">
           {title}
         </h3>
       </div>
@@ -59,7 +59,7 @@ export function RemedyHeading({
     <header>
       <h2 className="font-serif text-2xl font-bold text-slate-800">{canonicalName(remedy.name)}</h2>
       {(common || remedy.family) && (
-        <p className="mt-1 text-sm text-slate-500">
+        <p className="mt-1 text-sm text-ink/70">
           {common && <span className="italic">{common}</span>}
           {common && remedy.family && <span aria-hidden> · </span>}
           {remedy.family && <span>{remedy.family}</span>}
@@ -134,7 +134,7 @@ export function DrugPictureView({
       )}
 
       {empty ? (
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-ink/70">
           Not enough structured cues to distil a portrait — read the full text.
         </p>
       ) : (

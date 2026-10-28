@@ -14,7 +14,7 @@ export function BookCrossLinks({ remedyName }: { remedyName: string }) {
     <div className="card p-4">
       <div className="mb-3 flex items-center gap-2">
         <BookText className="h-4 w-4 text-brand-600" />
-        <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+        <h3 className="text-xs font-semibold uppercase tracking-wide text-ink/70">
           Read the full drug picture
         </h3>
       </div>
