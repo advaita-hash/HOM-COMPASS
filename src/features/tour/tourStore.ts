@@ -109,6 +109,9 @@ export const useTour = create<TourState>()(
 
       resetAll: () => {
         autoStarted.clear();
+        // the welcome tour comes back on the next launch; page tips come back
+        // now (without this they would wait for a welcome that never starts)
+        welcomeShown = true;
         set({ seen: {}, tipsEnabled: true });
       },
 
@@ -134,40 +137,70 @@ export const useTour = create<TourState>()(
   ),
 );
 
+/** A sheet, dialog or sticky note is open: a tour started now would sit on top of it. */
+export function modalOpen(): boolean {
+  return !!document.querySelector('#root [aria-modal="true"], [role="alertdialog"], [data-sticky-note]');
+}
+
 /**
  * Start a tour by itself (first visit), if it may: it exists, tips are on,
  * nothing else is showing, this device hasn't seen this version, it hasn't
  * started by itself this session, and (for page tours) the welcome tour has
- * had its turn. Returns whether it started.
+ * had its turn. 'wait' means it may start once a modal (or, for the welcome
+ * tour, another tour) closes; 'no' means not this time.
  */
-export function autoStartTour(id: string): boolean {
+export function tryAutoStart(id: string): 'started' | 'wait' | 'no' {
   const s = useTour.getState();
   const tour = getTour(id);
-  if (!tour || tour.steps.length === 0 || !s.tipsEnabled || s.active) return false;
-  if (autoStarted.has(id) || hasSeen(s.seen, tour)) return false;
-  if (id !== WELCOME_ID && !welcomeSettled(s.seen)) return false;
+  if (!tour || tour.steps.length === 0 || !s.tipsEnabled) return 'no';
+  if (autoStarted.has(id) || hasSeen(s.seen, tour)) return 'no';
+  if (s.active) return id === WELCOME_ID && s.active.tourId !== WELCOME_ID ? 'wait' : 'no';
+  if (id !== WELCOME_ID && !welcomeSettled(s.seen)) return 'no';
+  if (modalOpen()) return 'wait';
   s.start(id, { auto: true });
-  return true;
+  return 'started';
 }
+
+/** tryAutoStart, as a yes/no. */
+export function autoStartTour(id: string): boolean {
+  return tryAutoStart(id) === 'started';
+}
+
+/** Stops the previous Help → "Show me" wait when another one starts. */
+let cancelShowMe: (() => void) | null = null;
 
 /**
  * Help → "Show me": after navigating to a tour's page, start the tour once
- * that page has mounted (it registers itself through usePageTour), or after
- * a short wait for pages that don't register.
+ * that page has mounted and registered itself (through usePageTour), as long
+ * as the person is still on that page. Gives up when they go elsewhere, or
+ * after `timeoutMs` (a page that never loads).
  */
-export function startTourWhenPageShows(id: string, timeoutMs = 2000): void {
-  let done = false;
-  const go = () => {
-    if (done) return;
-    done = true;
+export function startTourWhenPageShows(id: string, timeoutMs = 15000): void {
+  cancelShowMe?.();
+  const path = window.location.pathname;
+  let timer = 0;
+  const stillHere = () => window.location.pathname === path && useTour.getState().currentPageTour === id;
+  const cancel = () => {
     unsubscribe();
-    window.clearTimeout(fallback);
+    window.clearTimeout(timer);
+    window.clearTimeout(giveUp);
+    if (cancelShowMe === cancel) cancelShowMe = null;
+  };
+  const go = () => {
+    unsubscribe();
+    window.clearTimeout(giveUp);
     // let the page lay out first; the overlay also waits for each target
-    window.setTimeout(() => useTour.getState().start(id), 300);
+    timer = window.setTimeout(() => {
+      cancel();
+      const s = useTour.getState();
+      if (!s.active && stillHere()) s.start(id);
+    }, 300);
   };
   const unsubscribe = useTour.subscribe((s) => {
-    if (s.currentPageTour === id) go();
+    if (window.location.pathname !== path) cancel();
+    else if (s.currentPageTour === id) go();
   });
-  const fallback = window.setTimeout(go, timeoutMs);
-  if (useTour.getState().currentPageTour === id) go();
+  const giveUp = window.setTimeout(cancel, timeoutMs);
+  cancelShowMe = cancel;
+  if (stillHere()) go();
 }

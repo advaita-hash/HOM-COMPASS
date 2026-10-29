@@ -39,15 +39,15 @@ export default {
       id: 'backup',
       target: 'patients-backup',
       magnify: false,
-      title: 'Saved on this device',
+      title: 'Backup',
       body: "Patients, cases and notes are kept only in this browser. They aren't uploaded, so clearing browser data or using another device starts empty.",
     },
     {
       id: 'export',
       target: 'patients-export',
       title: 'Export backup',
-      body: '{Tap} to save one file with all your patients, cases, notes and settings to your downloads. Keep it safe: it holds patient details.',
-      tip: 'Export every two weeks or so. A yellow note reminds you.',
+      body: '{Tap} Export backup to save one file with all your patients, cases, notes and settings to your downloads. Keep it safe: it holds patient details.',
+      tip: 'Export a backup every two weeks or so; a yellow note reminds you.',
     },
     {
       id: 'restore',

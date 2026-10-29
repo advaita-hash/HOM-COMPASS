@@ -28,7 +28,7 @@ export default {
       target: 'dashboard-stats',
       magnify: false,
       title: 'Quick counts',
-      body: "How many remedies the app holds and how many books you've uploaded. Each box is also a shortcut: {tap} it to open that part of the app.",
+      body: 'Remedies counts every remedy entry across the four sources. Your books counts the files listed in your Library. Each box is a shortcut: {tap} it to open that part.',
       tip: '{Tap} Repertory chapters to jump straight to the Repertory.',
     },
     {
@@ -36,7 +36,7 @@ export default {
       target: 'dashboard-quick-actions',
       magnify: false,
       title: 'Quick actions',
-      body: 'Upload a book opens your Library, where you add your own repertory or materia medica files. Browse Materia Medica opens the list of remedies to study.',
+      body: 'Add a book opens your Library, where you list your own book files. Browse Materia Medica opens the list of remedies to study.',
     },
   ],
 } satisfies Tour;

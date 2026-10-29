@@ -49,7 +49,7 @@ export default {
       id: 'browse',
       target: 'compare-browse',
       title: 'Browse the books',
-      body: '{Tap} it to open Reference Books. While you read a remedy there, {tap} Compare at the top to add it here.',
+      body: '{Tap} Browse the books to open Reference Books. While you read a remedy there, {tap} Compare at the top to add it here.',
     },
     {
       id: 'column',

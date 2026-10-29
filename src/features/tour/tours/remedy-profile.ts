@@ -22,7 +22,7 @@ export default {
       target: 'remedy-profile-header',
       magnify: false,
       title: 'Remedy name',
-      body: "Its full name and Kentian abbreviation. The buttons below open this remedy in the Materia Medica or in Boericke, Tyler or Allen, where it's found.",
+      body: "Its full name and Kentian abbreviation. The buttons below open its Study card or its chapter in Boericke, Tyler or Allen, where the app has one.",
     },
     {
       id: 'tabs',
@@ -45,7 +45,7 @@ export default {
       target: 'remedy-profile-rubric',
       magnify: false,
       title: 'Rubrics and grades',
-      body: 'Each line is a rubric with this remedy. Bold capitals mean grade 3 or 4, italics grade 2. The numbers show its grade, then how many remedies share it.',
+      body: 'Each line is a rubric with this remedy: purple capitals are grade 3, blue italics grade 2, plain grey grade 1. The numbers show its grade, then how many remedies share it.',
       tip: 'On a long list, scroll to the end and {tap} Show more.',
     },
     {

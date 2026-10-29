@@ -192,7 +192,7 @@ function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
           </span>
         ) : (
           <span className="inline-flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-amber-500" /> Demo mode
+            <span className="h-2 w-2 rounded-full bg-ink/30" /> Saved on this device
           </span>
         )}
         {/* Always-visible clinical disclaimer; full wording on hover / for screen readers. */}

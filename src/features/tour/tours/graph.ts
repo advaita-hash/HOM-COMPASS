@@ -16,7 +16,7 @@ export default {
       id: 'sample',
       target: 'graph-sample',
       magnify: false,
-      title: 'Sample data',
+      title: 'Demo data',
       body: "This graph uses a small sample of 55 rubrics, not the full Kent repertory. It's for exploring how things link up, not for real cases.",
     },
     {
@@ -40,7 +40,7 @@ export default {
       target: 'graph-details',
       magnify: false,
       title: 'Details',
-      body: 'Shows what the middle dot is and how many links it has. For a remedy, {tap} Read in reference books to look it up in Boericke.',
+      body: 'Shows what the middle dot is and how many links it has. For a remedy, {tap} Read in reference books to open its chapter in Boericke.',
     },
     {
       id: 'connections',

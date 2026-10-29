@@ -98,7 +98,7 @@ function Notepad() {
           description={
             <>
               Open a remedy in Reference Books and tap Notes, or select words in Full text to pin a note to that
-              passage. You can also use the Notes tab on a remedy’s page.
+              passage. You can also use the My notes tab on a remedy’s page.
             </>
           }
           action={

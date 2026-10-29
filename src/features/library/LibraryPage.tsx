@@ -7,7 +7,6 @@ import {
   Trash2,
   UploadCloud,
 } from 'lucide-react';
-import { isSupabaseConfigured } from '../../lib/supabase';
 import { EmptyState } from '../../components/ui/EmptyState';
 import {
   type Book,
@@ -135,11 +134,11 @@ export default function LibraryPage() {
   return (
     <div className="mx-auto max-w-4xl p-6 md:p-8">
       <header className="mb-6 flex items-center gap-3">
-        <Library className="h-6 w-6 text-brand-600" />
-        <div>
+        <Library className="mt-1 h-6 w-6 shrink-0 self-start text-brand-600" />
+        <div className="min-w-0 flex-1">
           <h1 className="text-2xl font-semibold text-slate-800">Library</h1>
           <p className="text-sm text-slate-500">
-            Upload repertories and materia medica to ingest into the knowledge graph.
+            Keep a list of your own repertory and materia medica files, on this device.
           </p>
         </div>
         <TourButton tour="library" />
@@ -183,25 +182,16 @@ export default function LibraryPage() {
         />
       </div>
 
-      {/* Mode notice */}
+      {/* What gets saved */}
       <div
         data-tour="library-about"
         className="mt-4 flex items-start gap-2 rounded-lg bg-slate-50 px-4 py-3 text-xs text-slate-500"
       >
         <FileText className="mt-1 h-4 w-4 shrink-0 text-slate-400" />
-        {isSupabaseConfigured ? (
-          <span>
-            Connected: uploads are sent to Supabase Storage and the ingestion
-            function extracts rubrics and remedies into the graph
-            (<code>QUEUED → INDEXED</code>).
-          </span>
-        ) : (
-          <span>
-            <strong>Demo mode:</strong> books are catalogued locally in your browser
-            (titles, categories and metadata persist). Connect a Supabase backend to
-            extract rubrics and remedies from the file contents.
-          </span>
-        )}
+        <span>
+          Only each file’s name, type and size are saved, in this browser. The file
+          itself isn’t copied or read, so its rubrics don’t appear in the app.
+        </span>
       </div>
 
       {/* Catalogue */}
@@ -220,10 +210,10 @@ export default function LibraryPage() {
             <EmptyState
               icon={Library}
               title="No books yet"
-              description="Upload a repertory or materia medica to ingest it into the knowledge graph."
+              description="Add a book file to list it here. Only its name, type and size are kept."
               action={
                 <button className="btn-primary" onClick={() => inputRef.current?.click()}>
-                  <UploadCloud className="h-4 w-4" /> Upload a book
+                  <UploadCloud className="h-4 w-4" /> Add a book
                 </button>
               }
             />

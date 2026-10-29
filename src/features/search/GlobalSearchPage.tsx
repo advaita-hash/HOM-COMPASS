@@ -109,8 +109,8 @@ export default function GlobalSearchPage() {
   return (
     <div className="mx-auto max-w-4xl p-6 md:p-8">
       <header className="mb-4 flex items-center gap-3">
-        <Search className="h-6 w-6 text-brand-600" />
-        <div className="min-w-0">
+        <Search className="mt-1 h-6 w-6 shrink-0 self-start text-brand-600" />
+        <div className="min-w-0 flex-1">
           <h1 className="text-2xl font-semibold text-slate-800">Search</h1>
           <p className="text-sm text-slate-500">
             Across your notes, materia medica, reference books and the repertory.

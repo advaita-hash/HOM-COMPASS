@@ -18,7 +18,7 @@ export interface TourStep {
    * screens and Click/click with a mouse.
    */
   body: string;
-  /** Optional one-line "Try it:" hint (<= 16 words), also {Tap}-aware. */
+  /** Optional one-line "Tip:" hint (<= 16 words), also {Tap}-aware. */
   tip?: string;
   /** Where the card sits beside the target on wide screens. Default 'auto'. */
   placement?: TourPlacement;
@@ -48,6 +48,8 @@ export interface Tour {
    * data the user may not have (e.g. one patient).
    */
   route?: string;
+  /** Help page hint in place of "Show me" when there is no route, e.g. how to reach the page. */
+  howToOpen?: string;
   /** Help page order: welcome 0, then pages in menu order (10, 20, 30, …). */
   order: number;
   /** Bump to show a changed tour again to people who already saw it. */

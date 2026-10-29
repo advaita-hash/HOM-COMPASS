@@ -116,7 +116,7 @@ export function ComparisonTable({ items }: { items: CompareItem[] }) {
               </div>
               {remedy && (
                 <Link
-                  to={`/books/${item.book}/${item.slug}`}
+                  to={`/books/${item.book}/${item.slug}?view=full`}
                   className="inline-flex min-h-[44px] items-center gap-2 self-start text-sm font-medium text-brand-600 hover:text-brand-700"
                 >
                   <BookOpenText className="h-4 w-4" /> Read full text

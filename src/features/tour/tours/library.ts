@@ -17,7 +17,7 @@ export default {
       target: 'library-upload',
       magnify: false,
       title: 'Add books',
-      body: '{Tap} this box to pick book files from your device, or drag them onto it. PDF, EPUB, TXT and Word files work, several at a time.',
+      body: '{Tap} the Drag & drop box to pick book files from your device, or drag them onto it. PDF, EPUB, TXT and Word files work, several at a time.',
     },
     {
       id: 'about',
@@ -30,7 +30,7 @@ export default {
       id: 'catalogue',
       target: 'library-catalogue',
       title: 'Catalogue',
-      body: 'Your books are listed below, and the number shows how many. With no books yet, {tap} Upload a book.',
+      body: 'Your books are listed below, and the number shows how many. With no books yet, {tap} Add a book.',
     },
     {
       id: 'book',

@@ -87,8 +87,8 @@ function RemedyBrowser() {
   return (
     <div className="mx-auto max-w-4xl p-6 md:p-8">
       <header className="mb-4 flex items-center gap-3">
-        <FlaskConical className="h-6 w-6 text-brand-600" />
-        <div>
+        <FlaskConical className="mt-1 h-6 w-6 shrink-0 self-start text-brand-600" />
+        <div className="min-w-0 flex-1">
           <h1 className="text-2xl font-semibold text-slate-800">Materia Medica</h1>
           <p className="text-sm text-slate-500">
             {loading ? 'Loading remedies…' : `${entries.length} remedies across ${BOOKS.length + 1} sources`}
@@ -132,13 +132,14 @@ function RemedyBrowser() {
         </div>
       )}
 
-      <div className="grid gap-2 sm:grid-cols-2">
+      {/* grid-cols-1 is minmax(0,1fr): a long name can't widen the column past the screen */}
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         {filtered.map((e, i) => (
           <Link
             key={e.key}
             to={e.to}
             data-tour={i === 0 ? 'materia-medica-remedy' : undefined}
-            className="card p-3 pressable"
+            className="card min-w-0 p-3 pressable"
           >
             <div className="flex items-center gap-2">
               <span className="min-w-0 flex-1 truncate font-serif text-base font-semibold text-slate-800">
@@ -183,29 +184,30 @@ function RemedyBrowser() {
  * Back to the list, with the page's ? button at the other end of the row. No
  * gap: the ? has its own inset, and the link stays on one line at 320px.
  */
-function BackRow() {
+function BackRow({ showHelp = true }: { showHelp?: boolean }) {
   return (
     <div className="mb-4 flex items-center">
       <Link to="/materia-medica" data-tour="materia-medica-back" className="btn-ghost">
         <ChevronLeft className="h-4 w-4" /> Back to Materia Medica
       </Link>
-      <TourButton tour="materia-medica" />
+      {showHelp && <TourButton tour="materia-medica" />}
     </div>
   );
 }
 
 export default function MateriaMedicaPage() {
-  // one tour for the list and an open remedy (its steps skip what isn't shown)
-  usePageTour('materia-medica');
   const { remedyId } = useParams();
+  const remedy = remedyId ? getRemedyById(remedyId) : undefined;
+  // one tour for the list and an open remedy (its steps skip what isn't shown);
+  // none on "Remedy not found", where none of its controls are
+  usePageTour(remedyId && !remedy ? '' : 'materia-medica');
   if (!remedyId) return <RemedyBrowser />;
 
-  const remedy = getRemedyById(remedyId);
   if (!remedy) {
     return (
       <div className="mx-auto max-w-4xl p-8">
-        <BackRow />
-        <p className="text-sm text-slate-500">Remedy “{remedyId}” not found.</p>
+        <BackRow showHelp={false} />
+        <p className="text-sm text-ink/70">Remedy “{remedyId}” not found.</p>
       </div>
     );
   }

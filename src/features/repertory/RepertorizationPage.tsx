@@ -184,20 +184,21 @@ export default function RepertorizationPage() {
     // "Analysis" plus its badge down to 360px wide; sm+ keeps the roomier padding.
     <div className="mx-auto max-w-6xl p-4 sm:p-6 md:p-8">
       <header className="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <Activity className="h-6 w-6 text-brand-600" />
-          <div>
+        <div className="flex min-w-0 flex-auto items-center gap-3">
+          <Activity className="h-6 w-6 shrink-0 text-brand-600" />
+          <div className="min-w-0">
             <h1
               ref={headingRef}
               tabIndex={-1}
               className="text-2xl font-semibold text-slate-800 focus:outline-none"
             >
-              Case
+              Cases
             </h1>
             <p className="text-sm text-slate-500">
               {items.length} rubric{items.length === 1 ? '' : 's'} · grade-weighted analysis
             </p>
           </div>
+          <TourButton tour="cases" />
         </div>
         <div data-tour="cases-tools" className="flex flex-wrap items-center gap-2">
           <RepertorySelect />
@@ -209,7 +210,6 @@ export default function RepertorizationPage() {
               <Trash2 className="h-4 w-4" /> Clear case
             </button>
           )}
-          <TourButton tour="cases" />
         </div>
       </header>
 
@@ -295,10 +295,10 @@ export default function RepertorizationPage() {
                 <select
                   value={gender}
                   onChange={(e) => setGender(e.target.value)}
-                  aria-label="Sex"
+                  aria-label="Gender"
                   className="w-24 rounded-lg border border-slate-200 bg-surface px-2 py-2 text-sm"
                 >
-                  <option value="">Sex</option>
+                  <option value="">Gender</option>
                   <option>Female</option>
                   <option>Male</option>
                   <option>Other</option>

@@ -14,7 +14,7 @@ import type { Grade, Rubric } from './types';
 
 const GRADE_CLASS: Record<Grade, string> = {
   1: 'text-grade-1',
-  2: 'text-grade-2 font-medium',
+  2: 'text-grade-2 font-medium italic',
   3: 'text-grade-3 font-semibold',
   4: 'text-grade-4 font-bold',
 };
@@ -105,14 +105,15 @@ export default function RepertoryPage() {
   return (
     <div className="mx-auto max-w-4xl p-6 md:p-8">
       <header className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <BookOpen className="h-6 w-6 text-brand-600" />
-          <div>
+        <div className="flex min-w-0 flex-auto items-center gap-3">
+          <BookOpen className="h-6 w-6 shrink-0 text-brand-600" />
+          <div className="min-w-0">
             <h1 className="text-2xl font-semibold text-slate-800">Repertory</h1>
             <p className="text-sm text-slate-500">
-              {rep ? `${rep.rubricCount} rubrics · ${rep.title}` : 'Loading…'}
+              {rep ? `${rep.rubricCount} rubrics · ${repMeta?.label ?? rep.title}` : 'Loading…'}
             </p>
           </div>
+          <TourButton tour="repertory" />
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <RepertorySelect />
@@ -122,7 +123,6 @@ export default function RepertoryPage() {
               <span className="ml-1 rounded-full bg-white/25 px-2 text-xs">{count}</span>
             )}
           </Link>
-          <TourButton tour="repertory" />
         </div>
       </header>
 
@@ -139,7 +139,7 @@ export default function RepertoryPage() {
             data-tour="repertory-search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search rubrics or remedies…"
+            placeholder="Search rubrics, e.g. thirst…"
             className="w-full rounded-lg border border-slate-200 bg-surface py-3 pl-10 pr-3 text-sm focus:outline-none"
           />
         </div>
@@ -225,7 +225,7 @@ export default function RepertoryPage() {
       >
         <span>Grade:</span>
         <span className="text-grade-3 font-semibold">3 bold</span>
-        <span className="text-grade-2 font-medium">2 italic</span>
+        <span className="text-grade-2 font-medium italic">2 italic</span>
         <span className="text-grade-1">1 plain</span>
       </div>
 

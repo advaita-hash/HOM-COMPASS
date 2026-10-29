@@ -164,15 +164,46 @@ export function needsScroll(el: Element, topInset = 0): boolean {
 /** The hole around a target: its visible part plus padding, and a matching radius. */
 export function measureHole(el: Element, pad: number, topInset = 0): { hole: Box; radius: number } {
   const b = visibleBox(el, topInset) ?? boxOf(el.getBoundingClientRect());
-  const hole = { left: b.left - pad, top: b.top - pad, right: b.right + pad, bottom: b.bottom + pad };
+  let hole = { left: b.left - pad, top: b.top - pad, right: b.right + pad, bottom: b.bottom + pad };
+  // keep the ring on screen for targets that touch an edge (a 2px margin fits its border)
+  const m = 2;
+  const vw = document.documentElement.clientWidth || window.innerWidth;
+  const inside = {
+    left: Math.max(m, hole.left),
+    top: Math.max((topInset && !isFixed(el) ? topInset : 0) + m, hole.top),
+    right: Math.min(vw - m, hole.right),
+    bottom: Math.min(window.innerHeight - m, hole.bottom),
+  };
+  if (!isEmpty(inside)) hole = inside;
   const own = parseFloat(getComputedStyle(el).borderTopLeftRadius) || 0;
   const radius = Math.min(Math.max(12, own + pad), (hole.right - hole.left) / 2, (hole.bottom - hole.top) / 2);
   return { hole, radius };
 }
 
-/** Targets up to this size get the magnifier unless the step says otherwise. */
+/** Targets up to this size can get the magnifier unless the step says otherwise. */
 const SMALL_W = 200;
 const SMALL_H = 72;
+/** Below these, a target is hard to read as it is (a short control, small type). */
+const SHORT_H = 40;
+const SMALL_FONT = 14;
+
+/**
+ * Hard to read at its own size: no words on screen (an icon), small text, or
+ * a short control. A normal 44px labelled button reads fine as it is.
+ */
+function hardToRead(el: Element, h: number): boolean {
+  if (h < SHORT_H) return true;
+  const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+  for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+    const parent = n.parentElement;
+    if (!n.textContent?.trim() || !parent) continue;
+    // screen-reader-only labels (1px boxes) don't count as words on screen
+    const r = parent.getBoundingClientRect();
+    if (r.width <= 1 || r.height <= 1) continue;
+    return parseFloat(getComputedStyle(parent).fontSize) < SMALL_FONT;
+  }
+  return true;
+}
 
 /** Whether a step's target gets the magnifier (Loupe). Never for media or charts. */
 export function shouldMagnify(step: TourStep, el: Element): boolean {
@@ -187,7 +218,7 @@ export function shouldMagnify(step: TourStep, el: Element): boolean {
     const s = svg.getBoundingClientRect();
     if (s.width > SMALL_W || s.height > SMALL_H) return false;
   }
-  return step.magnify === true || small;
+  return step.magnify === true || (small && hardToRead(el, r.height));
 }
 
 /** env(safe-area-inset-*) in px (notches, the home indicator). */

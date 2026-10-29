@@ -8,6 +8,7 @@ export default {
   id: 'patient-detail',
   title: 'Patient record',
   summary: "One patient's record: general notes, and a card for each visit with its symptoms and notes.",
+  howToOpen: 'Open a patient on the Patients page to see this tour.',
   order: 125,
   version: 1,
   steps: [

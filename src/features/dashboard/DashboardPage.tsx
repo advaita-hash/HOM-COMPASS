@@ -156,7 +156,7 @@ export default function DashboardPage() {
       {/* Quick stats */}
       <div data-tour="dashboard-stats" className="mt-6 grid gap-4 sm:grid-cols-3">
         <StatCard icon={FlaskConical} label="Remedies" value={`${REMEDY_TOTAL}+`} to="/materia-medica" />
-        <StatCard icon={Library} label="Books uploaded" value={bookCount} to="/library" />
+        <StatCard icon={Library} label="Your books" value={bookCount} to="/library" />
         <StatCard icon={BookMarked} label="Repertory chapters" value="—" to="/repertory" />
       </div>
 
@@ -167,8 +167,8 @@ export default function DashboardPage() {
           <Link to="/library" className="card flex items-center gap-3 p-4 pressable">
             <Library className="h-5 w-5 text-brand-600" />
             <div>
-              <div className="text-sm font-medium text-slate-800">Upload a book</div>
-              <div className="text-xs text-ink/70">Add a repertory or materia medica</div>
+              <div className="text-sm font-medium text-slate-800">Add a book</div>
+              <div className="text-xs text-ink/70">List your own book files</div>
             </div>
           </Link>
           <Link to="/materia-medica" className="card flex items-center gap-3 p-4 pressable">

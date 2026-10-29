@@ -27,14 +27,14 @@ export default {
       id: 'search',
       target: 'repertory-search',
       title: 'Search rubrics',
-      body: 'Type a repertory word, like thirst, to list the rubrics that contain exactly what you typed. For everyday wording, use Symptoms → rubrics on the Cases page.',
+      body: "Type a repertory word, like thirst, to list the rubrics that contain it. Remedy names aren't searched here. For everyday wording, use Symptoms → rubrics on the Cases page.",
       tip: 'Type burning, then pick a chapter to narrow the list.',
     },
     {
       id: 'chapter',
       target: 'repertory-chapter',
       title: 'Pick a chapter',
-      body: 'Choose a chapter, like Mind or Head, to see only its rubrics, in the same order as the book. Choose All to search every chapter.',
+      body: 'Choose a chapter, like Mind or Head, to see only its rubrics, in book order. Big chapters show the first 200; type a word to narrow. Choose All to search every chapter.',
       magnify: false,
     },
     {
@@ -42,7 +42,7 @@ export default {
       id: 'browse',
       target: 'repertory-browse',
       title: 'Browse Mind',
-      body: 'Not sure what to type? {Tap} Browse Mind to read the Mind chapter rubric by rubric, like turning the pages of the book.',
+      body: 'Not sure what to type? {Tap} Browse Mind to list Mind rubrics in book order. Only the first 200 show, so type a word to find the rest.',
     },
     {
       id: 'add',
@@ -56,7 +56,7 @@ export default {
       id: 'remedy',
       target: 'repertory-remedy',
       title: 'Remedy names',
-      body: "{Tap} any remedy name under a rubric to read the lines in Boericke, Tyler and Allen that mention the rubric's words, plus a link to the full text.",
+      body: "{Tap} any remedy name under a rubric to read the lines in Boericke, Tyler and Allen that mention the rubric's words, plus a link to its full chapter.",
       magnify: true,
       ifMissing: 'center',
     },
@@ -64,7 +64,7 @@ export default {
       id: 'grades',
       target: 'repertory-grades',
       title: 'Remedy grades',
-      body: "Colour shows a remedy's grade, how strongly it is known for the symptom: purple bold is 3, blue is 2, grey is 1. Higher grades score more in Cases.",
+      body: "Colour and style show a remedy's grade, how strongly it is known for the symptom: purple bold is 3, blue italic is 2, plain grey is 1. Higher grades score more.",
     },
   ],
 } satisfies Tour;

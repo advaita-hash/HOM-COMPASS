@@ -19,10 +19,11 @@ export default function ComparePage() {
   return (
     <div className="page max-w-7xl">
       <header className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        {/* flex-1 keeps the ? beside the title; min-w-48 lets the actions wrap below it on phones */}
-        <div className="flex min-w-48 flex-1 items-center gap-3">
-          <Columns3 className="h-6 w-6 text-brand-600" />
-          <div>
+        {/* flex-1 keeps the ? beside the title on wide screens; min-w-64 is wider than
+            what's left beside the actions on any phone, so they wrap below the title */}
+        <div className="flex min-w-64 flex-1 items-center gap-3">
+          <Columns3 className="mt-1 h-6 w-6 shrink-0 self-start text-brand-600" />
+          <div className="min-w-0 flex-1">
             <h1 className="text-2xl font-semibold text-ink/90">Compare</h1>
             <p className="text-sm text-ink/60">
               Up to {COMPARE_MAX} remedies from Boericke, Tyler and Allen, side by side.

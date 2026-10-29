@@ -18,8 +18,8 @@ export default {
     {
       id: 'menu-button',
       target: 'nav-menu-button',
-      title: 'Open the menu',
-      body: '{Tap} the ☰ button at the top to open the menu. It lists every part of the app.',
+      title: 'The menu button',
+      body: 'The ☰ button at the top opens the menu, which lists every part of the app. {Tap} Next to look inside.',
     },
     {
       id: 'dashboard',
@@ -67,7 +67,7 @@ export default {
       menu: 'open',
       placement: 'right',
       title: 'Materia Medica',
-      body: 'Browse and search remedies from Boericke, Tyler, Allen and a short curated list. Open one to read about it.',
+      body: "Browse and search remedies from Boericke, Tyler, Allen and the app's own Curated study cards. Open one to read about it.",
     },
     {
       id: 'compare',
@@ -118,20 +118,20 @@ export default {
       body: 'Keep patient records and their saved cases. They are saved on this device only, so export a backup now and then.',
     },
     {
-      id: 'appearance',
-      target: 'nav-appearance',
-      menu: 'open',
-      placement: 'right',
-      title: 'Appearance',
-      body: "Choose Light or Dark, or Auto to follow your device's setting.",
-    },
-    {
       id: 'help',
       target: 'nav-help',
       menu: 'open',
       placement: 'right',
       title: 'Help & tour',
       body: 'Replay this tour, or read what every button does, page by page.',
+    },
+    {
+      id: 'appearance',
+      target: 'nav-appearance',
+      menu: 'open',
+      placement: 'right',
+      title: 'Appearance',
+      body: "{Tap} the sun for Light, the moon for Dark, or the half sun, half moon for Auto, which follows your device's setting.",
     },
     {
       id: 'done',

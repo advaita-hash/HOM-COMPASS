@@ -71,48 +71,56 @@ export default function HelpPage() {
         </div>
       </header>
 
-      <section aria-label="Tour settings" className="card mb-8 divide-y divide-ink/10">
-        <div className="flex flex-wrap items-center justify-between gap-3 p-5">
-          <div className="min-w-0">
-            <h2 className="text-base font-semibold text-ink/90">Welcome tour</h2>
-            <p className="text-sm text-ink/70">A one-minute walk through the menu.</p>
-          </div>
-          <button type="button" className="btn-primary" onClick={() => start(WELCOME_ID)}>
-            <Play className="h-4 w-4" aria-hidden />
-            Take the welcome tour
-          </button>
-        </div>
-
-        <div className="flex items-center justify-between gap-4 p-5">
-          <div className="min-w-0">
-            <div id={tipsLabel} className="text-base font-medium text-ink/90">
-              Show tips on new pages
+      <section aria-labelledby="tour-settings-h" className="card mb-8">
+        <h2 id="tour-settings-h" className="sr-only">
+          Tour settings
+        </h2>
+        <div className="divide-y divide-ink/10">
+          <div className="flex flex-wrap items-center justify-between gap-3 p-5">
+            <div className="min-w-0">
+              <h3 className="text-base font-semibold text-ink/90">Welcome tour</h3>
+              <p className="text-sm text-ink/70">A one-minute walk through the menu.</p>
             </div>
-            <p id={tipsHint} className="text-sm text-ink/70">
-              A short tour the first time you open each page. The ? buttons work either way.
-            </p>
+            <button type="button" className="btn-primary" onClick={() => start(WELCOME_ID)}>
+              <Play className="h-4 w-4" aria-hidden />
+              Take the welcome tour
+            </button>
           </div>
-          <Switch checked={tipsEnabled} onChange={setTipsEnabled} labelledBy={tipsLabel} describedBy={tipsHint} />
-        </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-3 p-5">
-          <div className="min-w-0">
-            <div className="text-base font-medium text-ink/90">Start over</div>
-            <p className="text-sm text-ink/70" role="status" aria-live="polite">
-              {resetDone ? 'Done — every page will show its tips again.' : 'Show every page’s tips again, as on your first visit.'}
-            </p>
+          <div className="flex items-center justify-between gap-4 p-5">
+            <div className="min-w-0">
+              <h3 id={tipsLabel} className="text-base font-semibold text-ink/90">
+                Show tips on new pages
+              </h3>
+              <p id={tipsHint} className="text-sm text-ink/70">
+                A short tour the first time you open each page. The ? buttons work either way.
+              </p>
+            </div>
+            <Switch checked={tipsEnabled} onChange={setTipsEnabled} labelledBy={tipsLabel} describedBy={tipsHint} />
           </div>
-          <button
-            type="button"
-            className="btn-secondary"
-            onClick={() => {
-              resetAll();
-              setResetDone(true);
-            }}
-          >
-            <RotateCcw className="h-4 w-4" aria-hidden />
-            Show all tips again
-          </button>
+
+          <div className="flex flex-wrap items-center justify-between gap-3 p-5">
+            <div className="min-w-0">
+              <h3 className="text-base font-semibold text-ink/90">Start over</h3>
+              <p className="text-sm text-ink/70">
+                {resetDone ? 'Done — every page will show its tips again.' : 'Show every page’s tips again, as on your first visit.'}
+              </p>
+              <span role="status" aria-live="polite" className="sr-only">
+                {resetDone ? 'Done — every page will show its tips again.' : ''}
+              </span>
+            </div>
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={() => {
+                resetAll();
+                setResetDone(true);
+              }}
+            >
+              <RotateCcw className="h-4 w-4" aria-hidden />
+              Show all tips again
+            </button>
+          </div>
         </div>
       </section>
 
@@ -137,7 +145,7 @@ export default function HelpPage() {
                     <span className="sr-only"> the {tour.title} tour</span>
                   </button>
                 ) : (
-                  <p className="text-sm text-ink/70">Open that page to see this tour.</p>
+                  <p className="text-sm text-ink/70">{tour.howToOpen ?? 'This tour starts the first time you open that page.'}</p>
                 )}
               </div>
               <ol className="mt-4 list-decimal space-y-3 pl-5 text-subhead leading-relaxed text-ink/80 marker:text-sm marker:text-ink/70">
@@ -152,7 +160,7 @@ export default function HelpPage() {
                       <span className="mt-1 flex items-start gap-2 text-sm text-ink/80">
                         <Lightbulb className="mt-px h-4 w-4 shrink-0 text-brand-600" aria-hidden />
                         <span>
-                          <span className="font-semibold">Try it:</span> {resolveTap(s.tip, touch)}
+                          <span className="font-semibold">Tip:</span> {resolveTap(s.tip, touch)}
                         </span>
                       </span>
                     )}

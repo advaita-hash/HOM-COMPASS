@@ -56,7 +56,7 @@ export default {
       id: 'sign-out',
       target: 'my-notes-sign-out',
       title: 'Sign out',
-      body: "You're signed in to Common Room, so your notes from there show below. {Tap} Sign out to stop showing them; they stay safe in Common Room.",
+      body: "Once you're signed in to Common Room, your notes from there show below. {Tap} Sign out to stop showing them; they stay safe in Common Room.",
     },
     {
       id: 'common-room-notes',
@@ -64,7 +64,7 @@ export default {
       magnify: false,
       title: 'Common Room notes',
       body: "Each remedy you noted in Common Room gets a line. {Tap} one to see its notes on the remedy's page, where you can share or delete them.",
-      tip: "A share link can't be taken back, so never share a note with patient names.",
+      tip: "Share only notes without patient names; a share link can't be taken back.",
     },
     {
       // signed in, but no remedy notes in Common Room yet

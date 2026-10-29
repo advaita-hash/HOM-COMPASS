@@ -14,9 +14,36 @@ export const COMMON_ROOM_URL = 'https://common-room-six.vercel.app';
 const SUPABASE_URL = 'https://iltosbkrqufpjprxbnmz.supabase.co';
 const PUBLISHABLE_KEY = 'sb_publishable_aqoCvEjShkCXYa5qAWD5Hg_b0jrCPsD';
 
+// localStorage that never throws (blocked site data, some private windows):
+// the sign-in is then simply not kept, instead of an uncaught SecurityError.
+const guardedStorage = {
+  getItem: (k: string) => {
+    try {
+      return window.localStorage.getItem(k);
+    } catch {
+      return null;
+    }
+  },
+  setItem: (k: string, v: string) => {
+    try {
+      window.localStorage.setItem(k, v);
+    } catch {
+      /* blocked */
+    }
+  },
+  removeItem: (k: string) => {
+    try {
+      window.localStorage.removeItem(k);
+    } catch {
+      /* blocked */
+    }
+  },
+};
+
 export const commonRoom = createClient(SUPABASE_URL, PUBLISHABLE_KEY, {
   auth: {
     storageKey: 'hom-compass.common-room-auth',
+    storage: guardedStorage,
     persistSession: true,
     autoRefreshToken: true,
   },

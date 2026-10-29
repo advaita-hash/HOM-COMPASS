@@ -1,8 +1,10 @@
 import type { Tour } from '../types';
 
-// The search box, then one step per result group. Results only show after
-// typing two letters, so those steps fall back to centred cards until then;
-// each points at the group's first result.
+// The search box, a centred card naming the four result groups, then one step
+// per group. Results only show after typing two letters (and the query isn't
+// kept in the URL), so on a first visit the group steps are skipped and the
+// centred card explains them; replaying the tour after a search points at each
+// group's first result.
 export default {
   id: 'search',
   title: 'Search',
@@ -16,35 +18,36 @@ export default {
       target: 'search-input',
       title: 'Search box',
       body: 'Type at least two letters of a remedy, symptom or rubric. Matches from all over the app show below as you type.',
-      tip: 'Type thirst, then {tap} the ? button to tour the results.',
+      tip: 'Close this tour, type thirst, then {tap} the ? button to see the results explained.',
+    },
+    {
+      id: 'results',
+      title: 'Your results',
+      body: 'After you search, matches show in four groups: your notes, the Materia Medica, the reference books and repertory rubrics. {Tap} any match to open it.',
     },
     {
       id: 'notes',
       target: 'search-note-result',
-      ifMissing: 'center',
       title: 'Your notes',
-      body: 'Notes you wrote that match come first. This group only shows when one of your notes matches. {Tap} a note to open it where you wrote it.',
+      body: 'Notes you wrote that match come first; this group only shows when one does. {Tap} a note to open it where you wrote it.',
     },
     {
       id: 'materia-medica',
       target: 'search-remedy-result',
-      ifMissing: 'center',
       title: 'Materia Medica',
-      body: "After you search, matching remedies from the app's own Curated list show up. {Tap} one to open its study card.",
+      body: "Matching remedies from the app's own Curated list. {Tap} one to open its study card.",
     },
     {
       id: 'books',
       target: 'search-book-result',
-      ifMissing: 'center',
       title: 'Reference Books',
-      body: 'After you search, remedy chapters in Boericke, Tyler and Allen that use your words show up, with the words highlighted. {Tap} one to read that chapter.',
+      body: 'Remedy chapters in Boericke, Tyler and Allen that use your words, with the words highlighted. {Tap} one to read that chapter.',
     },
     {
       id: 'rubrics',
       target: 'search-rubric-result',
-      ifMissing: 'center',
       title: 'Repertory rubrics',
-      body: 'After you search, matching rubrics show up, with the number of remedies in brackets. {Tap} one to open the Repertory.',
+      body: 'Matching repertory rubrics, with the number of remedies in brackets. {Tap} one to open the Repertory.',
     },
   ],
 } satisfies Tour;

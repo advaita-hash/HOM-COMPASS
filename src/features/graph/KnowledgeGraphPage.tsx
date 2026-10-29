@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { AlertTriangle, Loader2, Network, Search } from 'lucide-react';
 import { type GNode, type NodeLabel, useGraph } from './graphData';
 import { canonicalName } from '../../lib/remedyName';
+import { findBookRemedy, useBook } from '../books/booksIndex';
 import { TourButton } from '../tour/TourButton';
 import { usePageTour } from '../tour/usePageTour';
 
@@ -46,6 +47,13 @@ export default function KnowledgeGraphPage() {
     return (graph.neighbors.get(current.id) ?? []).slice(0, MAX_NEIGHBORS);
   }, [graph, current]);
 
+  // the remedy's own chapter in Boericke, when it has one
+  const { data: boericke } = useBook('boericke');
+  const boerickeSlug =
+    boericke && current?.label === 'REMEDY'
+      ? (findBookRemedy(boericke, current.name) ?? findBookRemedy(boericke, canonicalName(current.name)))?.slug
+      : undefined;
+
   const searchResults = useMemo(() => {
     if (!graph || query.trim().length < 2) return [];
     const q = query.toLowerCase();
@@ -76,14 +84,14 @@ export default function KnowledgeGraphPage() {
       </div>
 
       <header className="mb-4 flex items-center gap-3">
-        <Network className="h-6 w-6 text-brand-600" />
-        <div>
+        <Network className="mt-1 h-6 w-6 shrink-0 self-start text-brand-600" />
+        <div className="min-w-0 flex-1">
           <h1 className="text-2xl font-semibold text-slate-800">Knowledge Graph</h1>
           <p className="text-sm text-slate-500">
             Explore remedy · rubric · chapter relationships (grade-weighted).
           </p>
         </div>
-        <TourButton tour="graph" />
+        <TourButton tour="graph" className="-mr-3" />
       </header>
 
       <div className="relative mb-4">
@@ -194,9 +202,9 @@ export default function KnowledgeGraphPage() {
                 {nodeLabel(current)}
               </h2>
               <p className="text-xs text-slate-500">{current.degree} connections</p>
-              {current.label === 'REMEDY' && (
+              {boerickeSlug && (
                 <Link
-                  to={`/books/boericke?q=${encodeURIComponent(current.name.split(/\s+/)[0])}`}
+                  to={`/books/boericke/${boerickeSlug}?view=full`}
                   className="mt-2 inline-block text-xs font-medium text-brand-600 hover:underline"
                 >
                   Read in reference books →

@@ -40,7 +40,7 @@ export default {
       // only on an open remedy
       id: 'back',
       target: 'materia-medica-back',
-      title: 'Back to the list',
+      title: 'Back to Materia Medica',
       body: '{Tap} Back to Materia Medica to return to the full list of remedies.',
     },
     {
@@ -64,8 +64,8 @@ export default {
       target: 'materia-medica-books',
       magnify: false,
       ifMissing: 'center',
-      title: 'Full drug picture',
-      body: 'At the end of each Curated remedy, buttons open Boericke, Tyler or Allen already searching for it, so you can read its full drug picture.',
+      title: 'Read in the books',
+      body: 'At the end of each Curated remedy, buttons open its chapter in Boericke, Tyler or Allen, where the book has it, so you can read it in full.',
     },
   ],
 } satisfies Tour;

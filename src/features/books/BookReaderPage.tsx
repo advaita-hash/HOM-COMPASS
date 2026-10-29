@@ -38,6 +38,7 @@ import { usePageTour } from '../tour/usePageTour';
 //                   (general notes open the notepad)
 //   ?notes=remedy   open the notepad on "This remedy"
 //   ?notes=book     open the notepad on "This book"
+//   ?view=full      open on Full text (?view=portrait: on Drug picture)
 // Each param is removed once acted on, so refresh/back doesn't reopen it. A
 // ?note= for a note that belongs to another chapter, remedy or book is sent
 // on to that note's own page (links.ts noteHref).
@@ -335,11 +336,23 @@ export default function BookReaderPage() {
   const meta = getBookMeta(bookId);
   const { data: book, isLoading, isError, error } = useBook(bookId);
   const [query, setQuery] = useState(searchParams.get('q') ?? '');
-  const [view, setViewState] = useState<'portrait' | 'full'>(readView);
+  const [view, setViewState] = useState<'portrait' | 'full'>(() => {
+    const v = searchParams.get('view');
+    return v === 'full' || v === 'portrait' ? v : readView();
+  });
   const setView = useCallback((v: 'portrait' | 'full') => {
     saveView(v);
     setViewState(v);
   }, []);
+  // ?view= from links ("Read in Boericke", "Read full text"): act once, then drop it
+  useEffect(() => {
+    const v = searchParams.get('view');
+    if (v !== 'full' && v !== 'portrait') return;
+    setView(v);
+    const next = new URLSearchParams(searchParams);
+    next.delete('view');
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams, setView]);
   // On phone/tablet the remedy index and the reader can't sit side by side, so
   // the list collapses once a remedy is chosen (tap "All remedies" to reopen).
   // Desktop (lg+) always shows both.
@@ -654,7 +667,7 @@ export default function BookReaderPage() {
             <span className="hidden sm:inline">Book notes</span>
             {bookNotes.length > 0 && <span className="text-xs tabular-nums text-ink/70">{bookNotes.length}</span>}
           </button>
-          <TourButton tour="book-reader" className="-mr-2" />
+          <TourButton tour="book-reader" className="-mr-3" />
         </div>
       </div>
 

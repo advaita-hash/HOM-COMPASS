@@ -93,6 +93,8 @@ function copyOf(el: Element, w: number, h: number): Element {
   const to = [copy, ...copy.querySelectorAll('*')];
   to.forEach((n, i) => {
     for (const a of ATTRS_TO_DROP) n.removeAttribute(a);
+    // out of the tab order too (the host is inert; this guards other focus code)
+    if (n.matches('a[href], button, input, select, textarea, summary, [contenteditable]')) n.setAttribute('tabindex', '-1');
     // typed values live in properties, not attributes
     const s = from[i];
     if (s instanceof HTMLInputElement && n instanceof HTMLInputElement) {

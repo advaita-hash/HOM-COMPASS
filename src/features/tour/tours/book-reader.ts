@@ -40,7 +40,7 @@ export default {
     {
       id: 'view',
       target: 'book-reader-view',
-      title: 'Two ways to read',
+      title: 'Drug picture, Full text',
       body: 'Drug picture is a short summary of the remedy. Full text is the whole chapter, where you can pin your own notes to any words.',
     },
     {

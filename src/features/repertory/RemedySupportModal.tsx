@@ -122,7 +122,7 @@ function BookSupport({
           {label}: {canonicalName(result.remedy.name)}
         </span>
         <Link
-          to={`/books/${bookId}/${result.remedy.slug}`}
+          to={`/books/${bookId}/${result.remedy.slug}?view=full`}
           className="ml-auto text-xs text-brand-600 hover:underline"
         >
           full text →

@@ -49,12 +49,12 @@ export default function PatientsPage() {
   return (
     <div className="mx-auto max-w-3xl p-6 md:p-8">
       <header className="mb-5 flex items-center gap-3">
-        <Users className="h-6 w-6 text-brand-600" />
-        <div>
+        <Users className="mt-1 h-6 w-6 shrink-0 self-start text-brand-600" />
+        <div className="min-w-0 flex-1">
           <h1 ref={headingRef} tabIndex={-1} className="text-2xl font-semibold text-slate-800">Patients &amp; Cases</h1>
           <p className="text-sm text-slate-500">{patients.length} {patients.length === 1 ? 'patient' : 'patients'}</p>
         </div>
-        <TourButton tour="patients" />
+        <TourButton tour="patients" className="-mr-2" />
       </header>
 
       <form onSubmit={submit} data-tour="patients-add" className="card mb-5 flex flex-wrap items-end gap-3 p-4">

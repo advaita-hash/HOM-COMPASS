@@ -22,7 +22,7 @@ export default {
       id: 'read',
       target: 'remedy-of-the-day-read',
       title: 'Read in Boericke',
-      body: "Opens this remedy's whole chapter in Boericke's book, so you can read it from start to finish.",
+      body: "Opens this remedy's whole chapter in Boericke's book, on Full text, so you can read it from start to finish.",
     },
     {
       id: 'notes',
@@ -52,8 +52,8 @@ export default {
       id: 'books',
       target: 'remedy-of-the-day-books',
       magnify: false,
-      title: 'Full drug picture',
-      body: "Read this remedy in Boericke, Tyler or Allen. Each button opens that book and searches it for this remedy's name.",
+      title: 'Read in the books',
+      body: "Read this remedy in Boericke, Tyler or Allen. Each button opens its chapter in that book; a book that doesn't have it shows no button.",
     },
   ],
 } satisfies Tour;

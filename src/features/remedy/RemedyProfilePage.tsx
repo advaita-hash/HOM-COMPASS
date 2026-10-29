@@ -131,7 +131,7 @@ export default function RemedyProfilePage() {
         <div className="mt-4 flex flex-wrap gap-2">
           {curated && (
             <Link to={`/materia-medica/${curated.id}`} className="btn-ghost inline-flex items-center gap-2">
-              <FlaskConical className="h-4 w-4" /> Materia Medica profile
+              <FlaskConical className="h-4 w-4" /> Study card
             </Link>
           )}
           {bookLinks.map(({ meta, slug }) => (

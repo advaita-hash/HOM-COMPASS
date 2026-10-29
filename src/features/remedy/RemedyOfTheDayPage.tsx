@@ -87,15 +87,20 @@ export default function RemedyOfTheDayPage() {
   return (
     <div className="page pb-28">
       <header className="mb-5 flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <div className="flex items-center gap-2 text-brand-600">
-            <CalendarDays className="h-4 w-4" aria-hidden />
-            <h1 className="text-xs font-semibold uppercase tracking-wide">Remedy of the Day</h1>
+        {/* the ? sits at the end of the title block, so on phones it stays top right
+            instead of following the day stepper when that wraps below */}
+        <div className="flex min-w-0 flex-auto items-center gap-3">
+          <div className="min-w-0 flex-auto">
+            <div className="flex items-center gap-2 text-brand-600">
+              <CalendarDays className="h-4 w-4 shrink-0" aria-hidden />
+              <h1 className="text-xs font-semibold uppercase tracking-wide">Remedy of the Day</h1>
+            </div>
+            <p className="mt-1 text-sm text-ink/70">
+              <time dateTime={isoOfDay(day)}>{dateLabel}</time>
+              {!isToday && <span className="sr-only"> (an earlier day)</span>}
+            </p>
           </div>
-          <p className="mt-1 text-sm text-ink/70">
-            <time dateTime={isoOfDay(day)}>{dateLabel}</time>
-            {!isToday && <span className="sr-only"> (an earlier day)</span>}
-          </p>
+          <TourButton tour="remedy-of-the-day" />
         </div>
         <div className="flex items-center gap-1">
           <nav aria-label="Choose a day" data-tour="remedy-of-the-day-days" className="flex items-center gap-1">
@@ -115,7 +120,6 @@ export default function RemedyOfTheDayPage() {
               <ChevronRight className="h-4 w-4" aria-hidden />
             </button>
           </nav>
-          <TourButton tour="remedy-of-the-day" />
         </div>
       </header>
 
@@ -161,7 +165,7 @@ export default function RemedyOfTheDayPage() {
             <p className="mt-2 text-xs text-ink/70">From Boericke, Pocket Manual of Homœopathic Materia Medica</p>
             <div className="mt-4 flex flex-wrap items-center gap-2">
               <Link
-                to={`/books/${DAILY_BOOK}/${remedy.slug}`}
+                to={`/books/${DAILY_BOOK}/${remedy.slug}?view=full`}
                 data-tour="remedy-of-the-day-read"
                 className="btn-primary"
               >
