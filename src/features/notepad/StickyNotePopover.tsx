@@ -45,6 +45,18 @@ export interface StickyCloseOptions {
 }
 
 const coarse = () => !!window.matchMedia?.('(pointer: coarse)').matches;
+/** The bottom safe-area inset (home indicator in a home-screen app), in px. */
+let sabProbe: HTMLDivElement | null = null;
+const safeBottom = () => {
+  if (!sabProbe || !sabProbe.isConnected) {
+    sabProbe = document.createElement('div');
+    sabProbe.setAttribute('aria-hidden', 'true');
+    sabProbe.style.cssText =
+      'position:fixed;left:0;bottom:0;width:0;height:env(safe-area-inset-bottom,0px);visibility:hidden;pointer-events:none';
+    document.body.appendChild(sabProbe);
+  }
+  return sabProbe.offsetHeight;
+};
 const reducedMotion = () => !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 const markerFor = (root: HTMLElement | null, id: string) =>
   root?.querySelector<HTMLElement>(`button[data-notes~="${CSS.escape(id)}"]`) ?? null;
@@ -202,7 +214,8 @@ export function StickyNotePopover({
     const w = Math.min(W, v.width - GUTTER * 2, window.innerWidth - GUTTER * 2);
     box.style.width = `${w}px`;
     const top0 = Math.max(v.top, 0) + 8;
-    const bottom0 = Math.min(v.bottom, window.innerHeight) - 8;
+    // kept above the home indicator (env(safe-area-inset-bottom)) in a home-screen app
+    const bottom0 = Math.min(v.bottom, window.innerHeight - safeBottom()) - 8;
     // the sticky's height with its text box at full size (up to 40vh), so a
     // text box shrunk to fit below doesn't change where it goes
     const ta = textRef.current;
@@ -225,15 +238,20 @@ export function StickyNotePopover({
       // the reader's scroll that puts the marker's top at `y` (as near as it goes)
       const scrollFor = (y: number) => Math.max(0, Math.min(sc.scrollTop + (m.top - y), max));
       const lands = (to: number) => m.top - (to - sc.scrollTop);
-      // where the marker could go, best first: centred (a link) or where it
-      // is (a tap), then just low enough for the sticky above it, then just
-      // high enough for it below; the first one the scroll range allows wins
+      // where the marker could go: centred (a link) or where it is, nudged
+      // just inside the margins (a tap); then just low enough for the sticky
+      // above it, or just high enough for it below. A link takes the first
+      // that fits; a tap the one that scrolls least
+      const here = Math.max(top0, Math.min(m.top, bottom0 - m.height));
       const tries = [
-        reveal ? top0 + (bottom0 - top0 - m.height) / 2 : m.top,
+        reveal ? top0 + (bottom0 - top0 - m.height) / 2 : here,
         top0 + GAP + hFull + 2,
         bottom0 - GAP - hFull - m.height - 2,
       ].map(scrollFor);
-      const to = tries.find((t) => fitsAt(lands(t))) ?? tries[0];
+      const fits = tries.filter((t) => fitsAt(lands(t)));
+      const to = reveal
+        ? (fits[0] ?? tries[0])
+        : ([...fits].sort((a, b) => Math.abs(a - sc.scrollTop) - Math.abs(b - sc.scrollTop))[0] ?? tries[0]);
       if (Math.abs(to - sc.scrollTop) > 1) {
         // the scroll moves the marker, and placing follows it
         sc.scrollTo({ top: to, behavior: reveal && !reducedMotion() ? 'smooth' : 'auto' });
@@ -389,7 +407,7 @@ export function StickyNotePopover({
         } animate-dialog-in`}
       >
         {/* header: which note (pager) and Close */}
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-3">
           <h2
             id={titleId}
             className="min-w-0 flex-1 truncate pl-1 text-xs font-semibold uppercase tracking-wide text-ink/70"
@@ -410,7 +428,7 @@ export function StickyNotePopover({
             type="button"
             onClick={() => close({ restoreFocus: true })}
             aria-label="Close note"
-            className={`${iconBtn} ml-1 bg-ink/[0.06]`}
+            className={`${iconBtn} bg-ink/[0.06]`}
           >
             <X className="h-4 w-4" strokeWidth={2.5} />
           </button>
@@ -429,7 +447,7 @@ export function StickyNotePopover({
           placeholder="Write a note"
           {...NOTE_FIELD}
           // 16px text: iOS doesn't zoom, and Scribble writes at reading size
-          className="mt-2 block max-h-[40vh] min-h-[88px] w-full resize-none rounded-lg border border-transparent bg-transparent px-2 py-2 font-sans text-base leading-normal text-ink/90 focus:bg-white/40 dark:focus:bg-black/10"
+          className="mt-2 block max-h-[40vh] min-h-[88px] w-full resize-none rounded-lg border border-transparent bg-transparent py-2 pl-[3px] pr-1 font-sans text-base leading-normal text-ink/90 focus:bg-white/40 dark:focus:bg-black/10"
         />
         <ScribbleHint show={!text} />
         {!text.trim() && (

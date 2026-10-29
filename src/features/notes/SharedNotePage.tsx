@@ -31,7 +31,7 @@ export default function SharedNotePage() {
   const date = note ? fmt(note.date) : '';
 
   return (
-    <div className="min-h-full bg-base px-4 py-10">
+    <div className="min-h-full bg-canvas px-4 py-10">
       <div className="mx-auto max-w-xl">
         <div className="mb-5 flex items-center gap-2">
           <Compass className="h-6 w-6 text-brand-600" />

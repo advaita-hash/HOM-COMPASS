@@ -47,7 +47,7 @@ export const DARK = {
 };
 
 export const SHADES = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950];
-const HUES = ['red', 'amber', 'emerald', 'violet', 'blue', 'teal', 'indigo'];
+const HUES = ['red', 'amber', 'emerald', 'violet', 'blue', 'teal', 'indigo', 'pink'];
 
 /** Ink opacity per slate shade (Apple label / separator / fill levels). */
 const INK_ALPHA = {
@@ -144,7 +144,9 @@ export const colors = {
   ...Object.fromEntries(HUES.map((h) => [h, scale(h)])),
   grade: { 1: v('c-grade-1'), 2: v('c-grade-2'), 3: v('c-grade-3'), 4: v('c-grade-4') },
   // semantic layers (use these in new code)
-  base: v('bg-base'),
+  // the grouped background is `canvas` (bg-canvas), not `base`: a colour named
+  // `base` would make the `text-base` font size also set the text colour
+  canvas: v('bg-base'),
   surface: v('bg-surface'),
   elevated: v('bg-elevated'),
   ink: v('ink'), // text-ink/90 · text-ink/60 · text-ink/30 · border-ink/10

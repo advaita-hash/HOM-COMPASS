@@ -17,7 +17,7 @@
   }
 
   body {
-    @apply bg-base font-sans text-base text-ink/90 antialiased;
+    @apply bg-canvas font-sans text-base text-ink/90 antialiased;
     margin: 0;
     /* we draw our own pressed states */
     -webkit-tap-highlight-color: transparent;

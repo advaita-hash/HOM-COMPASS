@@ -161,7 +161,7 @@ export const NoteCard = forwardRef<
             }}
             rows={Math.min(10, Math.max(3, draft.split('\n').length + 1))}
             {...NOTE_FIELD}
-            className="input min-h-[88px] resize-y py-2 text-base"
+            className="input min-h-[88px] resize-y py-2 text-base text-ink/90"
           />
           <ScribbleHint show={!draft} />
           <div className="mt-2 flex justify-end gap-2">

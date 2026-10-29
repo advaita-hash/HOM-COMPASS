@@ -176,7 +176,7 @@ export function NoteComposer({
         placeholder={placeholder}
         {...NOTE_FIELD}
         // 16px: iOS doesn't zoom into the field (and Scribble writes at size)
-        className="input min-h-[88px] resize-y py-2 text-base"
+        className="input min-h-[88px] resize-y py-2 text-base text-ink/90"
       />
       <ScribbleHint show={!body} />
 

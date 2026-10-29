@@ -1,7 +1,7 @@
 // ---------------------------------------------------------------------------
 // Note colours: the Apple Books highlight palette (yellow, green, blue, pink,
-// purple) drawn with the design system's hues. There is no pink scale, so
-// pink uses red, whose light tints read as pink.
+// purple) drawn with the design system's hues (amber, emerald, blue, pink,
+// violet; pink was added to design/tokens.js HUES for this).
 //
 // A note's colour tints its passage highlight, its marker in the text, its
 // sticky note and the tab on its card. Notes saved before colours existed
@@ -89,17 +89,17 @@ export const TONES: Record<NoteColor, Tone> = {
   },
   pink: {
     label: 'Pink',
-    mark: 'bg-red-100',
-    markActive: 'bg-red-200',
-    marker: 'bg-red-100 text-red-800 hover:bg-red-200',
-    markerActive: 'bg-red-200 text-red-800 ring-2 ring-red-300',
-    paper: 'bg-red-100 border-red-200',
-    tab: 'border-l-red-300',
-    wash: 'border-red-300 bg-red-50 ring-2 ring-red-300/50',
-    // red-300 reads pink in light; its dark-mode token is a wash, so use 400
-    swatch: 'bg-red-300 dark:bg-red-400',
-    dot: 'bg-red-300 dark:bg-red-400',
-    icon: 'text-red-500',
+    mark: 'bg-pink-100',
+    markActive: 'bg-pink-200',
+    marker: 'bg-pink-100 text-pink-800 hover:bg-pink-200',
+    markerActive: 'bg-pink-200 text-pink-800 ring-2 ring-pink-300',
+    paper: 'bg-pink-100 border-pink-200',
+    tab: 'border-l-pink-300 dark:border-l-pink-400',
+    wash: 'border-pink-300 bg-pink-50 ring-2 ring-pink-300/50 dark:border-pink-400 dark:ring-pink-400/50',
+    // pink-300 is a dark wash in dark mode, so the solid bits use 400 there
+    swatch: 'bg-pink-300 dark:bg-pink-400',
+    dot: 'bg-pink-300 dark:bg-pink-400',
+    icon: 'text-pink-500',
   },
   purple: {
     label: 'Purple',
