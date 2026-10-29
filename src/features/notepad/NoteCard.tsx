@@ -123,7 +123,8 @@ export const NoteCard = forwardRef<
 
   // brand-700 on the amber wash of a highlighted card: brand-600 falls under
   // 4.5:1 there in dark mode
-  const action = `btn-ghost px-3 text-sm ${highlighted ? 'text-brand-700' : ''}`;
+  // a little tighter on a phone, so the actions fit one line at 390px
+  const action = `btn-ghost px-3 max-sm:px-2 text-sm ${highlighted ? 'text-brand-700' : ''}`;
 
   return (
     <li
@@ -182,7 +183,7 @@ export const NoteCard = forwardRef<
       <p className="mt-2 break-words text-xs text-ink/70">{meta.join(' · ')}</p>
 
       {draft === null && (
-        <div className="-mb-2 -ml-3 mt-1 flex flex-wrap items-center">
+        <div className="-mb-2 -ml-3 mt-1 flex flex-wrap items-center max-sm:-ml-2">
           {showInText &&
             ('to' in showInText ? (
               <Link to={showInText.to} className={action}>
@@ -201,15 +202,21 @@ export const NoteCard = forwardRef<
             onClick={() => setPicking((p) => !p)}
             aria-expanded={picking}
             aria-controls={pickerId}
-            className={action}
+            title="Colour"
+            // just the swatch on a phone, so the actions stay on one line
+            className={`${action} min-w-11`}
           >
-            <span aria-hidden className={`h-4 w-4 rounded-full ring-1 ring-inset ring-black/15 ${tone.swatch}`} />
-            Colour<span className="sr-only">, {tone.label}</span>
+            <span
+              aria-hidden
+              className={`h-4 w-4 shrink-0 rounded-full ring-1 ring-inset ring-black/25 dark:ring-white/20 ${tone.swatch}`}
+            />
+            <span className="max-sm:sr-only">Colour</span>
+            <span className="sr-only">, {tone.label}</span>
           </button>
           <button
             type="button"
             onClick={() => setConfirm(true)}
-            className="btn-ghost px-3 text-sm text-red-700 hover:bg-red-50"
+            className="btn-ghost px-3 text-sm text-red-700 hover:bg-red-50 max-sm:px-2"
           >
             <Trash2 className="h-4 w-4" /> Delete
           </button>

@@ -54,7 +54,7 @@ export function NoteColorPicker({
           >
             <span
               aria-hidden
-              className={`flex h-7 w-7 items-center justify-center rounded-full ring-1 ring-inset ring-black/15 ${TONES[c].swatch} ${
+              className={`flex h-7 w-7 items-center justify-center rounded-full ring-1 ring-inset ring-black/25 dark:ring-white/20 ${TONES[c].swatch} ${
                 on ? 'outline outline-2 outline-offset-2 outline-ink/80' : ''
               }`}
             >

@@ -19,6 +19,11 @@ import { NoteColorPicker } from './NoteColorPicker';
 // the marker while the reader scrolls or resizes and closes once the marker
 // leaves the reader. Several notes on one marker get a pager.
 //
+// When the reader is too short for the sticky on either side of its marker,
+// opening it scrolls the reader once to make room; after that (the reader
+// scrolled by hand, a long note growing) the text box shrinks to the room on
+// the roomier side and scrolls inside, so the marker stays visible.
+//
 // The text box is a plain <textarea> (NOTE_FIELD) so Apple Pencil Scribble
 // works in it; see notepadUi.tsx before changing anything around it.
 // ---------------------------------------------------------------------------
@@ -29,6 +34,10 @@ const GAP = 12;
 /** Kept clear of the reader's edges. */
 const GUTTER = 16;
 const SAVE_DELAY = 500;
+/** The text box's smallest height (min-h-[88px]). */
+const TEXT_MIN = 88;
+/** A link's sticky whose marker never comes into view gives up after this. */
+const REVEAL_TIMEOUT = 2000;
 
 export interface StickyCloseOptions {
   /** Put focus back on the marker (not when closed by a tap elsewhere). */
@@ -36,6 +45,7 @@ export interface StickyCloseOptions {
 }
 
 const coarse = () => !!window.matchMedia?.('(pointer: coarse)').matches;
+const reducedMotion = () => !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 const markerFor = (root: HTMLElement | null, id: string) =>
   root?.querySelector<HTMLElement>(`button[data-notes~="${CSS.escape(id)}"]`) ?? null;
 
@@ -45,6 +55,7 @@ export function StickyNotePopover({
   onIdChange,
   scroller,
   focusText,
+  reveal = false,
   onClose,
   onOpenAll,
 }: {
@@ -57,6 +68,11 @@ export function StickyNotePopover({
   scroller: RefObject<HTMLElement>;
   /** Start in the text box (keyboard, mouse) rather than on the sticky (touch, links). */
   focusText: boolean;
+  /**
+   * Opened from a link ("Show in text", ?note=): bring the marker into view
+   * with room for the sticky beside it. A tapped marker is already in view.
+   */
+  reveal?: boolean;
   onClose: (o: StickyCloseOptions) => void;
   /** "All notes": the Notes sheet, on this note. */
   onOpenAll: (id: string) => void;
@@ -78,11 +94,16 @@ export function StickyNotePopover({
   const [side, setSide] = useState<'above' | 'below'>('above');
   const [confirm, setConfirm] = useState(false);
   const [saved, setSaved] = useState(false);
+  /** Spoken (only) when the pager shows another note. */
+  const [spoken, setSpoken] = useState('');
+  const spokenTimer = useRef(0);
   const savedTimer = useRef(0);
   /** The marker has been on screen (a link may still be scrolling to it). */
   const seen = useRef(false);
   const focused = useRef(false);
   const closing = useRef(false);
+  /** The first placement has run (and made room if it had to). */
+  const placedOnce = useRef(false);
 
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
@@ -121,13 +142,20 @@ export function StickyNotePopover({
     textNow.current = note.body;
     setText(note.body);
     setSaved(false);
-  }, [note, flush]);
+    // focus stays on the pager button, so say which note is showing now
+    if (list.length > 1) {
+      setSpoken('');
+      window.clearTimeout(spokenTimer.current);
+      spokenTimer.current = window.setTimeout(() => setSpoken(`Note ${index + 1} of ${list.length}`), 60);
+    }
+  }, [note, flush, index, list.length]);
 
   // closing, or the marker going away, saves first
   useEffect(
     () => () => {
       flush();
       window.clearTimeout(savedTimer.current);
+      window.clearTimeout(spokenTimer.current);
     },
     [flush],
   );
@@ -169,8 +197,50 @@ export function StickyNotePopover({
       close({ restoreFocus: false });
       return;
     }
-    const m = marker.getBoundingClientRect();
+    let m = marker.getBoundingClientRect();
     const v = sc.getBoundingClientRect();
+    const w = Math.min(W, v.width - GUTTER * 2, window.innerWidth - GUTTER * 2);
+    box.style.width = `${w}px`;
+    const top0 = Math.max(v.top, 0) + 8;
+    const bottom0 = Math.min(v.bottom, window.innerHeight) - 8;
+    // the sticky's height with its text box at full size (up to 40vh), so a
+    // text box shrunk to fit below doesn't change where it goes
+    const ta = textRef.current;
+    const taNow = ta?.offsetHeight ?? 0;
+    const taFull = ta
+      ? Math.max(TEXT_MIN, Math.min(parseFloat(ta.style.height) || taNow, window.innerHeight * 0.4))
+      : 0;
+    const hFull = box.offsetHeight - taNow + taFull;
+
+    // opening: make room on one side of the marker if there is none (a link
+    // also brings the marker into view, centred when the sticky fits)
+    if (!placedOnce.current) {
+      placedOnce.current = true;
+      // with the marker's top at `mTop` the marker shows, and so does the sticky on one side
+      const fitsAt = (mTop: number) =>
+        mTop >= top0 &&
+        mTop + m.height <= bottom0 &&
+        (mTop - GAP - hFull >= top0 || mTop + m.height + GAP + hFull <= bottom0);
+      const max = sc.scrollHeight - sc.clientHeight;
+      // the reader's scroll that puts the marker's top at `y` (as near as it goes)
+      const scrollFor = (y: number) => Math.max(0, Math.min(sc.scrollTop + (m.top - y), max));
+      const lands = (to: number) => m.top - (to - sc.scrollTop);
+      // where the marker could go, best first: centred (a link) or where it
+      // is (a tap), then just low enough for the sticky above it, then just
+      // high enough for it below; the first one the scroll range allows wins
+      const tries = [
+        reveal ? top0 + (bottom0 - top0 - m.height) / 2 : m.top,
+        top0 + GAP + hFull + 2,
+        bottom0 - GAP - hFull - m.height - 2,
+      ].map(scrollFor);
+      const to = tries.find((t) => fitsAt(lands(t))) ?? tries[0];
+      if (Math.abs(to - sc.scrollTop) > 1) {
+        // the scroll moves the marker, and placing follows it
+        sc.scrollTo({ top: to, behavior: reveal && !reducedMotion() ? 'smooth' : 'auto' });
+        m = marker.getBoundingClientRect();
+      }
+    }
+
     const inView = m.width > 0 && m.bottom > v.top && m.top < v.bottom;
     if (inView) seen.current = true;
     else if (seen.current) {
@@ -186,27 +256,22 @@ export function StickyNotePopover({
       return;
     }
 
-    const w = Math.min(W, v.width - GUTTER * 2, window.innerWidth - GUTTER * 2);
-    box.style.width = `${w}px`;
+    const roomAbove = m.top - GAP - top0;
+    const roomBelow = bottom0 - m.bottom - GAP;
+    let s: 'above' | 'below' = 'above';
+    if (hFull > roomAbove && (hFull <= roomBelow || roomBelow > roomAbove)) s = 'below';
+    const room = s === 'above' ? roomAbove : roomBelow;
+    // no room either side: the text box shrinks (and scrolls) to fit
+    if (ta) ta.style.maxHeight = hFull > room ? `${Math.max(TEXT_MIN, Math.floor(taFull - (hFull - room)))}px` : '';
     const h = box.offsetHeight;
     const cx = m.left + m.width / 2;
     const minLeft = Math.max(v.left, 0) + GUTTER;
     const maxLeft = Math.min(v.right, window.innerWidth) - GUTTER - w;
     const left = Math.max(minLeft, Math.min(cx - w / 2, maxLeft));
-    const top0 = Math.max(v.top, 0) + 8;
-    const bottom0 = Math.min(v.bottom, window.innerHeight) - 8;
-    const above = m.top - GAP - h;
-    const below = m.bottom + GAP;
-    let s: 'above' | 'below' = 'above';
-    let top = above;
-    if (above < top0) {
-      // flip below; if it fits neither way, take the roomier side
-      if (below + h <= bottom0 || bottom0 - m.bottom > m.top - top0) {
-        s = 'below';
-        top = below;
-      }
-    }
-    top = Math.max(top0, Math.min(top, bottom0 - h));
+    const want = s === 'above' ? m.top - GAP - h : m.bottom + GAP;
+    // still too tall (a very short reader): kept on screen, over the marker
+    const top = Math.max(top0, Math.min(want, bottom0 - h));
+    const attached = Math.abs(top - want) < 1;
     box.style.left = `${Math.round(left)}px`;
     box.style.top = `${Math.round(top)}px`;
     box.style.visibility = 'visible';
@@ -214,10 +279,10 @@ export function StickyNotePopover({
     const tail = tailRef.current;
     if (tail) {
       tail.style.left = `${Math.round(Math.max(20, Math.min(cx - left, w - 20)) - 8)}px`;
-      tail.style.display = inView ? '' : 'none';
+      tail.style.display = inView && attached ? '' : 'none';
     }
     focusInitial();
-  }, [scroller, note, close, focusInitial]);
+  }, [scroller, note, close, focusInitial, reveal]);
 
   useLayoutEffect(() => {
     place();
@@ -242,6 +307,15 @@ export function StickyNotePopover({
       ro?.disconnect();
     };
   }, [place]);
+
+  // a link whose marker never scrolled into view (a passage taller than the
+  // reader, say): don't stay open unseen, catching Escape and taps
+  useEffect(() => {
+    const t = window.setTimeout(() => {
+      if (!seen.current) close({ restoreFocus: false });
+    }, REVEAL_TIMEOUT);
+    return () => window.clearTimeout(t);
+  }, [close]);
 
   // no notes left on the marker (deleted elsewhere)
   useEffect(() => {
@@ -296,7 +370,7 @@ export function StickyNotePopover({
   const edited = note.updatedAt !== note.createdAt;
   const go = (by: number) => onIdChange(list[(index + by + list.length) % list.length].id);
   const iconBtn =
-    'tap flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-ink/70 transition-colors hover:bg-black/[0.06] hover:text-ink/90';
+    'tap flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-ink/70 transition-colors hover:bg-ink/[0.08] hover:text-ink/90';
 
   return createPortal(
     <>
@@ -336,7 +410,7 @@ export function StickyNotePopover({
             type="button"
             onClick={() => close({ restoreFocus: true })}
             aria-label="Close note"
-            className={`${iconBtn} ml-1 bg-black/[0.06]`}
+            className={`${iconBtn} ml-1 bg-ink/[0.06]`}
           >
             <X className="h-4 w-4" strokeWidth={2.5} />
           </button>
@@ -358,6 +432,9 @@ export function StickyNotePopover({
           className="mt-2 block max-h-[40vh] min-h-[88px] w-full resize-none rounded-lg border border-transparent bg-transparent px-2 py-2 font-sans text-base leading-normal text-ink/90 focus:bg-white/40 dark:focus:bg-black/10"
         />
         <ScribbleHint show={!text} />
+        {!text.trim() && (
+          <p className="mt-2 px-1 text-xs text-ink/70">Empty notes aren’t saved. To remove this note, use Delete.</p>
+        )}
 
         <p className="mt-2 flex min-w-0 flex-wrap gap-x-1 px-1 text-xs text-ink/70">
           {note.place && <span className="min-w-0 max-w-full truncate">{placeLabel(note.place)} ·</span>}
@@ -366,6 +443,9 @@ export function StickyNotePopover({
           </span>
           <span aria-live="polite">{saved ? '· Saved' : ''}</span>
         </p>
+        <span className="sr-only" aria-live="polite" aria-atomic="true">
+          {spoken}
+        </span>
 
         <NoteColorPicker className="-ml-1 mt-1" value={colorOf(note)} onChange={(c) => setColor(note.id, c)} />
 

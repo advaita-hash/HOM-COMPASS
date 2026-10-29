@@ -58,6 +58,8 @@ export const drafts = new Map<string, string>();
 
 /** Props shared by every note <textarea> (see the Scribble notes above). */
 export const NOTE_FIELD = {
+  // marks note fields for their placeholder colour (index.css)
+  'data-note-field': '',
   autoCapitalize: 'sentences',
   autoCorrect: 'on',
   spellCheck: true,

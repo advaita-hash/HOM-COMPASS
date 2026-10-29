@@ -105,7 +105,8 @@ type OpenNotes = (notes: PadNote[], focusText: boolean) => void;
 
 /**
  * Small inline button marking pinned notes; not part of the block's text.
- * Tinted with its (first) note's colour; opens the sticky note above it.
+ * Tinted with its first note's colour (the shown note's while its sticky is
+ * open); opens the sticky note above it.
  */
 function NoteMarker({
   notes,
@@ -114,13 +115,16 @@ function NoteMarker({
   at = 'end',
 }: {
   notes: PadNote[];
-  active: boolean;
+  /** Notes open from markers (a sticky's note, or the marker's notes in the sheet). */
+  active: Set<string>;
   onOpen: OpenNotes;
   /** 'start': opens a block, spaced from the text after it; 'end': follows words, spaced from them only. */
   at?: 'start' | 'end';
 }) {
   const pointer = useRef('mouse');
-  const tone = toneOf(notes[0]);
+  // while open, in the colour of the note on show (the pager can show any)
+  const shown = notes.find((n) => active.has(n.id));
+  const tone = toneOf(shown ?? notes[0]);
   const label =
     notes.length === 1 ? `Note: ${firstWords(notes[0].body)}` : `${notes.length} notes: ${firstWords(notes[0].body)}`;
   return (
@@ -130,7 +134,7 @@ function NoteMarker({
       data-notes={notes.map((n) => n.id).join(' ')}
       aria-label={label}
       aria-haspopup="dialog"
-      aria-expanded={active}
+      aria-expanded={!!shown}
       title={label}
       onPointerDown={(e) => {
         pointer.current = e.pointerType;
@@ -139,7 +143,7 @@ function NoteMarker({
       // don't, so the on-screen keyboard only comes up when asked for
       onClick={(e) => onOpen(notes, e.detail === 0 || pointer.current === 'mouse')}
       className={`tap ${at === 'start' ? 'mr-1' : 'ml-1'} inline-flex h-6 select-none items-center gap-1 rounded-full px-2 align-text-bottom font-sans text-2xs font-semibold normal-case tracking-normal transition-colors ${
-        active ? tone.markerActive : tone.marker
+        shown ? tone.markerActive : tone.marker
       }`}
     >
       <StickyNote className="h-3.5 w-3.5" aria-hidden strokeWidth={2.25} />
@@ -176,7 +180,7 @@ function PinnedText({
         key="section"
         at="start"
         notes={pins.section}
-        active={pins.section.some((n) => active.has(n.id))}
+        active={active}
         onOpen={onOpen}
       />,
     );
@@ -188,13 +192,15 @@ function PinnedText({
     const cover = ranges.filter((r) => r.start <= a && r.end >= b);
     if (cover.length) {
       const ids = cover.flatMap((r) => r.notes.map((n) => n.id));
-      // overlapping passages: the innermost (last pinned) one's colour
-      const tone = toneOf(cover[cover.length - 1].notes[0]);
+      // the colour of the note open on it, else of the innermost (last
+      // pinned) of overlapping passages
+      const shown = cover.flatMap((r) => r.notes).find((n) => active.has(n.id));
+      const tone = toneOf(shown ?? cover[cover.length - 1].notes[0]);
       node = (
         <mark
           data-notes={ids.join(' ')}
           className={`rounded-sm text-inherit [-webkit-box-decoration-break:clone] [box-decoration-break:clone] ${
-            ids.some((id) => active.has(id)) ? tone.markActive : tone.mark
+            shown ? tone.markActive : tone.mark
           }`}
         >
           {node}
@@ -205,7 +211,7 @@ function PinnedText({
     const ending = ranges.filter((r) => r.end === b);
     if (ending.length) {
       const notes = ending.flatMap((r) => r.notes);
-      out.push(<NoteMarker key={`m${b}`} notes={notes} active={notes.some((n) => active.has(n.id))} onOpen={onOpen} />);
+      out.push(<NoteMarker key={`m${b}`} notes={notes} active={active} onOpen={onOpen} />);
     }
   }
   return <>{out}</>;
@@ -258,7 +264,7 @@ function RemedyText({
                 <h3 className="mb-2 mt-6 font-sans text-xs font-semibold uppercase tracking-wide text-brand-600">
                   {heading}
                   {headPins.length > 0 && (
-                    <NoteMarker notes={headPins} active={headPins.some((n) => active.has(n.id))} onOpen={onOpenNotes} />
+                    <NoteMarker notes={headPins} active={active} onOpen={onOpenNotes} />
                   )}
                 </h3>
               )}
@@ -368,7 +374,9 @@ export default function BookReaderPage() {
    * The sticky note open above a marker: the marker's notes and the one
    * shown. Opened from the marker, "Show in text" or a ?note= link.
    */
-  const [sticky, setSticky] = useState<{ ids: string[]; id: string; focusText: boolean } | null>(null);
+  const [sticky, setSticky] = useState<{ ids: string[]; id: string; focusText: boolean; reveal?: boolean } | null>(
+    null,
+  );
   /** A pinned note to bring into view and open as a sticky once Full text shows it. */
   const [scrollTo, setScrollTo] = useState<{ id: string } | null>(null);
   const textRef = useRef<HTMLDivElement>(null);
@@ -455,7 +463,9 @@ export default function BookReaderPage() {
   /** A marker: its sticky note (a second click on the same marker closes it). */
   const onOpenMarker: OpenNotes = (notes, focusText) => {
     const ids = notes.map((n) => n.id);
-    if (sticky && sticky.ids.join(' ') === ids.join(' ')) {
+    // the marker's notes can change while its sticky is open (one deleted
+    // there), so it's the same marker when it carries the note on show
+    if (sticky && ids.includes(sticky.id)) {
       closeSticky({ restoreFocus: true });
       return;
     }
@@ -513,19 +523,20 @@ export default function BookReaderPage() {
     setSearchParams(next, { replace: true });
   }, [searchParams, setSearchParams, selected, bookId, blocks, remedyKey, navigate, setView]);
 
-  // bring a pinned note's place into view once Full text has rendered it, put
-  // focus on its marker, and open the note as a sticky above it (it shows once
-  // the marker has scrolled into view, and takes focus then)
+  // once Full text has rendered a pinned note's place, put focus on its marker
+  // and open the note as a sticky above it: the sticky scrolls the marker (not
+  // the passage, which can be taller than the reader) into view with room for
+  // itself, shows once the marker is on screen, and takes focus then
   useEffect(() => {
     if (!scrollTo || view !== 'full') return;
     const t = window.setTimeout(() => {
       const sel = `[data-notes~="${CSS.escape(scrollTo.id)}"]`;
-      const el = scrollerRef.current?.querySelector(sel);
-      el?.scrollIntoView({ block: 'center', behavior: 'smooth' });
       const marker = scrollerRef.current?.querySelector<HTMLElement>(`button${sel}`);
-      marker?.focus({ preventScroll: true });
       const ids = marker?.getAttribute('data-notes')?.split(' ').filter(Boolean);
-      if (ids?.length) setSticky({ ids, id: scrollTo.id, focusText: false });
+      if (marker && ids?.length) {
+        marker.focus({ preventScroll: true });
+        setSticky({ ids, id: scrollTo.id, focusText: false, reveal: true });
+      } else scrollerRef.current?.querySelector(sel)?.scrollIntoView({ block: 'center', behavior: 'smooth' });
       setScrollTo(null);
     }, 80);
     return () => window.clearTimeout(t);
@@ -817,6 +828,7 @@ export default function BookReaderPage() {
           onIdChange={(id) => setSticky((s) => (s ? { ...s, id } : s))}
           scroller={scrollerRef}
           focusText={sticky.focusText}
+          reveal={sticky.reveal}
           onClose={closeSticky}
           onOpenAll={stickyToSheet}
         />

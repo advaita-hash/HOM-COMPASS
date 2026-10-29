@@ -78,6 +78,11 @@
     color: rgb(var(--ink) / 0.45);
     opacity: 1;
   }
+  /* Note fields sit on tinted sticky-note paper too, so their placeholder is
+     darker: 0.65 keeps it at 4.5:1 on every paper and surface, both themes. */
+  textarea[data-note-field]::placeholder {
+    color: rgb(var(--ink) / 0.65);
+  }
 
   input[type='checkbox'],
   input[type='radio'] {
