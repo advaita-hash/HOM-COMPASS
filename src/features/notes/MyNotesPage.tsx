@@ -9,6 +9,7 @@ import { BOOKS } from '../books/booksIndex';
 import { noteBook, useNotepad, type PadNote } from '../notepad/notepadStore';
 import { bookHref, bookLabel, remedyHref } from '../notepad/links';
 import { placeLabel } from '../notepad/places';
+import { toneOf } from '../notepad/noteColors';
 import { remedyKeyLabel } from '../notepad/remedyKey';
 import CommonRoomSignIn from './CommonRoomSignIn';
 import { signOutOfCommonRoom, useCommonRoomSession, useRemedyNotes } from './useCommonRoom';
@@ -127,7 +128,11 @@ function Notepad() {
                         <span className="shrink-0 text-2xs uppercase tracking-wide text-ink/70">{bookLabel(f.book)}</span>
                       )}
                     </span>
-                    <span className="block truncate text-sm text-ink/70">{preview(f.latest)}</span>
+                    <span className="flex items-center gap-2 text-sm text-ink/70">
+                      {/* the latest note's colour */}
+                      <span aria-hidden className={`h-2 w-2 shrink-0 rounded-full ${toneOf(f.latest).dot}`} />
+                      <span className="min-w-0 truncate">{preview(f.latest)}</span>
+                    </span>
                   </span>
                   <span className="shrink-0 text-right text-xs text-ink/70">
                     <span className="block">{plural(f.count, 'note')}</span>

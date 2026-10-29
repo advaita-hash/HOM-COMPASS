@@ -59,7 +59,7 @@ export function BookNotepad({
           key={bookId}
           draftKey={`book:${bookId}`}
           placeholder={`Your note on ${label}`}
-          onSave={(body) => add({ body, book: bookId })}
+          onSave={(body, _place, color) => add({ body, book: bookId, color })}
         />
 
         {general.length + pinned === 0 && (

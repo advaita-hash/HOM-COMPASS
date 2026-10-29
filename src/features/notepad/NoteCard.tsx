@@ -5,7 +5,9 @@ import { MapPin, Pencil, Trash2 } from 'lucide-react';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { type PadNote, useNotepad } from './notepadStore';
 import { placeLabel } from './places';
-import { drafts, useAnnounce } from './notepadUi';
+import { NOTE_FIELD, ScribbleHint, drafts, useAnnounce } from './notepadUi';
+import { TONES, colorOf } from './noteColors';
+import { NoteColorPicker } from './NoteColorPicker';
 
 export const fmtDate = (iso: string) =>
   new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
@@ -49,7 +51,13 @@ export const NoteCard = forwardRef<
 >(function NoteCard({ note, source, showInText, highlighted = false, hidePlace = false }, ref) {
   const update = useNotepad((s) => s.update);
   const remove = useNotepad((s) => s.remove);
+  const setColor = useNotepad((s) => s.setColor);
   const announce = useAnnounce();
+  const color = colorOf(note);
+  const tone = TONES[color];
+  /** The colour swatches, opened from the card's Colour button. */
+  const [picking, setPicking] = useState(false);
+  const pickerId = useId();
   // an edit in progress survives the sheet being dismissed (kept for the session)
   const draftKey = `edit:${note.id}`;
   const [draft, setDraftState] = useState<string | null>(() => drafts.get(draftKey) ?? null);
@@ -127,8 +135,9 @@ export const NoteCard = forwardRef<
       data-note-id={note.id}
       // focus lands here when a neighbouring card is deleted
       tabIndex={-1}
-      className={`rounded-xl border p-3 transition-shadow ${
-        highlighted ? 'border-amber-400 bg-amber-50 ring-2 ring-amber-400/50' : 'border-ink/10 bg-surface'
+      // the coloured leading edge is the note's colour tab
+      className={`rounded-xl border border-l-4 p-3 transition-shadow ${tone.tab} ${
+        highlighted ? tone.wash : 'border-ink/10 bg-surface'
       }`}
     >
       {draft === null ? (
@@ -150,8 +159,10 @@ export const NoteCard = forwardRef<
               } else if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) save();
             }}
             rows={Math.min(10, Math.max(3, draft.split('\n').length + 1))}
-            className="input resize-y py-2"
+            {...NOTE_FIELD}
+            className="input min-h-[88px] resize-y py-2 text-base"
           />
+          <ScribbleHint show={!draft} />
           <div className="mt-2 flex justify-end gap-2">
             <button type="button" className="btn-ghost" onClick={stopEdit}>
               Cancel
@@ -187,11 +198,33 @@ export const NoteCard = forwardRef<
           </button>
           <button
             type="button"
+            onClick={() => setPicking((p) => !p)}
+            aria-expanded={picking}
+            aria-controls={pickerId}
+            className={action}
+          >
+            <span aria-hidden className={`h-4 w-4 rounded-full ring-1 ring-inset ring-black/15 ${tone.swatch}`} />
+            Colour<span className="sr-only">, {tone.label}</span>
+          </button>
+          <button
+            type="button"
             onClick={() => setConfirm(true)}
             className="btn-ghost px-3 text-sm text-red-700 hover:bg-red-50"
           >
             <Trash2 className="h-4 w-4" /> Delete
           </button>
+        </div>
+      )}
+      {draft === null && picking && (
+        <div id={pickerId}>
+          <NoteColorPicker
+            className="-ml-2 mt-2"
+            value={color}
+            onChange={(c) => {
+              setColor(note.id, c);
+              announce(`Colour: ${TONES[c].label}`);
+            }}
+          />
         </div>
       )}
 

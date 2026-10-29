@@ -73,10 +73,10 @@ export function BackupSection() {
     try {
       // Export what's on screen, even if the last save to storage failed.
       const { patients, cases } = usePatients.getState();
-      const { notes } = useNotepad.getState();
+      const { notes, defaultColor } = useNotepad.getState();
       const backup = buildBackup(browserStorage(), {
         [PATIENTS_KEY]: { state: { patients, cases }, version: 1 },
-        [NOTEPAD_KEY]: { state: { notes }, version: NOTEPAD_VERSION },
+        [NOTEPAD_KEY]: { state: { notes, defaultColor }, version: NOTEPAD_VERSION },
       });
       downloadBackup(backup);
       const at = new Date(backup.exportedAt);

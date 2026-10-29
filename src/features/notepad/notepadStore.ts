@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { persistedObject, safeStorage } from '../../lib/safeStorage';
+import { DEFAULT_NOTE_COLOR, type NoteColor, isNoteColor } from './noteColors';
 
 // ---------------------------------------------------------------------------
 // Notepad: the practitioner's own notes on remedies and reference books,
@@ -12,6 +13,10 @@ import { persistedObject, safeStorage } from '../../lib/safeStorage';
 //   • general book note   — `book` set, no `remedy`, no `place`
 //   • pinned note         — `remedy` set AND `place` (a spot inside one book
 //                           chapter); it belongs to that remedy and that book
+//
+// Each note may carry a colour (noteColors.ts); notes without one are yellow.
+// The colour last picked anywhere is kept as `defaultColor` for new notes, in
+// this store so the backup carries it too.
 // ---------------------------------------------------------------------------
 
 export const NOTEPAD_KEY = 'hom-compass.notepad';
@@ -45,14 +50,21 @@ export interface PadNote {
   /** Book id for general book notes. */
   book?: string;
   place?: NotePlace;
+  /** Highlight / sticky colour; missing on older notes, which show yellow. */
+  color?: NoteColor;
 }
 
 export type NewNote = Omit<PadNote, 'id' | 'createdAt' | 'updatedAt'>;
 
 interface NotepadState {
   notes: PadNote[];
+  /** Colour for new notes: the one picked last (composer, card or sticky). */
+  defaultColor: NoteColor;
   add: (note: NewNote) => PadNote;
   update: (id: string, body: string) => void;
+  /** Recolour a note (not an edit of its words, so its date stays). */
+  setColor: (id: string, color: NoteColor) => void;
+  setDefaultColor: (color: NoteColor) => void;
   remove: (id: string) => void;
 }
 
@@ -83,6 +95,7 @@ export function cleanNote(raw: unknown): PadNote | null {
   if (str(o.remedy)) note.remedy = str(o.remedy);
   if (str(o.remedyName)) note.remedyName = str(o.remedyName);
   if (str(o.book)) note.book = str(o.book);
+  if (isNoteColor(o.color)) note.color = o.color;
   const p = persistedObject(o.place);
   if (str(p.book) && str(p.slug) && str(p.block)) {
     note.place = {
@@ -193,9 +206,10 @@ export const useNotepad = create<NotepadState>()(
   persist(
     (set, get) => ({
       notes: [],
+      defaultColor: DEFAULT_NOTE_COLOR,
       add: (n) => {
         const now = new Date().toISOString();
-        const note: PadNote = { ...n, id: newId(), createdAt: now, updatedAt: now };
+        const note: PadNote = { ...n, color: n.color ?? get().defaultColor, id: newId(), createdAt: now, updatedAt: now };
         set({ notes: [...get().notes, note] });
         return note;
       },
@@ -203,6 +217,12 @@ export const useNotepad = create<NotepadState>()(
         set({
           notes: get().notes.map((n) => (n.id === id ? { ...n, body, updatedAt: new Date().toISOString() } : n)),
         }),
+      setColor: (id, color) =>
+        set({
+          notes: get().notes.map((n) => (n.id === id ? { ...n, color } : n)),
+          defaultColor: color,
+        }),
+      setDefaultColor: (color) => set({ defaultColor: color }),
       remove: (id) => set({ notes: get().notes.filter((n) => n.id !== id) }),
     }),
     {
@@ -213,7 +233,8 @@ export const useNotepad = create<NotepadState>()(
       merge: (persisted, current) => {
         const raw = persistedObject(persisted).notes;
         const notes = Array.isArray(raw) ? raw.map(cleanNote).filter((n): n is PadNote => !!n) : [];
-        return { ...current, notes };
+        const color = persistedObject(persisted).defaultColor;
+        return { ...current, notes, defaultColor: isNoteColor(color) ? color : DEFAULT_NOTE_COLOR };
       },
     },
   ),

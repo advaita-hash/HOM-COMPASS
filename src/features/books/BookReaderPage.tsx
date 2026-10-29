@@ -1,6 +1,6 @@
 import { Fragment, type ReactNode, type RefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { ChevronLeft, List, Loader2, NotebookPen, Search, StickyNote, X } from 'lucide-react';
+import { ChevronLeft, List, Loader2, NotebookPen, Search, StickyNote } from 'lucide-react';
 import { getBookMeta, useBook } from './booksIndex';
 import { DrugPictureView, RemedyHeading } from './DrugPictureView';
 import { canonicalName } from '../../lib/remedyName';
@@ -10,7 +10,6 @@ import { commonNameFor } from './commonName';
 import { SegmentedControl } from '../../components/ui/SegmentedControl';
 import { Sheet } from '../../components/ui/Sheet';
 import { CompareButton, CompareTray } from '../compare/CompareControls';
-import { useCompare } from '../compare/compareStore';
 import {
   type NotePlace,
   type PadNote,
@@ -21,17 +20,20 @@ import {
   useNotepad,
   useRemedyPad,
 } from '../notepad/notepadStore';
-import { type TextBlock, blocksOf, placeFromSelection, placeLabel, resolvePlace } from '../notepad/places';
+import { type TextBlock, blocksOf, placeFromSelection, resolvePlace } from '../notepad/places';
 import { remedyKeyForBookRemedy } from '../notepad/remedyKey';
 import { RemedyNotepad } from '../notepad/RemedyNotepad';
 import { noteHref } from '../notepad/links';
 import { BookNotepad } from '../notepad/BookNotepad';
 import { useTextSelection } from '../notepad/useTextSelection';
+import { type StickyCloseOptions, StickyNotePopover } from '../notepad/StickyNotePopover';
+import { toneOf } from '../notepad/noteColors';
 
 // ---------------------------------------------------------------------------
 // Notes in the reader. URL contract (other pages link here):
 //   ?note=<id>      open the note's chapter in Full text at its place, with
-//                   the note shown beside it (general notes open the notepad)
+//                   the note open as a sticky note above its marker
+//                   (general notes open the notepad)
 //   ?notes=remedy   open the notepad on "This remedy"
 //   ?notes=book     open the notepad on "This book"
 // Each param is removed once acted on, so refresh/back doesn't reopen it. A
@@ -98,7 +100,13 @@ const firstWords = (body: string, n = 6) => {
   return w.slice(0, n).join(' ') + (w.length > n ? '…' : '');
 };
 
-/** Small inline button marking pinned notes; not part of the block's text. */
+/** Opens a marker's sticky note; `focusText` when opened by keyboard or mouse. */
+type OpenNotes = (notes: PadNote[], focusText: boolean) => void;
+
+/**
+ * Small inline button marking pinned notes; not part of the block's text.
+ * Tinted with its (first) note's colour; opens the sticky note above it.
+ */
 function NoteMarker({
   notes,
   active,
@@ -107,10 +115,12 @@ function NoteMarker({
 }: {
   notes: PadNote[];
   active: boolean;
-  onOpen: (notes: PadNote[]) => void;
+  onOpen: OpenNotes;
   /** 'start': opens a block, spaced from the text after it; 'end': follows words, spaced from them only. */
   at?: 'start' | 'end';
 }) {
+  const pointer = useRef('mouse');
+  const tone = toneOf(notes[0]);
   const label =
     notes.length === 1 ? `Note: ${firstWords(notes[0].body)}` : `${notes.length} notes: ${firstWords(notes[0].body)}`;
   return (
@@ -119,10 +129,17 @@ function NoteMarker({
       data-note-ui
       data-notes={notes.map((n) => n.id).join(' ')}
       aria-label={label}
+      aria-haspopup="dialog"
+      aria-expanded={active}
       title={label}
-      onClick={() => onOpen(notes)}
-      className={`tap ${at === 'start' ? 'mr-1' : 'ml-1'} inline-flex h-6 select-none items-center gap-1 rounded-full px-2 align-text-bottom font-sans text-2xs font-semibold normal-case tracking-normal text-amber-800 transition-colors hover:bg-amber-200 ${
-        active ? 'bg-amber-200 ring-2 ring-amber-400' : 'bg-amber-100'
+      onPointerDown={(e) => {
+        pointer.current = e.pointerType;
+      }}
+      // keyboard (detail 0) and mouse start in the text box; touch and pen
+      // don't, so the on-screen keyboard only comes up when asked for
+      onClick={(e) => onOpen(notes, e.detail === 0 || pointer.current === 'mouse')}
+      className={`tap ${at === 'start' ? 'mr-1' : 'ml-1'} inline-flex h-6 select-none items-center gap-1 rounded-full px-2 align-text-bottom font-sans text-2xs font-semibold normal-case tracking-normal transition-colors ${
+        active ? tone.markerActive : tone.marker
       }`}
     >
       <StickyNote className="h-3.5 w-3.5" aria-hidden strokeWidth={2.25} />
@@ -148,7 +165,7 @@ function PinnedText({
   pins?: BlockPins;
   sectionMarker: boolean;
   active: Set<string>;
-  onOpen: (notes: PadNote[]) => void;
+  onOpen: OpenNotes;
 }) {
   const ranges = pins?.ranges ?? [];
   const cuts = [...new Set([0, text.length, labelLen, ...ranges.flatMap((r) => [r.start, r.end])])].sort((a, b) => a - b);
@@ -171,11 +188,13 @@ function PinnedText({
     const cover = ranges.filter((r) => r.start <= a && r.end >= b);
     if (cover.length) {
       const ids = cover.flatMap((r) => r.notes.map((n) => n.id));
+      // overlapping passages: the innermost (last pinned) one's colour
+      const tone = toneOf(cover[cover.length - 1].notes[0]);
       node = (
         <mark
           data-notes={ids.join(' ')}
           className={`rounded-sm text-inherit [-webkit-box-decoration-break:clone] [box-decoration-break:clone] ${
-            ids.some((id) => active.has(id)) ? 'bg-amber-200' : 'bg-amber-100'
+            ids.some((id) => active.has(id)) ? tone.markActive : tone.mark
           }`}
         >
           {node}
@@ -209,7 +228,7 @@ function RemedyText({
   common: string | null;
   pins: Map<string, BlockPins>;
   active: Set<string>;
-  onOpenNotes: (notes: PadNote[]) => void;
+  onOpenNotes: OpenNotes;
   textRef: RefObject<HTMLDivElement>;
 }) {
   const sections = useMemo(() => parseSections(remedy.text), [remedy.text]);
@@ -345,17 +364,15 @@ export default function BookReaderPage() {
   const [markerIds, setMarkerIds] = useState<string[]>([]);
   /** Selected passage waiting for its note. */
   const [pending, setPending] = useState<NotePlace | null>(null);
-  /** Note shown beside its place after "Show in text" or a ?note= link. */
-  const [peekId, setPeekId] = useState<string | null>(null);
+  /**
+   * The sticky note open above a marker: the marker's notes and the one
+   * shown. Opened from the marker, "Show in text" or a ?note= link.
+   */
+  const [sticky, setSticky] = useState<{ ids: string[]; id: string; focusText: boolean } | null>(null);
+  /** A pinned note to bring into view and open as a sticky once Full text shows it. */
   const [scrollTo, setScrollTo] = useState<{ id: string } | null>(null);
-  const peek = useNotepad((s) => (peekId ? s.notes.find((n) => n.id === peekId) : undefined));
-  const compareCount = useCompare((s) => s.items.length);
   const textRef = useRef<HTMLDivElement>(null);
   const scrollerRef = useRef<HTMLDivElement>(null);
-  /** The note card floating beside its place. */
-  const peekRef = useRef<HTMLDivElement>(null);
-  /** Its height, kept clear under the text so it never covers the last lines. */
-  const [peekHeight, setPeekHeight] = useState(0);
   /** Inside the sheet, to find its heading. */
   const sheetBodyRef = useRef<HTMLDivElement>(null);
   /** Wraps the Drug picture / Full text control. */
@@ -375,13 +392,13 @@ export default function BookReaderPage() {
   const remedyTab = !!(selected && remedyKey && (remedySlug || openedOnRemedy));
 
   const active = useMemo(
-    () => new Set(peek ? [peek.id] : notesTab ? markerIds : []),
-    [peek, notesTab, markerIds],
+    () => new Set(sticky ? [sticky.id] : notesTab ? markerIds : []),
+    [sticky, notesTab, markerIds],
   );
 
   const openNotes = (tab: 'remedy' | 'book', focus: string | null = null) => {
     if (!notesTab && document.activeElement !== document.body) openerRef.current = document.activeElement as HTMLElement;
-    setPeekId(null);
+    setSticky(null);
     setFocusNote(focus);
     setNotesTab(tab);
     setOpenedOnRemedy(tab === 'remedy');
@@ -403,9 +420,9 @@ export default function BookReaderPage() {
     setFocusNote(null);
     setMarkerIds([]);
     setView('full');
-    setPeekId(n.id);
+    setSticky(null);
     setScrollTo({ id: n.id });
-  }, []);
+  }, [setView]);
   /** Put focus on the marker of a note in the text, else on the toolbar Notes button. */
   const focusMarker = useCallback((id: string) => {
     window.setTimeout(() => {
@@ -413,29 +430,42 @@ export default function BookReaderPage() {
       (m ?? notesButtonRef.current)?.focus({ preventScroll: true });
     }, 0);
   }, []);
-  /** Close the note shown beside its place; focus goes back to its marker. */
-  const closePeek = useCallback(() => {
-    if (!peekId) return;
-    setPeekId(null);
-    if (document.activeElement === document.body || peekRef.current?.contains(document.activeElement)) {
-      focusMarker(peekId);
-    }
-  }, [peekId, focusMarker]);
+  /** Close the sticky note; focus goes back to its marker (not after a tap elsewhere). */
+  const stickyId = sticky?.id;
+  const closeSticky = useCallback(
+    ({ restoreFocus }: StickyCloseOptions) => {
+      setSticky(null);
+      if (restoreFocus && stickyId) focusMarker(stickyId);
+    },
+    [stickyId, focusMarker],
+  );
+  /** "All notes" on a sticky: the Notes sheet on that note; closing it comes back to the marker. */
+  const stickyToSheet = (id: string) => {
+    const ids = sticky?.ids ?? [id];
+    openNotes('remedy', id);
+    setMarkerIds(ids);
+    openerRef.current = scrollerRef.current?.querySelector<HTMLElement>(`button[data-notes~="${CSS.escape(id)}"]`) ?? null;
+  };
   /** Keyboard: to the reader's first control (the reading view). */
   const focusReader = useCallback(() => {
     const first =
       readingViewRef.current?.querySelector<HTMLElement>('[aria-checked="true"]') ?? notesButtonRef.current ?? scrollerRef.current;
     first?.focus();
   }, []);
-  const onOpenMarker = (notes: PadNote[]) => {
-    openNotes('remedy', notes[0].id);
-    setMarkerIds(notes.map((n) => n.id));
+  /** A marker: its sticky note (a second click on the same marker closes it). */
+  const onOpenMarker: OpenNotes = (notes, focusText) => {
+    const ids = notes.map((n) => n.id);
+    if (sticky && sticky.ids.join(' ') === ids.join(' ')) {
+      closeSticky({ restoreFocus: true });
+      return;
+    }
+    setSticky({ ids, id: ids[0], focusText });
   };
 
   // a new chapter starts clean
   useEffect(() => {
     setPending(null);
-    setPeekId(null);
+    setSticky(null);
     setMarkerIds([]);
   }, [bookId, slug]);
 
@@ -461,18 +491,18 @@ export default function BookReaderPage() {
       if (n && here && resolvePlace(blocks, n.place!)) {
         setNotesTab(null);
         setView('full');
-        setPeekId(n.id);
+        setSticky(null);
         setScrollTo({ id: n.id });
       } else if (n && (here || generalHere)) {
         // general notes, and pins whose place is gone, are shown in the notepad
-        setPeekId(null);
+        setSticky(null);
         setFocusNote(n.id);
         const tab = here || n.remedy ? 'remedy' : 'book';
         setNotesTab(tab);
         setOpenedOnRemedy(tab === 'remedy');
       }
     } else if (which === 'remedy' || which === 'book') {
-      setPeekId(null);
+      setSticky(null);
       setFocusNote(null);
       setNotesTab(which);
       setOpenedOnRemedy(which === 'remedy');
@@ -481,45 +511,25 @@ export default function BookReaderPage() {
     next.delete('note');
     next.delete('notes');
     setSearchParams(next, { replace: true });
-  }, [searchParams, setSearchParams, selected, bookId, blocks, remedyKey, navigate]);
+  }, [searchParams, setSearchParams, selected, bookId, blocks, remedyKey, navigate, setView]);
 
-  // bring a pinned note's place into view once Full text has rendered it, and
-  // put focus on its marker (keyboard users carry on reading from there)
+  // bring a pinned note's place into view once Full text has rendered it, put
+  // focus on its marker, and open the note as a sticky above it (it shows once
+  // the marker has scrolled into view, and takes focus then)
   useEffect(() => {
     if (!scrollTo || view !== 'full') return;
     const t = window.setTimeout(() => {
       const sel = `[data-notes~="${CSS.escape(scrollTo.id)}"]`;
       const el = scrollerRef.current?.querySelector(sel);
       el?.scrollIntoView({ block: 'center', behavior: 'smooth' });
-      scrollerRef.current?.querySelector<HTMLElement>(`button${sel}`)?.focus({ preventScroll: true });
+      const marker = scrollerRef.current?.querySelector<HTMLElement>(`button${sel}`);
+      marker?.focus({ preventScroll: true });
+      const ids = marker?.getAttribute('data-notes')?.split(' ').filter(Boolean);
+      if (ids?.length) setSticky({ ids, id: scrollTo.id, focusText: false });
+      setScrollTo(null);
     }, 80);
     return () => window.clearTimeout(t);
   }, [scrollTo, view, slug]);
-
-  // the note beside its place: Escape closes it, and the reader keeps room
-  // for it below the text
-  const peekShown = !!peek && !notesTab;
-  useEffect(() => {
-    if (!peekShown) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && !document.querySelector('[role="alertdialog"]')) closePeek();
-    };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [peekShown, closePeek]);
-  useEffect(() => {
-    const el = peekRef.current;
-    if (!peekShown || !el) {
-      setPeekHeight(0);
-      return;
-    }
-    const measure = () => setPeekHeight(el.offsetHeight);
-    measure();
-    if (typeof ResizeObserver === 'undefined') return;
-    const ro = new ResizeObserver(measure);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [peekShown]);
 
   // focus moves into the sheet when it opens: onto the note it was opened for,
   // the composer (a passage to write about), or else the sheet's heading
@@ -694,14 +704,6 @@ export default function BookReaderPage() {
           className={`${
             listOpen ? 'hidden' : 'block'
           } min-h-0 flex-1 overflow-auto bg-surface px-6 pb-28 pt-6 focus:outline-none md:px-10 lg:block`}
-          // room under the text for the note card floating above it
-          style={
-            peekHeight
-              ? {
-                  paddingBottom: `calc(max(16px, env(safe-area-inset-bottom)) + ${peekHeight + 24 + (compareCount ? 72 : 0)}px)`,
-                }
-              : undefined
-          }
         >
           {isError && (
             <p className="text-sm text-red-600">
@@ -806,39 +808,18 @@ export default function BookReaderPage() {
         </button>
       )}
 
-      {/* The note beside its place, after "Show in text" or a ?note= link */}
-      {peek && !notesTab && (
-        <div
-          className="pointer-events-none fixed inset-x-0 z-30 flex justify-center px-4 lg:left-60"
-          style={{ bottom: `calc(max(16px, env(safe-area-inset-bottom)) + ${compareCount ? 72 : 0}px)` }}
-        >
-          <div
-            ref={peekRef}
-            role="status"
-            className="material-thick pointer-events-auto w-full max-w-xl animate-dialog-in rounded-2xl border border-ink/10 p-3 shadow-elevated"
-          >
-            <div className="flex items-start gap-3">
-              <StickyNote className="mt-1 h-4 w-4 shrink-0 text-amber-700" aria-hidden />
-              <div className="min-w-0 flex-1">
-                <p className="line-clamp-4 whitespace-pre-wrap break-words text-subhead text-ink/90">{peek.body}</p>
-                {peek.place && <p className="mt-1 truncate text-xs text-ink/70">{placeLabel(peek.place)}</p>}
-              </div>
-              <button
-                type="button"
-                onClick={closePeek}
-                aria-label="Close note"
-                className="tap flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-ink/[0.06] text-ink/70 transition-colors hover:bg-ink/10 hover:text-ink/90"
-              >
-                <X className="h-4 w-4" strokeWidth={2.5} />
-              </button>
-            </div>
-            <div className="-mb-2 mt-1 flex justify-end">
-              <button type="button" onClick={() => openNotes('remedy', peek.id)} className="btn-ghost px-3 text-sm">
-                Open in notes
-              </button>
-            </div>
-          </div>
-        </div>
+      {/* A pinned note, opened from its marker, "Show in text" or a ?note= link */}
+      {sticky && view === 'full' && !notesTab && (
+        <StickyNotePopover
+          key={sticky.ids.join(' ')}
+          ids={sticky.ids}
+          id={sticky.id}
+          onIdChange={(id) => setSticky((s) => (s ? { ...s, id } : s))}
+          scroller={scrollerRef}
+          focusText={sticky.focusText}
+          onClose={closeSticky}
+          onOpenAll={stickyToSheet}
+        />
       )}
 
       {notesTab && (

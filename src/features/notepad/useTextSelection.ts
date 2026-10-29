@@ -24,6 +24,12 @@ const GAP = 12;
 const elementOf = (n: Node) => (n.nodeType === Node.ELEMENT_NODE ? (n as Element) : n.parentElement);
 const isUi = (n: Node) => !!elementOf(n)?.closest('[data-note-ui]');
 
+/** Text fields and note UI (markers, the sticky note): never a passage to pin. */
+const EDITABLE = 'input, textarea, select, [contenteditable]:not([contenteditable="false"])';
+const FIELD = `${EDITABLE}, [data-note-ui]`;
+const inField = (n: Node | null | undefined) => !!n && !!elementOf(n)?.closest(FIELD);
+const editing = () => !!document.activeElement?.closest(EDITABLE);
+
 /** Plain-text offset of a DOM point inside a block, ignoring note markers. */
 export function offsetIn(block: Element, node: Node, offset: number): number {
   const upTo = document.createRange();
@@ -43,7 +49,10 @@ export function offsetIn(block: Element, node: Node, offset: number): number {
  * mouse and touch (selectionchange + pointerup); clears when the selection
  * collapses, scrolls out of `scroller`, or on Escape.
  *
- * Touch: the pill goes below the selection, clear of the native callout
+ * Selections and pointers that start in a text field or note UI are ignored
+ * (see the Scribble notes in notepadUi.tsx).
+ *
+ * Touch and pen: the pill goes below the selection, clear of the native callout
  * above it; near the bottom edge the reader scrolls up to make room once the
  * finger lifts. Mouse: there is no callout, so it goes above, off the next
  * line of text.
@@ -72,11 +81,15 @@ export function useTextSelection(
     // Escape hides the pill until the selection itself changes
     let dismissed = false;
     let pointer = window.matchMedia?.('(pointer: fine)').matches ? 'mouse' : 'touch';
+    /** The last pointer went down in a text field or note UI. */
+    let fieldPointer = false;
 
     const read = (settled: boolean): PassageSelection | null => {
       const s = window.getSelection();
       const el = root.current;
       if (dismissed || !s || s.rangeCount === 0 || s.isCollapsed || !el) return null;
+      // writing or selecting inside a note (sticky, composer, card, Scribble)
+      if (inField(s.anchorNode) || inField(s.focusNode) || editing()) return null;
       const r = s.getRangeAt(0);
       if (!el.contains(r.commonAncestorContainer) && !r.intersectsNode(el)) return null;
       // the block the selection starts in (or the first one it touches)
@@ -135,9 +148,12 @@ export function useTextSelection(
       update();
     };
     const onPointerDown = (e: PointerEvent) => {
+      // Apple Pencil ('pen') has the native callout above a selection, like a finger
       pointer = e.pointerType === 'mouse' ? 'mouse' : 'touch';
+      fieldPointer = e.target instanceof Node && inField(e.target);
     };
     const onPointerUp = () => {
+      if (fieldPointer) return;
       window.clearTimeout(upTimer);
       upTimer = window.setTimeout(() => update(true), 0);
     };

@@ -7,6 +7,7 @@ import { NoteComposer } from './NoteComposer';
 import { type NotePlace, type PadNote, useChapterPad, useNotepad, useRemedyPad } from './notepadStore';
 import { type TextBlock, placeFromSection, placesOf, resolvePlace } from './places';
 import { Announcer } from './notepadUi';
+import type { NoteColor } from './noteColors';
 
 /** The book chapter the notepad is open beside (the reader). */
 export interface NotepadChapter {
@@ -92,7 +93,8 @@ export function RemedyNotepad({
 
   const total = lists.here.length + lists.lost.length + lists.general.length + lists.elsewhere.length;
 
-  const save = (body: string, place?: NotePlace) => add({ body, remedy: remedyKey, remedyName, ...(place ? { place } : {}) });
+  const save = (body: string, place: NotePlace | undefined, color: NoteColor) =>
+    add({ body, remedy: remedyKey, remedyName, color, ...(place ? { place } : {}) });
   // one draft per chapter; keyed so a new chapter starts with a fresh section choice
   const draftKey = chapter ? `remedy:${remedyKey}@${chapter.book}/${chapter.slug}` : `remedy:${remedyKey}`;
 

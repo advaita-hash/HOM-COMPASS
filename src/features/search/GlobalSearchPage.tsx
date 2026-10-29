@@ -9,6 +9,7 @@ import { canonicalName } from '../../lib/remedyName';
 import { useNotepad, type PadNote } from '../notepad/notepadStore';
 import { bookLabel, noteHref, noteTitle } from '../notepad/links';
 import { placeLabel } from '../notepad/places';
+import { toneOf } from '../notepad/noteColors';
 
 function snippet(text: string, q: string, len = 140): string {
   if (text.length <= len) return text;
@@ -135,7 +136,7 @@ export default function GlobalSearchPage() {
             {noteHits.shown.map(({ note, snip, inQuote }) => (
               <Link key={note.id} to={noteHref(note)} className="card block p-3 pressable">
                 <div className="flex items-center gap-2 text-sm font-medium text-slate-800">
-                  <StickyNote className="h-4 w-4 shrink-0 text-amber-600" aria-hidden />
+                  <StickyNote className={`h-4 w-4 shrink-0 ${toneOf(note).icon}`} aria-hidden />
                   <span className="min-w-0 truncate">{noteTitle(note)}</span>
                   {note.place && (
                     <span className="shrink-0 text-2xs uppercase tracking-wide text-ink/70">

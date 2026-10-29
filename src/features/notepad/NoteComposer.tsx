@@ -1,9 +1,11 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { X } from 'lucide-react';
 import { SegmentedControl } from '../../components/ui/SegmentedControl';
-import type { NotePlace } from './notepadStore';
+import { type NotePlace, useNotepad } from './notepadStore';
 import { type PlaceOption, wasShortened } from './places';
-import { drafts, useAnnounce } from './notepadUi';
+import { NOTE_FIELD, ScribbleHint, drafts, useAnnounce } from './notepadUi';
+import { type NoteColor, TONES } from './noteColors';
+import { NoteColorPicker } from './NoteColorPicker';
 
 /** What the composer needs to offer "In this chapter". */
 export interface ComposerChapter {
@@ -36,11 +38,14 @@ export function NoteComposer({
   generalLabel?: string;
   placeholder?: string;
   draftKey: string;
-  onSave: (body: string, place?: NotePlace) => void;
+  onSave: (body: string, place: NotePlace | undefined, color: NoteColor) => void;
 }) {
   const id = useId();
   const textRef = useRef<HTMLTextAreaElement>(null);
   const announce = useAnnounce();
+  // the colour picked last anywhere is the one new notes start with
+  const color = useNotepad((s) => s.defaultColor);
+  const setColor = useNotepad((s) => s.setDefaultColor);
   const [body, setBodyState] = useState(() => drafts.get(`new:${draftKey}`) ?? '');
   const setBody = (b: string) => {
     if (b) drafts.set(`new:${draftKey}`, b);
@@ -75,7 +80,7 @@ export function NoteComposer({
 
   const save = () => {
     if (!canSave) return;
-    onSave(body.trim(), place ?? undefined);
+    onSave(body.trim(), place ?? undefined, color);
     reset();
     announce('Note saved');
   };
@@ -101,7 +106,7 @@ export function NoteComposer({
           {where === 'chapter' && (
             <div className="mt-3">
               {pending ? (
-                <div className="flex items-start gap-2 rounded-lg bg-amber-100 py-2 pl-3 pr-1">
+                <div className={`flex items-start gap-2 rounded-lg py-2 pl-3 pr-1 ${TONES[color].mark}`}>
                   <div className="min-w-0 flex-1 py-1 text-sm text-ink/90">
                     <p>
                       <span className="sr-only">Pinned to the passage </span>
@@ -169,18 +174,25 @@ export function NoteComposer({
         }}
         rows={3}
         placeholder={placeholder}
-        className="input resize-y py-2"
+        {...NOTE_FIELD}
+        // 16px: iOS doesn't zoom into the field (and Scribble writes at size)
+        className="input min-h-[88px] resize-y py-2 text-base"
       />
+      <ScribbleHint show={!body} />
 
-      <div className="mt-2 flex flex-wrap items-center justify-end gap-2">
-        {dirty && (
-          <button type="button" className="btn-ghost" onClick={reset}>
-            Cancel
+      {/* colour on the left, actions on the right; they stack on narrow sheets */}
+      <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+        <NoteColorPicker className="-ml-2" value={color} onChange={setColor} label="Colour for this note" />
+        <div className="ml-auto flex items-center gap-2">
+          {dirty && (
+            <button type="button" className="btn-ghost" onClick={reset}>
+              Cancel
+            </button>
+          )}
+          <button type="button" className="btn-primary" disabled={!canSave} onClick={save}>
+            Save
           </button>
-        )}
-        <button type="button" className="btn-primary" disabled={!canSave} onClick={save}>
-          Save
-        </button>
+        </div>
       </div>
       <p className="mt-2 text-xs text-ink/70">Notes are saved on this device and included in your backup.</p>
     </div>
