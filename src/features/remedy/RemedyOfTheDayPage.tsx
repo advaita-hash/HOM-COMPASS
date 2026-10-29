@@ -20,6 +20,8 @@ import { CompareButton, CompareTray } from '../compare/CompareControls';
 import { chapterHref } from '../notepad/links';
 import { useRemedyPad } from '../notepad/notepadStore';
 import { isRepertoryKey, remedyKeyForBookRemedy, remedyKeyForCurated } from '../notepad/remedyKey';
+import { usePageTour } from '../tour/usePageTour';
+import { TourButton } from '../tour/TourButton';
 import {
   DAILY_BOOK,
   dateOfDay,
@@ -41,6 +43,7 @@ const SHORT_CHAPTER = 900;
  * cycle visiting every remedy once. Earlier days can be revisited (?date=).
  */
 export default function RemedyOfTheDayPage() {
+  usePageTour('remedy-of-the-day');
   const [params, setParams] = useSearchParams();
   // moves on at local midnight, so a tab left open overnight shows the new day
   const today = useLocalDay();
@@ -94,23 +97,26 @@ export default function RemedyOfTheDayPage() {
             {!isToday && <span className="sr-only"> (an earlier day)</span>}
           </p>
         </div>
-        <nav aria-label="Choose a day" className="flex items-center gap-1">
-          <button type="button" onClick={() => goTo(day - 1)} className="btn-ghost px-3" aria-label="Previous day">
-            <ChevronLeft className="h-4 w-4" aria-hidden />
-          </button>
-          <button type="button" onClick={() => goTo(today)} disabled={isToday} className="btn-secondary">
-            Today
-          </button>
-          <button
-            type="button"
-            onClick={() => goTo(day + 1)}
-            disabled={isToday}
-            className="btn-ghost px-3"
-            aria-label="Next day"
-          >
-            <ChevronRight className="h-4 w-4" aria-hidden />
-          </button>
-        </nav>
+        <div className="flex items-center gap-1">
+          <nav aria-label="Choose a day" data-tour="remedy-of-the-day-days" className="flex items-center gap-1">
+            <button type="button" onClick={() => goTo(day - 1)} className="btn-ghost px-3" aria-label="Previous day">
+              <ChevronLeft className="h-4 w-4" aria-hidden />
+            </button>
+            <button type="button" onClick={() => goTo(today)} disabled={isToday} className="btn-secondary">
+              Today
+            </button>
+            <button
+              type="button"
+              onClick={() => goTo(day + 1)}
+              disabled={isToday}
+              className="btn-ghost px-3"
+              aria-label="Next day"
+            >
+              <ChevronRight className="h-4 w-4" aria-hidden />
+            </button>
+          </nav>
+          <TourButton tour="remedy-of-the-day" />
+        </div>
       </header>
 
       {isLoading && (
@@ -154,21 +160,40 @@ export default function RemedyOfTheDayPage() {
             )}
             <p className="mt-2 text-xs text-ink/70">From Boericke, Pocket Manual of Homœopathic Materia Medica</p>
             <div className="mt-4 flex flex-wrap items-center gap-2">
-              <Link to={`/books/${DAILY_BOOK}/${remedy.slug}`} className="btn-primary">
+              <Link
+                to={`/books/${DAILY_BOOK}/${remedy.slug}`}
+                data-tour="remedy-of-the-day-read"
+                className="btn-primary"
+              >
                 <BookOpenText className="h-4 w-4" aria-hidden /> Read in Boericke
               </Link>
-              <Link to={chapterHref(DAILY_BOOK, remedy.slug)} className="btn-secondary">
+              <Link
+                to={chapterHref(DAILY_BOOK, remedy.slug)}
+                data-tour="remedy-of-the-day-notes"
+                className="btn-secondary"
+              >
                 <StickyNote className="h-4 w-4" aria-hidden />
                 {notes.length ? `Notes (${notes.length})` : 'Add a note'}
               </Link>
-              <CompareButton book={DAILY_BOOK} slug={remedy.slug} name={remedy.name} />
+              {/* plain wrapper: CompareButton takes no extra props, the tour needs a target */}
+              <div data-tour="remedy-of-the-day-compare">
+                <CompareButton book={DAILY_BOOK} slug={remedy.slug} name={remedy.name} />
+              </div>
               {isRepertoryKey(key) && (
-                <Link to={`/remedy/${encodeURIComponent(key)}`} className="btn-ghost">
+                <Link
+                  to={`/remedy/${encodeURIComponent(key)}`}
+                  data-tour="remedy-of-the-day-profile"
+                  className="btn-ghost"
+                >
                   Repertory profile
                 </Link>
               )}
               {curated && (
-                <Link to={`/materia-medica/${curated.id}`} className="btn-ghost">
+                <Link
+                  to={`/materia-medica/${curated.id}`}
+                  data-tour="remedy-of-the-day-study-card"
+                  className="btn-ghost"
+                >
                   <FlaskConical className="h-4 w-4" aria-hidden /> Study card
                 </Link>
               )}
@@ -184,7 +209,7 @@ export default function RemedyOfTheDayPage() {
             />
           )}
 
-          <div className="mt-5">
+          <div className="mt-5" data-tour="remedy-of-the-day-books">
             <BookCrossLinks remedyName={remedy.name} />
           </div>
 

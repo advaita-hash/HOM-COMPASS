@@ -11,6 +11,8 @@ export default function CommonRoomSignIn() {
   const [error, setError] = useState('');
   return (
     <form
+      // shared target: the My notes tour points here (it also shows on a remedy's page)
+      data-tour="common-room-sign-in"
       className="max-w-sm space-y-3"
       onSubmit={async (e) => {
         e.preventDefault();

@@ -13,6 +13,8 @@ import { canonicalName } from '../../lib/remedyName';
 import { SegmentedControl } from '../../components/ui/SegmentedControl';
 import { RemedyNotepad } from '../notepad/RemedyNotepad';
 import { remedyKeyForCurated } from '../notepad/remedyKey';
+import { usePageTour } from '../tour/usePageTour';
+import { TourButton } from '../tour/TourButton';
 
 type Source = 'Curated' | (typeof BOOKS)[number]['label'];
 
@@ -92,26 +94,31 @@ function RemedyBrowser() {
             {loading ? 'Loading remedies…' : `${entries.length} remedies across ${BOOKS.length + 1} sources`}
           </p>
         </div>
+        <TourButton tour="materia-medica" />
       </header>
 
       {/* Source segregation — scrolls sideways on phones rather than truncating */}
       <div className="-mx-6 mb-4 overflow-x-auto px-6 md:mx-0 md:px-0">
-        <SegmentedControl
-          className="!max-w-none"
-          ariaLabel="Source"
-          value={source}
-          onChange={setSource}
-          options={tabs.map((t) => ({
-            value: t,
-            label: t,
-            badge: <span className="text-2xs tabular-nums text-ink/60">{counts[t] ?? 0}</span>,
-          }))}
-        />
+        {/* plain wrapper: SegmentedControl takes no extra props, the tour needs a target */}
+        <div data-tour="materia-medica-sources" className="w-max">
+          <SegmentedControl
+            className="!max-w-none"
+            ariaLabel="Source"
+            value={source}
+            onChange={setSource}
+            options={tabs.map((t) => ({
+              value: t,
+              label: t,
+              badge: <span className="text-2xs tabular-nums text-ink/60">{counts[t] ?? 0}</span>,
+            }))}
+          />
+        </div>
       </div>
 
       <div className="relative mb-4">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
         <input
+          data-tour="materia-medica-search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search remedies…"
@@ -126,8 +133,13 @@ function RemedyBrowser() {
       )}
 
       <div className="grid gap-2 sm:grid-cols-2">
-        {filtered.map((e) => (
-          <Link key={e.key} to={e.to} className="card p-3 pressable">
+        {filtered.map((e, i) => (
+          <Link
+            key={e.key}
+            to={e.to}
+            data-tour={i === 0 ? 'materia-medica-remedy' : undefined}
+            className="card p-3 pressable"
+          >
             <div className="flex items-center gap-2">
               <span className="min-w-0 flex-1 truncate font-serif text-base font-semibold text-slate-800">
                 {canonicalName(e.name)}
@@ -167,7 +179,24 @@ function RemedyBrowser() {
   );
 }
 
+/**
+ * Back to the list, with the page's ? button at the other end of the row. No
+ * gap: the ? has its own inset, and the link stays on one line at 320px.
+ */
+function BackRow() {
+  return (
+    <div className="mb-4 flex items-center">
+      <Link to="/materia-medica" data-tour="materia-medica-back" className="btn-ghost">
+        <ChevronLeft className="h-4 w-4" /> Back to Materia Medica
+      </Link>
+      <TourButton tour="materia-medica" />
+    </div>
+  );
+}
+
 export default function MateriaMedicaPage() {
+  // one tour for the list and an open remedy (its steps skip what isn't shown)
+  usePageTour('materia-medica');
   const { remedyId } = useParams();
   if (!remedyId) return <RemedyBrowser />;
 
@@ -175,9 +204,7 @@ export default function MateriaMedicaPage() {
   if (!remedy) {
     return (
       <div className="mx-auto max-w-4xl p-8">
-        <Link to="/materia-medica" className="btn-ghost mb-4">
-          <ChevronLeft className="h-4 w-4" /> Back to Materia Medica
-        </Link>
+        <BackRow />
         <p className="text-sm text-slate-500">Remedy “{remedyId}” not found.</p>
       </div>
     );
@@ -185,9 +212,7 @@ export default function MateriaMedicaPage() {
 
   return (
     <div className="mx-auto max-w-4xl p-6 md:p-8">
-      <Link to="/materia-medica" className="btn-ghost mb-4">
-        <ChevronLeft className="h-4 w-4" /> Back to Materia Medica
-      </Link>
+      <BackRow />
       <RemedyDetail remedy={remedy} />
       <section className="card mt-5 p-5" aria-labelledby="notepad-heading">
         <h2 id="notepad-heading" className="mb-3 flex items-center gap-2 text-lg font-semibold text-ink/90">
@@ -195,7 +220,7 @@ export default function MateriaMedicaPage() {
         </h2>
         <RemedyNotepad remedyKey={remedyKeyForCurated(remedy)} remedyName={remedy.name} />
       </section>
-      <div className="mt-5">
+      <div data-tour="materia-medica-books" className="mt-5">
         <BookCrossLinks remedyName={remedy.name} />
       </div>
     </div>

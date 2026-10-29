@@ -91,6 +91,7 @@ export function ComparisonTable({ items }: { items: CompareItem[] }) {
           {columns.map(({ item, book, remedy, common }, i) => (
             <div
               key={`${item.book}:${item.slug}`}
+              data-tour={i === 0 ? 'compare-column' : undefined}
               className={`flex flex-col gap-1 px-4 pb-2 pt-4 ${i ? 'border-l border-ink/10' : ''}`}
               style={{ scrollSnapAlign: 'start' }}
             >
@@ -126,11 +127,16 @@ export function ComparisonTable({ items }: { items: CompareItem[] }) {
         </div>
 
         {/* sections */}
-        {SECTIONS.map(({ key, title, icon: Icon, tint }) => {
+        {SECTIONS.map(({ key, title, icon: Icon, tint }, si) => {
           const isOpen = expanded.has(key);
           const longest = Math.max(0, ...columns.map((c) => c.picture?.[key].length ?? 0));
           return (
-            <section key={key} aria-label={title} className="border-b border-ink/10 last:border-0">
+            <section
+              key={key}
+              aria-label={title}
+              data-tour={si === 0 ? 'compare-rows' : undefined}
+              className="border-b border-ink/10 last:border-0"
+            >
               <div className="flex items-center gap-2 px-4 pb-2 pt-6">
                 <Icon className={`h-4 w-4 ${tint}`} />
                 <h4 className="flex-1 text-xs font-semibold uppercase tracking-wide text-ink/60">{title}</h4>

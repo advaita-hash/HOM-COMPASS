@@ -85,7 +85,7 @@ export function SymptomTranslator({
   }
 
   return (
-    <div className="card p-4">
+    <div data-tour="symptom-translator" className="card p-4">
       <div className="mb-2 flex items-center gap-2">
         <Wand2 className="h-4 w-4 text-brand-600" />
         <h2 className="text-sm font-semibold text-slate-700">Symptoms → rubrics</h2>
@@ -105,7 +105,12 @@ export function SymptomTranslator({
         aria-label="Symptoms in plain language, one per line"
         className="mt-3 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none"
       />
-      <button onClick={run} disabled={!rep || !text.trim() || busy} className="btn-primary mt-2">
+      <button
+        onClick={run}
+        disabled={!rep || !text.trim() || busy}
+        data-tour="symptom-translator-find"
+        className="btn-primary mt-2"
+      >
         {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
         Find rubrics
       </button>
@@ -145,6 +150,7 @@ export function SymptomTranslator({
                         key={m.rubric.id}
                         onClick={() => add(m.rubric.id)}
                         disabled={on}
+                        data-tour="symptom-translator-match"
                         className={`flex w-full items-start gap-2 min-h-[44px] rounded-lg border px-3 py-2 text-left text-sm transition-[background-color,border-color,transform,opacity] duration-300 ease-spring active:scale-[0.96] active:opacity-80 ${
                           on
                             ? 'border-brand-200 bg-brand-50 text-brand-700'
@@ -195,7 +201,10 @@ function SemanticToggle({ sem }: { sem: ReturnType<typeof useSemantic> }) {
           ? 'bg-slate-300'
           : 'bg-brand-500 animate-pulse';
   return (
-    <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+    <div
+      data-tour="symptom-translator-ai"
+      className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2"
+    >
       <label className="flex cursor-pointer items-center gap-2">
         <input
           type="checkbox"

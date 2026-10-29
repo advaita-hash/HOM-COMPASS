@@ -86,7 +86,7 @@ export function NoteComposer({
   };
 
   return (
-    <div className="rounded-xl border border-ink/10 bg-surface p-3">
+    <div data-tour="note-composer" className="rounded-xl border border-ink/10 bg-surface p-3">
       <label htmlFor={`${id}-body`} className="mb-2 block text-sm font-semibold text-ink/90">
         New note
       </label>

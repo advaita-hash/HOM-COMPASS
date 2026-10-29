@@ -18,6 +18,8 @@ import { BOOKS } from '../books/booksIndex';
 import { useLibraryStore } from '../library/libraryStore';
 import { DISCLAIMER } from '../../components/ClinicalDisclaimer';
 import { useDisclaimerAck } from './disclaimerStore';
+import { usePageTour } from '../tour/usePageTour';
+import { TourButton } from '../tour/TourButton';
 
 const REMEDY_TOTAL =
   REMEDIES.length + BOOKS.reduce((n, b) => n + b.approxRemedies, 0);
@@ -49,6 +51,7 @@ function StatCard({
 }
 
 export default function DashboardPage() {
+  usePageTour('dashboard');
   // moves on at local midnight, so a tab left open overnight shows the new day
   const today = useLocalDay();
   const { book, pick, isError } = useDailyRemedy(today);
@@ -71,15 +74,19 @@ export default function DashboardPage() {
 
   return (
     <div className="mx-auto max-w-5xl p-6 md:p-8">
-      <header className="mb-6">
-        <h1 className="text-2xl font-semibold text-slate-800">Dashboard</h1>
-        <p className="text-sm text-ink/70">{dateLabel}</p>
+      <header className="mb-6 flex items-center gap-3">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-semibold text-slate-800">Dashboard</h1>
+          <p className="text-sm text-ink/70">{dateLabel}</p>
+        </div>
+        <TourButton tour="dashboard" />
       </header>
 
       {/* One-time clinical disclaimer (the sidebar keeps a short version visible). */}
       {!disclaimerAck && (
         <section
           aria-label="About this app"
+          data-tour="dashboard-disclaimer"
           className="card mb-6 flex flex-col gap-3 p-4 sm:flex-row sm:items-center"
         >
           <Info className="h-5 w-5 shrink-0 text-brand-600" aria-hidden />
@@ -95,6 +102,7 @@ export default function DashboardPage() {
       {/* Remedy of the Day hero */}
       <Link
         to="/remedy-of-the-day"
+        data-tour="dashboard-remedy-of-the-day"
         className="pressable group block overflow-hidden rounded-2xl bg-gradient-to-br from-art-pine to-art-sea text-white shadow-card"
       >
         <div className="flex flex-col gap-4 p-6 md:flex-row md:items-center md:justify-between">
@@ -146,7 +154,7 @@ export default function DashboardPage() {
       </Link>
 
       {/* Quick stats */}
-      <div className="mt-6 grid gap-4 sm:grid-cols-3">
+      <div data-tour="dashboard-stats" className="mt-6 grid gap-4 sm:grid-cols-3">
         <StatCard icon={FlaskConical} label="Remedies" value={`${REMEDY_TOTAL}+`} to="/materia-medica" />
         <StatCard icon={Library} label="Books uploaded" value={bookCount} to="/library" />
         <StatCard icon={BookMarked} label="Repertory chapters" value="—" to="/repertory" />
@@ -155,7 +163,7 @@ export default function DashboardPage() {
       {/* Quick actions */}
       <section className="mt-6">
         <h3 className="mb-2 text-sm font-semibold text-slate-700">Quick actions</h3>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div data-tour="dashboard-quick-actions" className="grid gap-3 sm:grid-cols-2">
           <Link to="/library" className="card flex items-center gap-3 p-4 pressable">
             <Library className="h-5 w-5 text-brand-600" />
             <div>

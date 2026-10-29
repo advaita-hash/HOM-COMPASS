@@ -38,9 +38,11 @@ export function WorksheetGrid({
   const top = showN === 'all' ? scores : scores.slice(0, showN);
   const byId = new Map(rubrics.map((r) => [r.id, r]));
 
+  // 'cases-results' marks this empty state, or the ranked remedies once there
+  // are rubrics: the page tour's Results step points at whichever shows.
   if (items.length === 0) {
     return (
-      <div className="card">
+      <div data-tour="cases-results" className="card">
         <EmptyState
           icon={ListPlus}
           title="No rubrics yet"
@@ -60,7 +62,10 @@ export function WorksheetGrid({
       {/* Ranked remedies — click for Materia Medica support */}
       {/* lg: the analysis column is only ~360px beside the 340px step-1 column;
           three cards fit only from 2xl, so names don't truncate at laptop widths */}
-      <div className="mb-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3">
+      <div
+        data-tour="cases-results"
+        className="mb-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3"
+      >
         {top.slice(0, 6).map((s, i) => {
           const inner = (
             <>
@@ -116,7 +121,7 @@ export function WorksheetGrid({
       </div>
 
       {/* Grid */}
-      <div className="card overflow-x-auto">
+      <div data-tour="cases-table" className="card overflow-x-auto">
         <table className="w-full border-collapse text-sm">
           <thead>
             <tr className="border-b border-slate-200">

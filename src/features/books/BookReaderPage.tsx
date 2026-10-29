@@ -28,6 +28,8 @@ import { BookNotepad } from '../notepad/BookNotepad';
 import { useTextSelection } from '../notepad/useTextSelection';
 import { type StickyCloseOptions, StickyNotePopover } from '../notepad/StickyNotePopover';
 import { toneOf } from '../notepad/noteColors';
+import { TourButton } from '../tour/TourButton';
+import { usePageTour } from '../tour/usePageTour';
 
 // ---------------------------------------------------------------------------
 // Notes in the reader. URL contract (other pages link here):
@@ -131,6 +133,7 @@ function NoteMarker({
     <button
       type="button"
       data-note-ui
+      data-tour="book-reader-marker"
       data-notes={notes.map((n) => n.id).join(' ')}
       aria-label={label}
       aria-haspopup="dialog"
@@ -312,6 +315,19 @@ function pinsFor(blocks: TextBlock[], notes: PadNote[]): Map<string, BlockPins> 
   return m;
 }
 
+/** lg and up: the remedy index and the reader share the screen. */
+const sideBySide = () => !!window.matchMedia?.('(min-width: 1024px)').matches;
+
+/**
+ * The reader's tour, mounted only once a remedy is on screen: on a phone a
+ * book opens on its remedy list, which hides the reader's buttons, so the
+ * first visit there would otherwise use up the tour on a list.
+ */
+function ReaderTour() {
+  usePageTour('book-reader');
+  return null;
+}
+
 export default function BookReaderPage() {
   const { bookId, remedySlug } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -330,7 +346,7 @@ export default function BookReaderPage() {
   const [listOpen, setListOpen] = useState(!remedySlug);
 
   const q = query.trim().toLowerCase();
-  const remedies = book?.remedies ?? [];
+  const remedies = useMemo(() => book?.remedies ?? [], [book]);
   const filtered = useMemo(() => {
     if (!q) return remedies;
     return remedies.filter(
@@ -615,6 +631,7 @@ export default function BookReaderPage() {
 
   return (
     <div className="flex h-full flex-col">
+      {selected && (!listOpen || sideBySide()) && <ReaderTour />}
       {/* Header */}
       <div className="flex items-start gap-3 border-b border-slate-200 bg-surface px-6 py-4">
         <div className="min-w-0 flex-1">
@@ -624,16 +641,21 @@ export default function BookReaderPage() {
           <h1 className="font-serif text-xl font-semibold text-slate-800">{meta.title}</h1>
           <p className="text-xs text-brand-600">{meta.author}</p>
         </div>
-        <button
-          type="button"
-          onClick={() => openNotes('book')}
-          className="btn-ghost -mr-3 min-w-[44px] shrink-0 px-3"
-          aria-label={`Book notes${bookNotes.length ? `, ${bookNotes.length}` : ''}`}
-        >
-          <NotebookPen className="h-4 w-4" />
-          <span className="hidden sm:inline">Book notes</span>
-          {bookNotes.length > 0 && <span className="text-xs tabular-nums text-ink/70">{bookNotes.length}</span>}
-        </button>
+        {/* Book notes, then the page's ? button, centred on the title */}
+        <div className="flex shrink-0 items-center self-center">
+          <button
+            type="button"
+            data-tour="book-reader-book-notes"
+            onClick={() => openNotes('book')}
+            className="btn-ghost min-w-[44px] shrink-0 px-3"
+            aria-label={`Book notes${bookNotes.length ? `, ${bookNotes.length}` : ''}`}
+          >
+            <NotebookPen className="h-4 w-4" />
+            <span className="hidden sm:inline">Book notes</span>
+            {bookNotes.length > 0 && <span className="text-xs tabular-nums text-ink/70">{bookNotes.length}</span>}
+          </button>
+          <TourButton tour="book-reader" className="-mr-2" />
+        </div>
       </div>
 
       <div className="flex min-h-0 flex-1">
@@ -657,6 +679,7 @@ export default function BookReaderPage() {
           <div className="relative p-3">
             <Search className="pointer-events-none absolute left-6 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <input
+              data-tour="book-reader-search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => {
@@ -724,10 +747,14 @@ export default function BookReaderPage() {
           {selected ? (
             <div className="mx-auto max-w-2xl">
               <div className="mb-4 flex flex-wrap items-center gap-3">
-              <button onClick={() => setListOpen(true)} className="btn-secondary lg:hidden">
+              <button
+                data-tour="book-reader-all-remedies"
+                onClick={() => setListOpen(true)}
+                className="btn-secondary lg:hidden"
+              >
                 <List className="h-4 w-4" /> All remedies
               </button>
-              <div ref={readingViewRef}>
+              <div ref={readingViewRef} data-tour="book-reader-view">
                 <SegmentedControl
                   ariaLabel="Reading view"
                   value={view}
@@ -743,6 +770,7 @@ export default function BookReaderPage() {
                 <button
                   ref={notesButtonRef}
                   type="button"
+                  data-tour="book-reader-notes"
                   onClick={() => openNotes('remedy')}
                   className="btn-secondary"
                   aria-label={`Notes, ${remedyCount} on this remedy`}
@@ -754,7 +782,9 @@ export default function BookReaderPage() {
                     </span>
                   )}
                 </button>
-                <CompareButton book={bookId!} slug={selected.slug} name={selected.name} />
+                <div data-tour="book-reader-compare">
+                  <CompareButton book={bookId!} slug={selected.slug} name={selected.name} />
+                </div>
               </div>
               </div>
               {view === 'portrait' ? (
@@ -804,6 +834,7 @@ export default function BookReaderPage() {
       {selection && (
         <button
           type="button"
+          data-tour="book-reader-add-note"
           // keep the selection when clicked with a mouse
           onMouseDown={(e) => e.preventDefault()}
           onClick={() => {

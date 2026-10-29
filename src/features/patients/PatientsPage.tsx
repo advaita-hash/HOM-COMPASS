@@ -5,9 +5,12 @@ import { usePatients, type Patient } from './patientsStore';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { BackupSection } from './BackupSection';
+import { TourButton } from '../tour/TourButton';
+import { usePageTour } from '../tour/usePageTour';
 
 export default function PatientsPage() {
   const { patients, cases, addPatient, removePatient } = usePatients();
+  usePageTour('patients');
   const [name, setName] = useState('');
   const [age, setAge] = useState('');
   const [gender, setGender] = useState('');
@@ -51,9 +54,10 @@ export default function PatientsPage() {
           <h1 ref={headingRef} tabIndex={-1} className="text-2xl font-semibold text-slate-800">Patients &amp; Cases</h1>
           <p className="text-sm text-slate-500">{patients.length} {patients.length === 1 ? 'patient' : 'patients'}</p>
         </div>
+        <TourButton tour="patients" />
       </header>
 
-      <form onSubmit={submit} className="card mb-5 flex flex-wrap items-end gap-3 p-4">
+      <form onSubmit={submit} data-tour="patients-add" className="card mb-5 flex flex-wrap items-end gap-3 p-4">
         <div className="flex-1">
           <label className="mb-1 block text-xs font-medium text-slate-500">Name</label>
           <input
@@ -96,7 +100,7 @@ export default function PatientsPage() {
             title="No patients yet"
             description="Patients appear here once you add one above or save your first case from the Cases workspace."
             action={
-              <Link to="/analysis" className="btn-primary">
+              <Link to="/analysis" data-tour="patients-new-case" className="btn-primary">
                 Take a new case
               </Link>
             }
@@ -104,11 +108,12 @@ export default function PatientsPage() {
         </div>
       ) : (
         <div ref={listRef} className="card overflow-hidden">
-          {patients.map((p) => {
+          {patients.map((p, i) => {
             const n = cases.filter((c) => c.patient_id === p.id).length;
             return (
               <div
                 key={p.id}
+                data-tour={i === 0 ? 'patients-row' : undefined}
                 className="flex items-center gap-3 border-b border-slate-100 px-4 py-3 last:border-0 hover:bg-slate-50"
               >
                 <Link to={`/patients/${p.id}`} className="min-w-0 flex-1" data-patient-link>

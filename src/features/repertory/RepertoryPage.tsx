@@ -8,6 +8,8 @@ import { RepertorySelect } from './RepertorySelect';
 import { RemedySupportModal } from './RemedySupportModal';
 import { useBindWorksheet, useWorksheet } from './worksheetStore';
 import { canonicalName } from '../../lib/remedyName';
+import { usePageTour } from '../tour/usePageTour';
+import { TourButton } from '../tour/TourButton';
 import type { Grade, Rubric } from './types';
 
 const GRADE_CLASS: Record<Grade, string> = {
@@ -31,6 +33,7 @@ function RemedyChips({
           // position + name: unique even if a source lists a remedy twice
           key={`${i}:${r.name}`}
           onClick={() => onRemedy(r.name)}
+          data-tour={i === 0 ? 'repertory-remedy' : undefined}
           className={`${GRADE_CLASS[r.grade as Grade]} hover:underline`}
           title={`grade ${r.grade} — Materia Medica support`}
         >
@@ -48,6 +51,7 @@ function RubricRow({ rubric, onRemedy }: { rubric: Rubric; onRemedy: (name: stri
     <div className="flex items-start gap-3 border-b border-slate-100 px-4 py-3 last:border-0">
       <button
         onClick={() => toggle(rubric.id)}
+        data-tour="repertory-add"
         className={`tap mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-md border transition-[background-color,border-color,color,transform] duration-300 ease-spring active:scale-[0.96] ${
           has
             ? 'border-accent bg-accent text-on-accent'
@@ -75,6 +79,7 @@ function RubricRow({ rubric, onRemedy }: { rubric: Rubric; onRemedy: (name: stri
 }
 
 export default function RepertoryPage() {
+  usePageTour('repertory');
   const { data: rep, isLoading, isError } = useRepertory();
   const repId = useRepertorySelection((s) => s.id);
   const repMeta = REPERTORIES.find((r) => r.id === repId);
@@ -111,12 +116,13 @@ export default function RepertoryPage() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <RepertorySelect />
-          <Link to="/analysis" className="btn-primary">
+          <Link to="/analysis" data-tour="repertory-worksheet" className="btn-primary">
             Worksheet
             {count > 0 && (
               <span className="ml-1 rounded-full bg-white/25 px-2 text-xs">{count}</span>
             )}
           </Link>
+          <TourButton tour="repertory" />
         </div>
       </header>
 
@@ -130,6 +136,7 @@ export default function RepertoryPage() {
         <div className="relative flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <input
+            data-tour="repertory-search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search rubrics or remedies…"
@@ -137,6 +144,7 @@ export default function RepertoryPage() {
           />
         </div>
         <select
+          data-tour="repertory-chapter"
           value={chapter}
           onChange={(e) => setChapter(e.target.value)}
           className="rounded-lg border border-slate-200 bg-surface px-3 py-3 text-sm text-slate-600"
@@ -162,7 +170,11 @@ export default function RepertoryPage() {
             title={`Search ${rep.rubricCount.toLocaleString()} rubrics`}
             description="Type a symptom above or pick a chapter to browse the repertory in Chapter → Rubric → Sub-rubric order."
             action={
-              <button className="btn-primary" onClick={() => setChapter(rep.chapters[0])}>
+              <button
+                data-tour="repertory-browse"
+                className="btn-primary"
+                onClick={() => setChapter(rep.chapters[0])}
+              >
                 Browse {rep.chapters[0]}
               </button>
             }
@@ -206,7 +218,11 @@ export default function RepertoryPage() {
         </>
       )}
 
-      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-400">
+      {/* w-fit: the tour's spotlight hugs the key instead of the full row */}
+      <div
+        data-tour="repertory-grades"
+        className="mt-3 flex w-fit flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-400"
+      >
         <span>Grade:</span>
         <span className="text-grade-3 font-semibold">3 bold</span>
         <span className="text-grade-2 font-medium">2 italic</span>

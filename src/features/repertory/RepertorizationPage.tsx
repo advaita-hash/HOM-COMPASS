@@ -13,6 +13,10 @@ import { usePatients } from '../patients/patientsStore';
 import { SegmentedControl } from '../../components/ui/SegmentedControl';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { ClinicalDisclaimer } from '../../components/ClinicalDisclaimer';
+import { usePageTour } from '../tour/usePageTour';
+import { TourButton } from '../tour/TourButton';
+import { useTour } from '../tour/tourStore';
+import { getTour } from '../tour/registry';
 
 /** Phone/tablet tabs so each part of the case fits one screen (desktop shows
  *  everything in two columns, unchanged). */
@@ -23,11 +27,22 @@ const TABS: { id: CaseTab; label: string }[] = [
   { id: 'analysis', label: 'Analysis' },
 ];
 
+/** The phone/tablet tab that holds each of the page tour's targets. */
+const TOUR_TABS: Record<string, CaseTab | undefined> = {
+  'cases-patient': 'patient',
+  'causative-factor': 'symptoms',
+  'symptom-translator': 'symptoms',
+  'cases-save': 'symptoms',
+  'cases-results': 'analysis',
+  'cases-table': 'analysis',
+};
+
 /**
  * Case workspace: enter patient details, translate plain-language symptoms into
  * rubrics, repertorise live, and save the case to the patient's record.
  */
 export default function RepertorizationPage() {
+  usePageTour('cases');
   const { data: rep, isError: repFailed } = useRepertory();
   const repId = useRepertorySelection((s) => s.id);
   const repMeta = REPERTORIES.find((r) => r.id === repId);
@@ -57,11 +72,25 @@ export default function RepertorizationPage() {
   const focusAfterClear = useRef(false);
   const [supportRemedy, setSupportRemedy] = useState<string | null>(null);
   const [tab, setTab] = useState<CaseTab>('patient'); // phone/tablet only
+  // While the page tour points at something on another tab, that tab shows;
+  // the person's own tab comes back when the tour ends. The switch waits a
+  // frame so the tour is already looking for the new target when the old one
+  // hides (switching in the same render left the tour stuck on the old step).
+  const tourTab = useTour((s) => {
+    const step = s.active?.tourId === 'cases' ? getTour('cases')?.steps[s.active.index] : undefined;
+    return step?.target ? TOUR_TABS[step.target] : undefined;
+  });
+  const [tourShownTab, setTourShownTab] = useState<CaseTab | undefined>(undefined);
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => setTourShownTab(tourTab));
+    return () => cancelAnimationFrame(raf);
+  }, [tourTab]);
+  const shownTab = tourShownTab ?? tab;
   const symptomList = cleanSymptoms(symptoms); // individual, non-empty symptoms
 
   // On phone/tablet a section is shown only when its tab is active; on desktop
   // (lg+) every section is always visible in the two-column grid.
-  const panel = (id: CaseTab) => (tab === id ? '' : 'hidden lg:block');
+  const panel = (id: CaseTab) => (shownTab === id ? '' : 'hidden lg:block');
 
   const { scores, rubrics } = repertorize(rep, items);
 
@@ -170,7 +199,7 @@ export default function RepertorizationPage() {
             </p>
           </div>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div data-tour="cases-tools" className="flex flex-wrap items-center gap-2">
           <RepertorySelect />
           <Link to="/repertory" className="btn-secondary">
             <BookOpen className="h-4 w-4" /> Repertory
@@ -180,6 +209,7 @@ export default function RepertorizationPage() {
               <Trash2 className="h-4 w-4" /> Clear case
             </button>
           )}
+          <TourButton tour="cases" />
         </div>
       </header>
 
@@ -194,25 +224,26 @@ export default function RepertorizationPage() {
       </div>
 
       {/* Phone/tablet: segmented control — each segment fits one screen. Hidden on desktop. */}
-      <SegmentedControl
-        className="mb-4 lg:hidden"
-        fullWidth
-        ariaLabel="Case section"
-        value={tab}
-        onChange={setTab}
-        options={TABS.map((t) => ({
-          value: t.id,
-          label: t.label,
-          // -ml-1 tightens the label→badge gap to 4px; -mr-1 lets the badge use 4px of
-          // the segment's 12px end padding on phones, so "Analysis" + badge fit at 360px.
-          badge:
-            t.id === 'analysis' && items.length > 0 ? (
-              <span className="-ml-1 -mr-1 min-w-[20px] shrink-0 rounded-full bg-accent px-1 text-center text-2xs font-semibold leading-5 text-on-accent sm:mr-0">
-                {items.length}
-              </span>
-            ) : undefined,
-        }))}
-      />
+      <div data-tour="cases-tabs" className="mb-4 lg:hidden">
+        <SegmentedControl
+          fullWidth
+          ariaLabel="Case section"
+          value={shownTab}
+          onChange={setTab}
+          options={TABS.map((t) => ({
+            value: t.id,
+            label: t.label,
+            // -ml-1 tightens the label→badge gap to 4px; -mr-1 lets the badge use 4px of
+            // the segment's 12px end padding on phones, so "Analysis" + badge fit at 360px.
+            badge:
+              t.id === 'analysis' && items.length > 0 ? (
+                <span className="-ml-1 -mr-1 min-w-[20px] shrink-0 rounded-full bg-accent px-1 text-center text-2xs font-semibold leading-5 text-on-accent sm:mr-0">
+                  {items.length}
+                </span>
+              ) : undefined,
+          }))}
+        />
+      </div>
 
       {/* Shown once per screen (desktop and every phone tab), not per panel. */}
       <ClinicalDisclaimer className="mb-4" />
@@ -225,7 +256,7 @@ export default function RepertorizationPage() {
           <div className="hidden text-xs font-semibold uppercase tracking-wide text-slate-400 lg:block">
             Step 1 · Patient’s language → rubrics
           </div>
-          <div className={`card p-4 ${panel('patient')}`}>
+          <div data-tour="cases-patient" className={`card p-4 ${panel('patient')}`}>
             <h2 id="case-patient-heading" className="mb-2 text-sm font-semibold text-slate-700">
               Patient
             </h2>
@@ -315,6 +346,7 @@ export default function RepertorizationPage() {
           <button
             onClick={saveCase}
             disabled={!canSave}
+            data-tour="cases-save"
             className="btn-primary w-full justify-center"
           >
             <Save className="h-4 w-4" /> Save case

@@ -15,6 +15,8 @@ import {
   type BookStatus,
   useLibraryStore,
 } from './libraryStore';
+import { TourButton } from '../tour/TourButton';
+import { usePageTour } from '../tour/usePageTour';
 
 const ACCEPTED = '.pdf,.txt,.epub,.doc,.docx';
 const CATEGORY_LABELS: Record<BookCategory, string> = {
@@ -56,12 +58,16 @@ function guessCategory(fileName: string): BookCategory {
   return 'OTHER';
 }
 
-function BookRow({ book }: { book: Book }) {
+/** `first`: the row the page tour points at. */
+function BookRow({ book, first }: { book: Book; first: boolean }) {
   const { removeBook, updateBook } = useLibraryStore();
   const Icon = book.category === 'REPERTORY' ? BookText : BookOpen;
 
   return (
-    <div className="flex items-center gap-3 border-b border-slate-100 px-4 py-3 last:border-0">
+    <div
+      data-tour={first ? 'library-book' : undefined}
+      className="flex items-center gap-3 border-b border-slate-100 px-4 py-3 last:border-0"
+    >
       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-600">
         <Icon className="h-5 w-5" />
       </div>
@@ -95,6 +101,7 @@ function BookRow({ book }: { book: Book }) {
 
       <button
         onClick={() => removeBook(book.id)}
+        data-tour={first ? 'library-remove' : undefined}
         className="shrink-0 rounded-md p-2 text-slate-400 hover:bg-red-50 hover:text-red-600"
         aria-label={`Remove ${book.title}`}
       >
@@ -108,6 +115,7 @@ export default function LibraryPage() {
   const { books, addBook } = useLibraryStore();
   const [dragging, setDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  usePageTour('library');
 
   function ingest(files: FileList | null) {
     if (!files) return;
@@ -134,10 +142,12 @@ export default function LibraryPage() {
             Upload repertories and materia medica to ingest into the knowledge graph.
           </p>
         </div>
+        <TourButton tour="library" />
       </header>
 
       {/* Dropzone */}
       <div
+        data-tour="library-upload"
         onDragOver={(e) => {
           e.preventDefault();
           setDragging(true);
@@ -174,7 +184,10 @@ export default function LibraryPage() {
       </div>
 
       {/* Mode notice */}
-      <div className="mt-4 flex items-start gap-2 rounded-lg bg-slate-50 px-4 py-3 text-xs text-slate-500">
+      <div
+        data-tour="library-about"
+        className="mt-4 flex items-start gap-2 rounded-lg bg-slate-50 px-4 py-3 text-xs text-slate-500"
+      >
         <FileText className="mt-1 h-4 w-4 shrink-0 text-slate-400" />
         {isSupabaseConfigured ? (
           <span>
@@ -194,7 +207,7 @@ export default function LibraryPage() {
       {/* Catalogue */}
       <section className="mt-6">
         <div className="mb-2 flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-slate-700">
+          <h2 data-tour="library-catalogue" className="text-sm font-semibold text-slate-700">
             Catalogue{' '}
             <span className="ml-1 rounded-full bg-slate-100 px-2 py-1 text-xs text-slate-500">
               {books.length}
@@ -217,8 +230,8 @@ export default function LibraryPage() {
           </div>
         ) : (
           <div className="card overflow-hidden">
-            {books.map((book) => (
-              <BookRow key={book.id} book={book} />
+            {books.map((book, i) => (
+              <BookRow key={book.id} book={book} first={i === 0} />
             ))}
           </div>
         )}

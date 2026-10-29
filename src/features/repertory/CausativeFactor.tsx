@@ -31,7 +31,7 @@ export function CausativeFactor({ rep }: { rep: Repertory | undefined }) {
   }
 
   return (
-    <div className="card p-4">
+    <div data-tour="causative-factor" className="card p-4">
       <div className="mb-2 flex items-center gap-2">
         <Zap className="h-4 w-4 text-amber-500" />
         <h2 className="text-sm font-semibold text-slate-700">Probable causative factor</h2>
@@ -45,7 +45,7 @@ export function CausativeFactor({ rep }: { rep: Repertory | undefined }) {
         placeholder="e.g. grief, fright, getting wet…"
         className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none"
       />
-      <div className="mt-2 flex flex-wrap gap-2">
+      <div data-tour="causative-factor-chips" className="mt-2 flex flex-wrap gap-2">
         {COMMON.map((c) => (
           <button
             key={c}

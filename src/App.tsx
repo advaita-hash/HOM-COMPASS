@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { NavLink, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import {
   Activity,
   BookOpen,
   BookText,
   CalendarDays,
+  CircleHelp,
   Compass,
   FlaskConical,
   LayoutDashboard,
@@ -37,12 +38,16 @@ import RemedyProfilePage from './features/remedy/RemedyProfilePage';
 import MyNotesPage from './features/notes/MyNotesPage';
 import SharedNotePage from './features/notes/SharedNotePage';
 import ComparePage from './features/compare/ComparePage';
+import HelpPage from './features/tour/HelpPage';
+import { TourOverlay } from './features/tour/TourOverlay';
+import { useWelcomeTour } from './features/tour/usePageTour';
 import { useCompare } from './features/compare/compareStore';
 import { SegmentedControl } from './components/ui/SegmentedControl';
 import { StorageStatusBanner } from './components/StorageStatusBanner';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { DISCLAIMER } from './components/ClinicalDisclaimer';
 import { type Appearance, useAppearance, useApplyAppearance } from './lib/appearance';
+import { useShell } from './lib/shell';
 
 // ---------------------------------------------------------------------------
 // Application shell — responsive navigation + routed module outlet.
@@ -50,20 +55,22 @@ import { type Appearance, useAppearance, useApplyAppearance } from './lib/appear
 // hamburger that opens the same nav as a slide-in drawer.
 // ---------------------------------------------------------------------------
 
-const NAV: readonly { to: string; label: string; icon: typeof Search; demo?: true }[] = [
-  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/search', label: 'Search', icon: Search },
-  { to: '/remedy-of-the-day', label: 'Remedy of the Day', icon: CalendarDays },
-  { to: '/repertory', label: 'Repertory', icon: BookOpen },
-  { to: '/analysis', label: 'Cases', icon: Activity },
-  { to: '/materia-medica', label: 'Materia Medica', icon: FlaskConical },
-  { to: '/compare', label: 'Compare', icon: Columns3 },
-  { to: '/my-notes', label: 'My notes', icon: NotebookPen },
-  { to: '/books', label: 'Reference Books', icon: BookText },
-  { to: '/library', label: 'Library', icon: Library },
+// `tour` is the item's data-tour target for the welcome tour (features/tour).
+const NAV: readonly { to: string; label: string; icon: typeof Search; tour: string; demo?: true }[] = [
+  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, tour: 'nav-dashboard' },
+  { to: '/search', label: 'Search', icon: Search, tour: 'nav-search' },
+  { to: '/remedy-of-the-day', label: 'Remedy of the Day', icon: CalendarDays, tour: 'nav-remedy-of-the-day' },
+  { to: '/repertory', label: 'Repertory', icon: BookOpen, tour: 'nav-repertory' },
+  { to: '/analysis', label: 'Cases', icon: Activity, tour: 'nav-cases' },
+  { to: '/materia-medica', label: 'Materia Medica', icon: FlaskConical, tour: 'nav-materia-medica' },
+  { to: '/compare', label: 'Compare', icon: Columns3, tour: 'nav-compare' },
+  { to: '/my-notes', label: 'My notes', icon: NotebookPen, tour: 'nav-my-notes' },
+  { to: '/books', label: 'Reference Books', icon: BookText, tour: 'nav-books' },
+  { to: '/library', label: 'Library', icon: Library, tour: 'nav-library' },
   // Built from the 55-rubric sample repertory, not the full Kent repertory.
-  { to: '/graph', label: 'Knowledge Graph', icon: Network, demo: true },
-  { to: '/patients', label: 'Patients', icon: Users },
+  { to: '/graph', label: 'Knowledge Graph', icon: Network, tour: 'nav-graph', demo: true },
+  { to: '/patients', label: 'Patients', icon: Users, tour: 'nav-patients' },
+  { to: '/help', label: 'Help & tour', icon: CircleHelp, tour: 'nav-help' },
 ];
 
 const APPEARANCE_CAPTION: Record<Appearance, string> = {
@@ -83,7 +90,7 @@ function AppearanceControl() {
     </>
   );
   return (
-    <div className="px-4 pt-4">
+    <div className="px-4 pt-4" data-tour="nav-appearance">
       <div className="mb-2 px-1 text-2xs font-semibold uppercase tracking-wide text-ink/60">Appearance</div>
       <SegmentedControl
         fullWidth
@@ -134,10 +141,11 @@ function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
       </div>
 
       <nav className="flex-1 space-y-1 overflow-y-auto px-3">
-        {NAV.map(({ to, label, icon: Icon, demo }) => (
+        {NAV.map(({ to, label, icon: Icon, tour, demo }) => (
           <NavLink
             key={to}
             to={to}
+            data-tour={tour}
             onClick={onClose}
             className={({ isActive }) =>
               `flex min-h-[44px] items-center gap-3 rounded-lg px-3 py-2 text-sm transition-[background-color,color,transform,opacity] duration-300 ease-spring active:scale-[0.96] active:opacity-80 ${
@@ -198,12 +206,15 @@ function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
 }
 
 export default function App() {
-  const [menuOpen, setMenuOpen] = useState(false);
+  const menuOpen = useShell((s) => s.menuOpen);
+  const setMenuOpen = useShell((s) => s.setMenuOpen);
   const location = useLocation();
 
   // Close the drawer on navigation.
-  useEffect(() => setMenuOpen(false), [location.pathname]);
+  useEffect(() => setMenuOpen(false), [location.pathname, setMenuOpen]);
   useApplyAppearance();
+  // The welcome tour, once per device (not on the bare shared-note page).
+  useWelcomeTour(location.pathname !== '/shared/note');
 
   // Shared-note links are a clean public page — no sidebar/app shell.
   if (location.pathname === '/shared/note')
@@ -225,6 +236,7 @@ export default function App() {
             onClick={() => setMenuOpen(true)}
             className="tap flex h-10 w-10 items-center justify-center rounded-full text-brand-600 transition-colors hover:bg-ink/[0.06] active:opacity-60"
             aria-label="Open menu"
+            data-tour="nav-menu-button"
           >
             <Menu className="h-6 w-6" />
           </button>
@@ -268,10 +280,14 @@ export default function App() {
             <Route path="/search" element={<GlobalSearchPage />} />
             <Route path="/patients" element={<PatientsPage />} />
             <Route path="/patients/:patientId" element={<PatientDetailPage />} />
+            <Route path="/help" element={<HelpPage />} />
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </ErrorBoundary>
       </main>
+
+      {/* The active tutorial, portaled over everything (features/tour). */}
+      <TourOverlay />
     </div>
   );
 }

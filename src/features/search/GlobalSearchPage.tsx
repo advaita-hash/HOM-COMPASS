@@ -10,6 +10,8 @@ import { useNotepad, type PadNote } from '../notepad/notepadStore';
 import { bookLabel, noteHref, noteTitle } from '../notepad/links';
 import { placeLabel } from '../notepad/places';
 import { toneOf } from '../notepad/noteColors';
+import { usePageTour } from '../tour/usePageTour';
+import { TourButton } from '../tour/TourButton';
 
 function snippet(text: string, q: string, len = 140): string {
   if (text.length <= len) return text;
@@ -32,6 +34,7 @@ function Highlight({ text, q }: { text: string; q: string }) {
 }
 
 export default function GlobalSearchPage() {
+  usePageTour('search');
   const [query, setQuery] = useState('');
   const q = query.trim().toLowerCase();
   const active = q.length >= 2;
@@ -107,18 +110,20 @@ export default function GlobalSearchPage() {
     <div className="mx-auto max-w-4xl p-6 md:p-8">
       <header className="mb-4 flex items-center gap-3">
         <Search className="h-6 w-6 text-brand-600" />
-        <div>
+        <div className="min-w-0">
           <h1 className="text-2xl font-semibold text-slate-800">Search</h1>
           <p className="text-sm text-slate-500">
             Across your notes, materia medica, reference books and the repertory.
           </p>
         </div>
+        <TourButton tour="search" />
       </header>
 
       <div className="relative mb-6">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
         <input
           autoFocus
+          data-tour="search-input"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search remedies, symptoms, rubrics…"
@@ -133,8 +138,13 @@ export default function GlobalSearchPage() {
             {noteHits.total > noteHits.shown.length && `, showing ${noteHits.shown.length}`})
           </h2>
           <div className="space-y-2">
-            {noteHits.shown.map(({ note, snip, inQuote }) => (
-              <Link key={note.id} to={noteHref(note)} className="card block p-3 pressable">
+            {noteHits.shown.map(({ note, snip, inQuote }, i) => (
+              <Link
+                key={note.id}
+                to={noteHref(note)}
+                data-tour={i === 0 ? 'search-note-result' : undefined}
+                className="card block p-3 pressable"
+              >
                 <div className="flex items-center gap-2 text-sm font-medium text-slate-800">
                   <StickyNote className={`h-4 w-4 shrink-0 ${toneOf(note).icon}`} aria-hidden />
                   <span className="min-w-0 truncate">{noteTitle(note)}</span>
@@ -176,8 +186,13 @@ export default function GlobalSearchPage() {
                 Materia Medica ({curated.length})
               </h2>
               <div className="grid gap-2 sm:grid-cols-2">
-                {curated.map((r) => (
-                  <Link key={r.id} to={`/materia-medica/${r.id}`} className="card p-3 pressable">
+                {curated.map((r, i) => (
+                  <Link
+                    key={r.id}
+                    to={`/materia-medica/${r.id}`}
+                    data-tour={i === 0 ? 'search-remedy-result' : undefined}
+                    className="card p-3 pressable"
+                  >
                     <div className="flex items-center gap-2 text-sm font-medium text-slate-800">
                       <FlaskConical className="h-4 w-4 text-brand-500" />
                       <Highlight text={canonicalName(r.name)} q={q} />
@@ -198,6 +213,7 @@ export default function GlobalSearchPage() {
                 <Link
                   key={`${h.id}-${h.slug}-${i}`}
                   to={`/books/${h.id}/${h.slug}`}
+                  data-tour={i === 0 ? 'search-book-result' : undefined}
                   className="card block p-3 pressable"
                 >
                   <div className="flex items-center gap-2 text-sm font-medium text-slate-800">
@@ -224,10 +240,11 @@ export default function GlobalSearchPage() {
                 Repertory rubrics ({rubricHits.length})
               </h2>
               <div className="card overflow-hidden">
-                {rubricHits.map((r) => (
+                {rubricHits.map((r, i) => (
                   <Link
                     key={r.id}
                     to="/repertory"
+                    data-tour={i === 0 ? 'search-rubric-result' : undefined}
                     className="block border-b border-slate-100 px-3 py-2 text-sm last:border-0 hover:bg-slate-50"
                   >
                     <span className="text-2xs uppercase tracking-wide text-slate-400">

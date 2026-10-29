@@ -93,7 +93,7 @@ function BookGroup({
     }
     for (const list of groups.values()) list.sort((a, b) => a.name.localeCompare(b.name));
     return [...groups.entries()].sort(([a], [b]) => a.localeCompare(b));
-  }, [data, query, boericke]);
+  }, [data, query, boericke, meta.id]);
 
   const total = letters.reduce((n, [, l]) => n + l.length, 0);
   if (searching && data && total === 0) return null; // hide books with no matches
@@ -112,7 +112,7 @@ function BookGroup({
             aria-hidden
             className={`h-8 w-8 shrink-0 rounded-md bg-gradient-to-br ${meta.cover} shadow-card`}
           />
-          <span className="min-w-0 flex-1">
+          <span data-tour="compare-book" className="min-w-0 flex-1">
             <span className="block truncate text-subhead font-semibold leading-5 text-ink/90">{author}</span>
             <span className="block truncate text-xs text-ink/60">{meta.title}</span>
           </span>
@@ -212,7 +212,7 @@ export function RemedyPicker({ defaultOpen = true }: { defaultOpen?: boolean }) 
         onToggle={() => setOpen((o) => !o)}
         headerClassName="px-4 py-3"
         header={
-          <span className="min-w-0 flex-1">
+          <span data-tour="compare-choose" className="min-w-0 flex-1">
             <span className="block text-base font-semibold text-ink/90">Choose remedies</span>
             <span className="block text-xs text-ink/60">
               {items.length} of {COMPARE_MAX} selected
@@ -223,7 +223,7 @@ export function RemedyPicker({ defaultOpen = true }: { defaultOpen?: boolean }) 
         <div className="border-t border-ink/10 lg:max-h-[calc(100vh-14rem)] lg:overflow-y-auto">
           {/* search — pinned above the scrolling list */}
           <div className="material sticky top-0 z-10 border-b border-ink/10 p-3">
-            <label className="relative block">
+            <label data-tour="compare-search" className="relative block">
               <span className="sr-only">Search remedies</span>
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink/45" />
               <input
@@ -251,7 +251,7 @@ export function RemedyPicker({ defaultOpen = true }: { defaultOpen?: boolean }) 
           </p>
 
           {items.length > 0 && !q && (
-            <section aria-label="Selected remedies" className="pt-3">
+            <section data-tour="compare-selected" aria-label="Selected remedies" className="pt-3">
               <h3 className="px-4 pb-1 text-2xs font-semibold uppercase tracking-wide text-ink/60">Selected</h3>
               {items.map((i: CompareItem, idx) => {
                 const meta = BOOKS.find((b) => b.id === i.book);

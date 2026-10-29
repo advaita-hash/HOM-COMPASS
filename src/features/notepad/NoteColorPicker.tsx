@@ -25,7 +25,7 @@ export function NoteColorPicker({
     refs.current[i]?.focus();
   };
   return (
-    <div role="radiogroup" aria-label={label} className={`flex items-center ${className}`}>
+    <div data-tour="note-color-picker" role="radiogroup" aria-label={label} className={`flex items-center ${className}`}>
       {NOTE_COLORS.map((c, i) => {
         const on = c === value;
         return (

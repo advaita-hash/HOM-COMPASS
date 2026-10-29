@@ -5,6 +5,8 @@ import ABBREV from '../../data/remedyAbbrev.json';
 import { canonicalName } from '../../lib/remedyName';
 import { COMMON_ROOM_URL, usernameOf } from '../../lib/commonRoom';
 import { EmptyState } from '../../components/ui/EmptyState';
+import { TourButton } from '../tour/TourButton';
+import { usePageTour } from '../tour/usePageTour';
 import { BOOKS } from '../books/booksIndex';
 import { noteBook, useNotepad, type PadNote } from '../notepad/notepadStore';
 import { bookHref, bookLabel, remedyHref } from '../notepad/links';
@@ -100,7 +102,7 @@ function Notepad() {
             </>
           }
           action={
-            <Link className="btn-primary" to="/books">
+            <Link data-tour="my-notes-open-books" className="btn-primary" to="/books">
               Open Reference Books
             </Link>
           }
@@ -115,9 +117,10 @@ function Notepad() {
         <div>
           <GroupHeading>Remedies</GroupHeading>
           <ul className="card divide-y divide-ink/10 overflow-hidden">
-            {remedies.map((f) => (
+            {remedies.map((f, i) => (
               <li key={f.key}>
                 <Link
+                  data-tour={i === 0 ? 'my-notes-remedy' : undefined}
                   to={remedyHref(f.key)}
                   className="flex min-h-11 items-center gap-3 px-4 py-3 transition-colors hover:bg-slate-50 active:bg-slate-100"
                 >
@@ -150,11 +153,12 @@ function Notepad() {
         <div>
           <GroupHeading>Books</GroupHeading>
           <ul className="card divide-y divide-ink/10 overflow-hidden">
-            {books.map((b) => {
+            {books.map((b, i) => {
               const meta = BOOKS.find((m) => m.id === b.id);
               return (
                 <li key={b.id}>
                   <Link
+                    data-tour={i === 0 ? 'my-notes-book' : undefined}
                     to={bookHref(b.id)}
                     className="flex min-h-11 items-center gap-3 px-4 py-3 transition-colors hover:bg-slate-50 active:bg-slate-100"
                   >
@@ -181,6 +185,7 @@ function Notepad() {
 
 /** Notes on this device, then the student's remedy notes from Common Room. */
 export default function MyNotesPage() {
+  usePageTour('my-notes');
   const session = useCommonRoomSession();
   const notes = useRemedyNotes(session?.user.id);
   const files = useMemo(() => {
@@ -207,10 +212,12 @@ export default function MyNotesPage() {
       <header className="flex items-center gap-2">
         <NotebookPen className="h-5 w-5 text-brand-600" />
         <h1 className="text-2xl font-semibold text-ink/90">My notes</h1>
+        {/* -my-2: the 44px button doesn't make the title row taller */}
+        <TourButton tour="my-notes" className="-my-2" />
       </header>
 
       <section aria-labelledby="notepad-heading">
-        <div className="mb-4">
+        <div data-tour="my-notes-notepad" className="mb-4">
           <h2 id="notepad-heading" className="text-lg font-semibold text-ink/90">
             Notepad
           </h2>
@@ -234,7 +241,7 @@ export default function MyNotesPage() {
             <>
               <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
                 <span>Signed in to Common Room as {usernameOf(session.user.email)}</span>
-                <button className="underline" onClick={() => signOutOfCommonRoom()}>
+                <button data-tour="my-notes-sign-out" className="underline" onClick={() => signOutOfCommonRoom()}>
                   Sign out
                 </button>
               </div>
@@ -244,16 +251,23 @@ export default function MyNotesPage() {
                   title="No remedy notes yet"
                   description="In Common Room’s OPD notes, start a line with a remedy and a dash — “Puls - weepy, thirstless” — and it’s filed here under that remedy."
                   action={
-                    <a className="btn-primary" href={COMMON_ROOM_URL} target="common-room" rel="noopener noreferrer">
-                  Open Common Room
-                </a>
+                    <a
+                      data-tour="my-notes-open-common-room"
+                      className="btn-primary"
+                      href={COMMON_ROOM_URL}
+                      target="common-room"
+                      rel="noopener noreferrer"
+                    >
+                      Open Common Room
+                    </a>
                   }
                 />
               ) : (
                 <ul className="divide-y divide-slate-100">
-                  {files.map((f) => (
+                  {files.map((f, i) => (
                     <li key={f.remedy}>
                       <Link
+                        data-tour={i === 0 ? 'my-notes-common-room-note' : undefined}
                         to={`/remedy/${encodeURIComponent(f.remedy)}?tab=notes`}
                         className="flex items-baseline gap-3 py-3 hover:bg-slate-50"
                       >

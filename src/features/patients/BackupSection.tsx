@@ -126,7 +126,7 @@ export function BackupSection() {
 
   return (
     <section id="backup" ref={sectionRef} aria-labelledby="backup-heading" className="card mt-6 scroll-mt-16 p-4">
-      <div className="flex items-start gap-3">
+      <div data-tour="patients-backup" className="flex items-start gap-3">
         <HardDrive className="h-5 w-5 shrink-0 text-brand-600" aria-hidden />
         <div className="min-w-0 flex-1">
           <h2 id="backup-heading" className="text-base font-semibold text-ink/90">
@@ -157,10 +157,10 @@ export function BackupSection() {
       )}
 
       <div className="mt-4 flex flex-wrap gap-3">
-        <button type="button" onClick={exportBackup} className="btn-primary">
+        <button type="button" onClick={exportBackup} data-tour="patients-export" className="btn-primary">
           <Download className="h-4 w-4" aria-hidden /> Export backup
         </button>
-        <label className="btn-secondary cursor-pointer has-[:focus-visible]:ring-2">
+        <label data-tour="patients-restore" className="btn-secondary cursor-pointer has-[:focus-visible]:ring-2">
           <Upload className="h-4 w-4" aria-hidden /> Restore from backup
           <input
             type="file"

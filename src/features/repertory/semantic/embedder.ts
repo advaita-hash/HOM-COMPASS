@@ -30,7 +30,7 @@ export async function getExtractor(): Promise<Extractor> {
   if (extractor) return extractor;
   if (!loading) {
     loading = (async () => {
-      const t: any = await import('@xenova/transformers');
+      const t = await import('@xenova/transformers');
       // Hosted model + CDN wasm; never look for local files.
       t.env.allowLocalModels = false;
       t.env.useBrowserCache = true;

@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { AlertTriangle, Loader2, Network, Search } from 'lucide-react';
 import { type GNode, type NodeLabel, useGraph } from './graphData';
 import { canonicalName } from '../../lib/remedyName';
+import { TourButton } from '../tour/TourButton';
+import { usePageTour } from '../tour/usePageTour';
 
 /** Remedy node names get the canonical spelling; rubric/chapter names don't. */
 function nodeLabel(n: GNode): string {
@@ -27,6 +29,7 @@ export default function KnowledgeGraphPage() {
   const { data: graph, isLoading } = useGraph();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [query, setQuery] = useState('');
+  usePageTour('graph');
 
   const current = useMemo(() => {
     if (!graph) return null;
@@ -65,6 +68,7 @@ export default function KnowledgeGraphPage() {
     <div className="mx-auto max-w-5xl p-6 md:p-8">
       <div
         role="note"
+        data-tour="graph-sample"
         className="mb-4 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
       >
         <AlertTriangle className="mt-px h-4 w-4 shrink-0 text-amber-600" aria-hidden />
@@ -79,11 +83,13 @@ export default function KnowledgeGraphPage() {
             Explore remedy · rubric · chapter relationships (grade-weighted).
           </p>
         </div>
+        <TourButton tour="graph" />
       </header>
 
       <div className="relative mb-4">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
         <input
+          data-tour="graph-search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Find a remedy, rubric or chapter…"
@@ -117,7 +123,7 @@ export default function KnowledgeGraphPage() {
 
       {graph && current && (
         <div className="grid gap-4 lg:grid-cols-[1fr_260px]">
-          <div className="card overflow-hidden">
+          <div data-tour="graph-map" className="card overflow-hidden">
             <svg viewBox={`0 0 ${W} ${H}`} className="w-full">
               {/* edges */}
               {neighbors.map((nb, i) => {
@@ -177,7 +183,7 @@ export default function KnowledgeGraphPage() {
           </div>
 
           <aside className="space-y-3">
-            <div className="card p-4">
+            <div data-tour="graph-details" className="card p-4">
               <div className="flex items-center gap-2">
                 <span className="h-2.5 w-2.5 rounded-full" style={{ background: COLOR[current.label] }} />
                 <span className="text-2xs uppercase tracking-wide text-slate-400">
@@ -197,7 +203,7 @@ export default function KnowledgeGraphPage() {
                 </Link>
               )}
             </div>
-            <div className="card p-3">
+            <div data-tour="graph-connections" className="card p-3">
               <div className="mb-1 text-2xs font-semibold uppercase tracking-wide text-slate-400">
                 Connections
               </div>
@@ -217,7 +223,7 @@ export default function KnowledgeGraphPage() {
                 ))}
               </div>
             </div>
-            <div className="flex flex-wrap gap-3 px-1 text-2xs text-slate-500">
+            <div data-tour="graph-legend" className="flex flex-wrap gap-3 px-1 text-2xs text-slate-500">
               {(['REMEDY', 'RUBRIC', 'CHAPTER'] as NodeLabel[]).map((l) => (
                 <span key={l} className="inline-flex items-center gap-1">
                   <span className="h-2 w-2 rounded-full" style={{ background: COLOR[l] }} />

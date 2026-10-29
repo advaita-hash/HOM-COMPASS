@@ -63,7 +63,7 @@ export function RemedyDetail({ remedy }: { remedy: Remedy }) {
       </div>
 
       {/* Keynotes — highlighted */}
-      <div className="card border-brand-200 bg-brand-50/50 p-5">
+      <div data-tour="materia-medica-keynotes" className="card border-brand-200 bg-brand-50/50 p-5">
         <div className="mb-3 flex items-center gap-2">
           <KeyRound className="h-4 w-4 text-brand-700" />
           <h2 className="text-sm font-semibold uppercase tracking-wide text-brand-800">

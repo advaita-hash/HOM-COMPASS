@@ -12,6 +12,8 @@ import { useRepertoryById } from '../repertory/repertoryData';
 import { useQueries } from '@tanstack/react-query';
 import { BOOKS, bookQueryOptions, findBookRemedy } from '../books/booksIndex';
 import type { Grade } from '../repertory/types';
+import { usePageTour } from '../tour/usePageTour';
+import { TourButton } from '../tour/TourButton';
 
 // ---------------------------------------------------------------------------
 // Remedy profile: one remedy and its repertory settings — every rubric of the
@@ -41,6 +43,8 @@ export default function RemedyProfilePage() {
   const focusNote = search.get('note');
   const setTab = (t: 'repertory' | 'notes') => setSearch(t === 'notes' ? { tab: 'notes' } : {}, { replace: true });
   const name = resolveRemedy(decodeURIComponent(param));
+  // no tour on "Remedy not found": none of its controls are there
+  usePageTour(name ? 'remedy-profile' : '');
   const { data: rep, isLoading, error } = useRepertoryById('kent');
   const books = useQueries({ queries: BOOKS.map((b) => bookQueryOptions(b.id)) });
   const [chapter, setChapter] = useState('all');
@@ -103,16 +107,24 @@ export default function RemedyProfilePage() {
 
   return (
     <div className="page space-y-5">
-      <Link to="/repertory" className="tap inline-flex items-center gap-1 text-sm text-brand-600 hover:text-brand-700">
+      <Link
+        to="/repertory"
+        data-tour="remedy-profile-back"
+        className="tap inline-flex items-center gap-1 text-sm text-brand-600 hover:text-brand-700"
+      >
         <ArrowLeft className="h-3.5 w-3.5" /> Repertory
       </Link>
 
-      <header className="card p-5">
-        <div className="flex flex-wrap items-baseline gap-3">
-          <h1 className="text-2xl font-semibold text-slate-900">{display}</h1>
-          <span className="rounded-md bg-brand-50 px-2 py-1 font-mono text-sm font-semibold text-brand-700" title="Kentian abbreviation">
-            {abbr}
-          </span>
+      <header data-tour="remedy-profile-header" className="card p-5">
+        <div className="flex items-center gap-3">
+          <div className="flex min-w-0 flex-1 flex-wrap items-baseline gap-3">
+            <h1 className="text-2xl font-semibold text-slate-900">{display}</h1>
+            <span className="rounded-md bg-brand-50 px-2 py-1 font-mono text-sm font-semibold text-brand-700" title="Kentian abbreviation">
+              {abbr}
+            </span>
+          </div>
+          {/* -my-2: the 44px button doesn't make the title row taller */}
+          <TourButton tour="remedy-profile" className="-my-2" />
         </div>
         {display !== name && <p className="mt-1 text-sm text-slate-500">Repertory name: {name}</p>}
         {alts.length > 0 && <p className="mt-1 text-sm text-slate-500">Also known as {alts.join(', ')}</p>}
@@ -130,15 +142,18 @@ export default function RemedyProfilePage() {
         </div>
       </header>
 
-      <SegmentedControl
-        ariaLabel="Remedy section"
-        value={tab}
-        onChange={setTab}
-        options={[
-          { value: 'repertory', label: <span className="inline-flex items-center gap-2"><BookText className="h-4 w-4" /> Repertory</span> },
-          { value: 'notes', label: <span className="inline-flex items-center gap-2"><NotebookPen className="h-4 w-4" /> My notes</span> },
-        ]}
-      />
+      {/* plain wrapper: SegmentedControl takes no extra props, the tour needs a target */}
+      <div data-tour="remedy-profile-tabs" className="w-max max-w-full">
+        <SegmentedControl
+          ariaLabel="Remedy section"
+          value={tab}
+          onChange={setTab}
+          options={[
+            { value: 'repertory', label: <span className="inline-flex items-center gap-2"><BookText className="h-4 w-4" /> Repertory</span> },
+            { value: 'notes', label: <span className="inline-flex items-center gap-2"><NotebookPen className="h-4 w-4" /> My notes</span> },
+          ]}
+        />
+      </div>
 
       {tab === 'notes' ? (
         <>
@@ -148,7 +163,7 @@ export default function RemedyProfilePage() {
             </h2>
             <RemedyNotepad remedyKey={name} remedyName={display} focusId={focusNote} />
           </section>
-          <section className="card p-5" aria-labelledby="common-room-heading">
+          <section data-tour="remedy-profile-common-room" className="card p-5" aria-labelledby="common-room-heading">
             <h2 id="common-room-heading" className="mb-3 text-lg font-semibold text-ink/90">
               From Common Room
             </h2>
@@ -173,7 +188,7 @@ export default function RemedyProfilePage() {
           <p className="py-6 text-sm text-red-600">Could not load the repertory. Check your connection and reload.</p>
         ) : (
           <>
-            <div className="mt-3 flex flex-wrap gap-2">
+            <div data-tour="remedy-profile-filters" className="mt-3 flex flex-wrap gap-2">
               <input
                 className="input min-w-0 flex-1"
                 placeholder="Filter rubrics…"
@@ -237,12 +252,16 @@ export default function RemedyProfilePage() {
               />
             ) : (
               <div className="mt-4 space-y-5">
-                {grouped.map(([ch, list]) => (
+                {grouped.map(([ch, list], gi) => (
                   <div key={ch}>
                     <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">{ch}</h3>
                     <ul className="divide-y divide-slate-100">
-                      {list.map((r) => (
-                        <li key={r.id} className="flex items-baseline justify-between gap-3 py-2 text-sm">
+                      {list.map((r, ri) => (
+                        <li
+                          key={r.id}
+                          data-tour={gi === 0 && ri === 0 ? 'remedy-profile-rubric' : undefined}
+                          className="flex items-baseline justify-between gap-3 py-2 text-sm"
+                        >
                           <span className={GRADE_CLASS[r.grade]}>{r.rubric.slice(ch.length).replace(/^,\s*/, '') || ch}</span>
                           <span className="shrink-0 font-mono text-xs text-slate-400" title={`${r.others} remedies in this rubric`}>
                             {r.grade} · {r.others}

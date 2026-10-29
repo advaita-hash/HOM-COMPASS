@@ -86,11 +86,18 @@ export default {
           from: { opacity: '0', transform: 'scale(0.96)' },
           to: { opacity: '1', transform: 'scale(1)' },
         },
+        // tour spotlight: an accent glow that swells out from the ring and fades
+        'tour-pulse': {
+          '0%': { boxShadow: '0 0 0 0 rgb(var(--accent) / 0.5)' },
+          '70%, 100%': { boxShadow: '0 0 0 12px rgb(var(--accent) / 0)' },
+        },
       },
       animation: {
         'fade-in': 'fade-in 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
         'sheet-in': 'sheet-in 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
         'dialog-in': 'dialog-in 0.35s cubic-bezier(0.25, 1, 0.5, 1)',
+        // infinite: use as motion-safe:animate-tour-pulse only
+        'tour-pulse': 'tour-pulse 1.8s cubic-bezier(0.16, 1, 0.3, 1) infinite',
       },
     },
   },

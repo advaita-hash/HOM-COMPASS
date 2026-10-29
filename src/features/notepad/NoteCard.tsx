@@ -134,6 +134,7 @@ export const NoteCard = forwardRef<
         else if (ref) ref.current = el;
       }}
       data-note-id={note.id}
+      data-tour="note-card"
       // focus lands here when a neighbouring card is deleted
       tabIndex={-1}
       // the coloured leading edge is the note's colour tab
@@ -183,7 +184,7 @@ export const NoteCard = forwardRef<
       <p className="mt-2 break-words text-xs text-ink/70">{meta.join(' · ')}</p>
 
       {draft === null && (
-        <div className="-mb-2 -ml-3 mt-1 flex flex-wrap items-center max-sm:-ml-2">
+        <div data-tour="note-card-actions" className="-mb-2 -ml-3 mt-1 flex flex-wrap items-center max-sm:-ml-2">
           {showInText &&
             ('to' in showInText ? (
               <Link to={showInText.to} className={action}>
