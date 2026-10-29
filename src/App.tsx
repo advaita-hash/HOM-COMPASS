@@ -108,7 +108,7 @@ function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
   return (
     <aside
       className={`material fixed inset-y-0 left-0 z-50 flex w-64 max-w-[80vw] shrink-0 transform flex-col border-r border-ink/10 transition-transform duration-500 ease-smooth lg:static lg:z-auto lg:w-60 lg:max-w-none lg:translate-x-0 ${
-        open ? 'translate-x-0 shadow-elevated' : '-translate-x-full lg:shadow-none'
+        open ? 'translate-x-0 shadow-float' : '-translate-x-full lg:shadow-none'
       }`}
       style={{
         paddingTop: 'env(safe-area-inset-top)',

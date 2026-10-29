@@ -65,7 +65,7 @@ export function ConfirmDialog({
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={message ? messageId : undefined}
-        className="material-thick relative w-full max-w-[320px] animate-dialog-in overflow-hidden rounded-2xl border border-ink/10 text-center shadow-elevated"
+        className="material-thick relative w-full max-w-[320px] animate-dialog-in overflow-hidden rounded-2xl border border-ink/10 text-center shadow-float"
       >
         <div className="px-5 pb-4 pt-5">
           <h2 id={titleId} className="text-base font-semibold leading-snug text-ink/90">

@@ -813,7 +813,7 @@ export default function BookReaderPage() {
             clearSelection();
           }}
           style={{ left: selection.x, top: selection.y }}
-          className="material-thick fixed z-40 inline-flex h-11 -translate-x-1/2 animate-fade-in items-center gap-2 whitespace-nowrap rounded-full border border-ink/10 px-4 text-subhead font-semibold text-brand-600 shadow-elevated"
+          className="material-thick fixed z-40 inline-flex h-11 -translate-x-1/2 animate-fade-in items-center gap-2 whitespace-nowrap rounded-full border border-ink/10 px-4 text-subhead font-semibold text-brand-600 shadow-float"
         >
           <StickyNote className="h-4 w-4" /> Add note
         </button>

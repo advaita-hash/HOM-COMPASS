@@ -70,7 +70,8 @@ export default {
 
       boxShadow: {
         card: '0 1px 2px rgb(var(--shadow) / 0.05), 0 1px 1px rgb(var(--shadow) / 0.03)',
-        elevated: '0 12px 40px rgb(var(--shadow) / 0.18), 0 2px 6px rgb(var(--shadow) / 0.08)',
+        // not 'elevated': that name is also a colour, and shadow-<colour> would recolour the shadow
+        float: '0 12px 40px rgb(var(--shadow) / 0.18), 0 2px 6px rgb(var(--shadow) / 0.08)',
         // UISegmentedControl thumb
         segment: '0 3px 8px rgb(0 0 0 / 0.12), 0 3px 1px rgb(0 0 0 / 0.04)',
       },

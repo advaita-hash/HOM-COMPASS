@@ -53,7 +53,7 @@ export function CompareTray() {
       className="pointer-events-none fixed inset-x-0 z-30 flex justify-center px-4 lg:left-60"
       style={{ bottom: 'max(16px, env(safe-area-inset-bottom))' }}
     >
-      <div className="material-thick pointer-events-auto flex animate-dialog-in items-center gap-3 rounded-full border border-ink/10 py-2 pl-3 pr-2 shadow-elevated">
+      <div className="material-thick pointer-events-auto flex animate-dialog-in items-center gap-3 rounded-full border border-ink/10 py-2 pl-3 pr-2 shadow-float">
         {/* stacked monograms */}
         <div className="flex -space-x-2" aria-hidden>
           {items.map((i) => (

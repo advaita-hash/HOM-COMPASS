@@ -44,7 +44,7 @@ export function Sheet({
         onClick={onClose}
         aria-hidden
       />
-      <div className="relative flex max-h-[92vh] w-full animate-sheet-in flex-col overflow-auto rounded-t-2xl bg-elevated shadow-elevated sm:max-h-[85vh] sm:max-w-2xl sm:animate-dialog-in sm:rounded-2xl">
+      <div className="relative flex max-h-[92vh] w-full animate-sheet-in flex-col overflow-auto rounded-t-2xl bg-elevated shadow-float sm:max-h-[85vh] sm:max-w-2xl sm:animate-dialog-in sm:rounded-2xl">
         <header className="material sticky top-0 z-10 border-b border-ink/10">
           {/* grabber — sheet presentation only */}
           <div className="flex justify-center pt-2 sm:hidden" aria-hidden>
