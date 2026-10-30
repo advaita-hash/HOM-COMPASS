@@ -1,0 +1,34 @@
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import { BrowserRouter } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import App from './App';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { probeStorage, requestPersistentStorage } from './lib/safeStorage';
+import './index.css';
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 60_000,
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
+
+// Surface blocked storage immediately, and ask the browser not to evict data.
+if (probeStorage()) void requestPersistentStorage();
+
+ReactDOM.createRoot(document.getElementById('root')!).render(
+  <React.StrictMode>
+    {/* Last resort: anything the per-screen boundaries in App miss. */}
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter>
+          <App />
+        </BrowserRouter>
+      </QueryClientProvider>
+    </ErrorBoundary>
+  </React.StrictMode>,
+);

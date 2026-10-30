@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/compass.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f4f9f8" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0c1d1a" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta
+      name="description"
+      content="HOM-COMPASS: homeopathic repertory, repertorisation worksheet and materia medica reference for practitioners."
+    />
+    <title>HOM-COMPASS · Homeopathic Repertory</title>
+    <script>
+      // Apply a manual Light/Dark choice before first paint (no flash).
+      try {
+        var s = JSON.parse(localStorage.getItem('hom-compass.appearance') || 'null');
+        var m = s && s.state && s.state.mode;
+        if (m === 'light' || m === 'dark') {
+          document.documentElement.setAttribute('data-theme', m);
+          var c = m === 'dark' ? '#0c1d1a' : '#f4f9f8';
+          document.querySelectorAll('meta[name="theme-color"]').forEach(function (e) {
+            e.setAttribute('content', c);
+          });
+        }
+      } catch (e) {}
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
