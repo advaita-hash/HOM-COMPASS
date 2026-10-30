@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom';
 import { useQueries } from '@tanstack/react-query';
 import { BookText, Loader2 } from 'lucide-react';
-import { BOOKS, bookQueryOptions, findBookRemedy } from './booksIndex';
+import { BOOKS, bookQueryOptions } from './booksIndex';
+import { findChapterFor } from '../notepad/remedyKey';
 
 /**
  * Links from a curated remedy out to its own chapter in each reference book
@@ -13,7 +14,7 @@ export function BookCrossLinks({ remedyName }: { remedyName: string }) {
   const loading = books.some((b) => b.isLoading);
   const links = BOOKS.flatMap((meta, i) => {
     const data = books[i].data;
-    const hit = data ? findBookRemedy(data, remedyName) : undefined;
+    const hit = data ? findChapterFor(data, remedyName) : undefined;
     return hit ? [{ meta, slug: hit.slug }] : [];
   });
   return (

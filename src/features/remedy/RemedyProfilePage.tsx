@@ -10,7 +10,8 @@ import { REMEDIES } from '../../data/remedies';
 import { REMEDY_TABLE, resolveRemedy } from '../../lib/remedyResolve';
 import { useRepertoryById } from '../repertory/repertoryData';
 import { useQueries } from '@tanstack/react-query';
-import { BOOKS, bookQueryOptions, findBookRemedy } from '../books/booksIndex';
+import { BOOKS, bookQueryOptions } from '../books/booksIndex';
+import { findChapterFor } from '../notepad/remedyKey';
 import type { Grade } from '../repertory/types';
 import { usePageTour } from '../tour/usePageTour';
 import { TourButton } from '../tour/TourButton';
@@ -101,7 +102,7 @@ export default function RemedyProfilePage() {
   const curated = REMEDIES.find((r) => r.abbr === abbr || canonicalName(r.name) === display);
   const bookLinks = BOOKS.flatMap((meta, i) => {
     const data = books[i].data;
-    const hit = data ? findBookRemedy(data, name) : undefined;
+    const hit = data ? findChapterFor(data, name) : undefined;
     return hit ? [{ meta, slug: hit.slug }] : [];
   });
 

@@ -87,6 +87,24 @@ export function remedyKeyForBookRemedy(book: BookData, remedy: BookRemedy): stri
   return fit?.rep ?? `book:${book.id}:${remedy.slug}`;
 }
 
+/**
+ * The book's chapter on this very remedy, if it has one. findBookRemedy also
+ * takes a shorter name ("Hydrastis Canadensis" → "Hydrastis"), which for a
+ * salt or a sister species lands on another medicine: Mercurius Corrosivus →
+ * Tyler's Mercurius, Tarentula Cubensis → Allen's Tarentula. Such a chapter
+ * counts only when it is keyed to the same remedy.
+ */
+export function findChapterFor(book: BookData, name: string): BookRemedy | undefined {
+  const hit = findBookRemedy(book, name);
+  if (!hit || bookNameKey(hit.name) === bookNameKey(name)) return hit;
+  const want = resolveRemedyMatch(name);
+  const chapter = remedyKeyForBookRemedy(book, hit);
+  if (want && want.how !== 'prefix') return chapter === want.name ? hit : undefined;
+  // a name the repertory doesn't know (Arsenicum Bromatum) is not the
+  // repertory remedy the chapter stands for (Arsenicum Album)
+  return isRepertoryKey(chapter) && !sameName(chapter, name) ? undefined : hit;
+}
+
 /** Remedy key for a curated Materia Medica remedy (matched by abbreviation). */
 export function remedyKeyForCurated(r: Remedy): string {
   const byAbbr = REP_NAMES.find((n) => TABLE[n][0] === r.abbr);

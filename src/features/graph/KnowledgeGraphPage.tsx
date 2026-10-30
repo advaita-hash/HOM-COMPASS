@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom';
 import { AlertTriangle, Loader2, Network, Search } from 'lucide-react';
 import { type GNode, type NodeLabel, useGraph } from './graphData';
 import { canonicalName } from '../../lib/remedyName';
-import { findBookRemedy, useBook } from '../books/booksIndex';
+import { useBook } from '../books/booksIndex';
+import { findChapterFor } from '../notepad/remedyKey';
 import { TourButton } from '../tour/TourButton';
 import { usePageTour } from '../tour/usePageTour';
 
@@ -51,7 +52,7 @@ export default function KnowledgeGraphPage() {
   const { data: boericke } = useBook('boericke');
   const boerickeSlug =
     boericke && current?.label === 'REMEDY'
-      ? (findBookRemedy(boericke, current.name) ?? findBookRemedy(boericke, canonicalName(current.name)))?.slug
+      ? (findChapterFor(boericke, current.name) ?? findChapterFor(boericke, canonicalName(current.name)))?.slug
       : undefined;
 
   const searchResults = useMemo(() => {

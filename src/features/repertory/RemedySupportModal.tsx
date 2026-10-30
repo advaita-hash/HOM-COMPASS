@@ -2,7 +2,8 @@ import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { BookText, Loader2 } from 'lucide-react';
 import { Sheet } from '../../components/ui/Sheet';
-import { BOOKS, findBookRemedy, getBookMeta, useBook } from '../books/booksIndex';
+import { BOOKS, getBookMeta, useBook } from '../books/booksIndex';
+import { findChapterFor } from '../notepad/remedyKey';
 import { parseSections } from '../books/sections';
 import { canonicalName } from '../../lib/remedyName';
 import type { Rubric } from './types';
@@ -74,7 +75,7 @@ function BookSupport({
 
   const result = useMemo(() => {
     if (!book) return null;
-    const remedy = findBookRemedy(book, remedyName);
+    const remedy = findChapterFor(book, remedyName);
     if (!remedy) return { remedy: null, lines: [] as { text: string; kws: string[]; rubrics: string[] }[] };
 
     const rubricKws = rubrics.map((r) => ({ rubric: r.rubric, kws: rubricKeywords(r.rubric) }));
