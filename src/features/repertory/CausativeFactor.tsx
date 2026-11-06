@@ -34,7 +34,7 @@ export function CausativeFactor({ rep }: { rep: Repertory | undefined }) {
     <div data-tour="causative-factor" className="card p-4">
       <div className="mb-2 flex items-center gap-2">
         <Zap className="h-4 w-4 text-amber-500" />
-        <h2 className="text-sm font-semibold text-slate-700">Probable causative factor</h2>
+        <h2 id="causative-factor-heading" className="text-sm font-semibold text-slate-700">Probable causative factor</h2>
       </div>
       <p className="mb-2 text-xs text-slate-500">
         What brought it on? Causation ("ailments from…") is weighted ×2.
@@ -42,6 +42,7 @@ export function CausativeFactor({ rep }: { rep: Repertory | undefined }) {
       <input
         value={text}
         onChange={(e) => run(e.target.value)}
+        aria-labelledby="causative-factor-heading"
         placeholder="e.g. grief, fright, getting wet…"
         className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none"
       />

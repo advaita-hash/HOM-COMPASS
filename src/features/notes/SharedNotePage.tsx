@@ -33,10 +33,17 @@ export default function SharedNotePage() {
   return (
     <div className="min-h-full bg-canvas px-4 py-10">
       <div className="mx-auto max-w-xl">
-        <div className="mb-5 flex items-center gap-2">
-          <Compass className="h-6 w-6 text-brand-600" />
-          <span className="font-bold text-ink/90">HOM-COMPASS</span>
-        </div>
+        <Link
+          to="/dashboard"
+          className="pressable mb-5 inline-flex min-h-11 items-center gap-2 rounded-xl"
+          aria-label="HOM-COMPASS home"
+        >
+          <Compass className="h-6 w-6 text-brand-600" aria-hidden />
+          <span className="flex flex-col leading-tight">
+            <span className="font-bold text-ink/90">HOM-COMPASS</span>
+            <span className="text-xs text-ink/70">Repertory & Materia Medica</span>
+          </span>
+        </Link>
 
         {note === undefined ? null : !note ? (
           <div role="alert" className="card p-6">
@@ -76,9 +83,18 @@ export default function SharedNotePage() {
             can’t be revoked.
           </span>
         </p>
-        <Link to="/dashboard" className="mt-3 inline-block text-sm text-brand-600 hover:underline">
-          Open HOM-COMPASS →
-        </Link>
+        {note ? (
+          <Link
+            to={`/remedy/${encodeURIComponent(note.remedy)}`}
+            className="mt-3 inline-flex min-h-11 items-center text-sm text-brand-600 hover:underline"
+          >
+            Read about {canonicalName(note.remedy)} in HOM-COMPASS →
+          </Link>
+        ) : (
+          <Link to="/dashboard" className="mt-3 inline-flex min-h-11 items-center text-sm text-brand-600 hover:underline">
+            Open HOM-COMPASS →
+          </Link>
+        )}
       </div>
     </div>
   );

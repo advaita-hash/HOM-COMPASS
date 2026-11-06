@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AlertTriangle, Loader2, Network, Search } from 'lucide-react';
 import { type GNode, type NodeLabel, useGraph } from './graphData';
@@ -27,11 +27,28 @@ const LABEL_TEXT: Record<NodeLabel, string> = {
 
 const MAX_NEIGHBORS = 14;
 
+const WIDE_QUERY = '(min-width: 1024px)';
+
+/** True on lg screens and up, where the graph is drawn at its full size. */
+function useWide(): boolean {
+  const [wide, setWide] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia(WIDE_QUERY).matches,
+  );
+  useEffect(() => {
+    const mq = window.matchMedia(WIDE_QUERY);
+    const onChange = () => setWide(mq.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
+  return wide;
+}
+
 export default function KnowledgeGraphPage() {
   const { data: graph, isLoading } = useGraph();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   usePageTour('graph');
+  const wide = useWide();
 
   const current = useMemo(() => {
     if (!graph) return null;
@@ -66,12 +83,18 @@ export default function KnowledgeGraphPage() {
     return out.sort((a, b) => b.degree - a.degree);
   }, [graph, query]);
 
-  // radial layout geometry
-  const W = 640;
-  const H = 460;
+  // Radial layout geometry. Phones get a smaller viewBox and larger type, so
+  // labels stay readable once the svg is scaled down to the screen.
+  const W = wide ? 640 : 400;
+  const H = wide ? 460 : 380;
   const cx = W / 2;
   const cy = H / 2;
-  const R = 170;
+  const R = wide ? 170 : 135;
+  const nodeR = wide ? 9 : 11;
+  const centerR = wide ? 16 : 18;
+  const labelSize = wide ? 10 : 13;
+  const centerSize = wide ? 13 : 16;
+  const maxChars = wide ? 16 : 13; // cut to maxChars - 1 plus '…'
 
   return (
     <div className="mx-auto max-w-5xl p-6 md:p-8">
@@ -81,23 +104,25 @@ export default function KnowledgeGraphPage() {
         className="mb-4 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
       >
         <AlertTriangle className="mt-px h-4 w-4 shrink-0 text-amber-600" aria-hidden />
-        <span>Demo data — this graph uses a 55-rubric sample, not the full Kent repertory.</span>
+        <span>Sample data: 55 rubrics, not the full Kent repertory.</span>
       </div>
 
       <header className="mb-4 flex items-center gap-3">
         <Network className="mt-1 h-6 w-6 shrink-0 self-start text-brand-600" />
         <div className="min-w-0 flex-1">
           <h1 className="text-2xl font-semibold text-slate-800">Knowledge Graph</h1>
-          <p className="text-sm text-slate-500">
-            Explore remedy · rubric · chapter relationships (grade-weighted).
+          <p className="text-sm text-ink/70">
+            See which rubrics a remedy appears in, and which remedies share a rubric.
           </p>
         </div>
         <TourButton tour="graph" className="-mr-3" />
       </header>
 
       <div className="relative mb-4">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden />
         <input
+          type="search"
+          aria-label="Find a remedy, rubric or chapter"
           data-tour="graph-search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -113,11 +138,11 @@ export default function KnowledgeGraphPage() {
                   setSelectedId(n.id);
                   setQuery('');
                 }}
-                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-slate-50"
+                className="flex min-h-[44px] w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-slate-50"
               >
                 <span className="h-2 w-2 rounded-full" style={{ background: COLOR[n.label] }} />
                 <span className="flex-1 truncate">{nodeLabel(n)}</span>
-                <span className="text-2xs uppercase text-slate-400">{LABEL_TEXT[n.label]}</span>
+                <span className="text-2xs uppercase text-ink/70">{LABEL_TEXT[n.label]}</span>
               </button>
             ))}
           </div>
@@ -125,15 +150,16 @@ export default function KnowledgeGraphPage() {
       </div>
 
       {isLoading && (
-        <div className="flex items-center gap-2 p-8 text-sm text-slate-400">
-          <Loader2 className="h-4 w-4 animate-spin" /> Building graph…
+        <div className="flex items-center gap-2 p-8 text-sm text-ink/70">
+          <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> Building graph…
         </div>
       )}
 
       {graph && current && (
         <div className="grid gap-4 lg:grid-cols-[1fr_260px]">
           <div data-tour="graph-map" className="card overflow-hidden">
-            <svg viewBox={`0 0 ${W} ${H}`} className="w-full">
+            {/* the Connections list offers the same choices accessibly */}
+            <svg viewBox={`0 0 ${W} ${H}`} className="w-full" aria-hidden="true">
               {/* edges */}
               {neighbors.map((nb, i) => {
                 const a = (i / neighbors.length) * Math.PI * 2 - Math.PI / 2;
@@ -157,20 +183,20 @@ export default function KnowledgeGraphPage() {
                 const x = cx + R * Math.cos(a);
                 const y = cy + R * Math.sin(a);
                 const nm = nodeLabel(nb.node);
-                const label = nm.length > 16 ? nm.slice(0, 15) + '…' : nm;
+                const label = nm.length > maxChars ? nm.slice(0, maxChars - 1) + '…' : nm;
                 return (
                   <g
                     key={nb.node.id}
                     className="cursor-pointer"
                     onClick={() => setSelectedId(nb.node.id)}
                   >
-                    <circle cx={x} cy={y} r={9} style={{ fill: COLOR[nb.node.label] }} opacity={0.85} />
+                    <circle cx={x} cy={y} r={nodeR} style={{ fill: COLOR[nb.node.label] }} opacity={0.85} />
                     <text
                       x={x}
-                      y={y - 13}
+                      y={y - (nodeR + 5)}
                       textAnchor="middle"
                       className="fill-slate-600"
-                      style={{ fontSize: 10 }}
+                      style={{ fontSize: labelSize }}
                     >
                       {label}
                     </text>
@@ -178,13 +204,13 @@ export default function KnowledgeGraphPage() {
                 );
               })}
               {/* center node */}
-              <circle cx={cx} cy={cy} r={16} style={{ fill: COLOR[current.label] }} />
+              <circle cx={cx} cy={cy} r={centerR} style={{ fill: COLOR[current.label] }} />
               <text
                 x={cx}
-                y={cy + 34}
+                y={cy + centerR + centerSize + 4}
                 textAnchor="middle"
                 className="fill-slate-800"
-                style={{ fontSize: 13, fontWeight: 600 }}
+                style={{ fontSize: centerSize, fontWeight: 600 }}
               >
                 {nodeLabel(current)}
               </text>
@@ -195,14 +221,18 @@ export default function KnowledgeGraphPage() {
             <div data-tour="graph-details" className="card p-4">
               <div className="flex items-center gap-2">
                 <span className="h-2.5 w-2.5 rounded-full" style={{ background: COLOR[current.label] }} />
-                <span className="text-2xs uppercase tracking-wide text-slate-400">
+                <span className="text-2xs uppercase tracking-wide text-ink/70">
                   {LABEL_TEXT[current.label]}
                 </span>
               </div>
               <h2 className="mt-1 font-serif text-lg font-semibold text-slate-800">
                 {nodeLabel(current)}
               </h2>
-              <p className="text-xs text-slate-500">{current.degree} connections</p>
+              <p className="text-xs text-ink/70">
+                {current.degree > neighbors.length
+                  ? `Showing ${neighbors.length} of ${current.degree} connections`
+                  : `${current.degree} connections`}
+              </p>
               {boerickeSlug && (
                 <Link
                   to={`/books/boericke/${boerickeSlug}?view=full`}
@@ -213,7 +243,7 @@ export default function KnowledgeGraphPage() {
               )}
             </div>
             <div data-tour="graph-connections" className="card p-3">
-              <div className="mb-1 text-2xs font-semibold uppercase tracking-wide text-slate-400">
+              <div className="mb-1 text-2xs font-semibold uppercase tracking-wide text-ink/70">
                 Connections
               </div>
               <div className="max-h-64 space-y-1 overflow-auto">
@@ -221,18 +251,20 @@ export default function KnowledgeGraphPage() {
                   <button
                     key={nb.node.id}
                     onClick={() => setSelectedId(nb.node.id)}
-                    className="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-sm hover:bg-slate-50"
+                    className="flex min-h-[44px] w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm hover:bg-slate-50"
                   >
                     <span className="h-2 w-2 rounded-full" style={{ background: COLOR[nb.node.label] }} />
                     <span className="flex-1 truncate text-slate-700">{nodeLabel(nb.node)}</span>
                     {nb.relationship === 'HAS_RUBRIC' && (
-                      <span className="text-2xs text-slate-400">g{nb.weight}</span>
+                      <span className="text-2xs text-ink/70" title="Grade in this rubric (1–3)">
+                        Grade {nb.weight}
+                      </span>
                     )}
                   </button>
                 ))}
               </div>
             </div>
-            <div data-tour="graph-legend" className="flex flex-wrap gap-3 px-1 text-2xs text-slate-500">
+            <div data-tour="graph-legend" className="flex flex-wrap gap-3 px-1 text-2xs text-ink/70">
               {(['REMEDY', 'RUBRIC', 'CHAPTER'] as NodeLabel[]).map((l) => (
                 <span key={l} className="inline-flex items-center gap-1">
                   <span className="h-2 w-2 rounded-full" style={{ background: COLOR[l] }} />

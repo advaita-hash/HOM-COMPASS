@@ -25,7 +25,7 @@ export default function ComparePage() {
           <Columns3 className="mt-1 h-6 w-6 shrink-0 self-start text-brand-600" />
           <div className="min-w-0 flex-1">
             <h1 className="text-2xl font-semibold text-ink/90">Compare</h1>
-            <p className="text-sm text-ink/60">
+            <p className="text-sm text-ink/70">
               Up to {COMPARE_MAX} remedies from Boericke, Tyler and Allen, side by side.
             </p>
           </div>
@@ -57,9 +57,9 @@ export default function ComparePage() {
               <EmptyState
                 icon={Columns3}
                 title={items.length === 0 ? 'Nothing to compare yet' : 'Choose one more remedy'}
-                description="Pick two to four remedies from the list, or tap Compare at the top of any remedy while you read any reference book."
+                description="Pick two to four remedies from the list. You can also add one from any book you're reading."
                 action={
-                  <Link to="/books" data-tour="compare-browse" className="btn-primary">
+                  <Link to="/books" data-tour="compare-browse" className="btn-secondary">
                     Browse the books
                   </Link>
                 }

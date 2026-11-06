@@ -33,14 +33,14 @@ export default {
       magnify: false,
       ifMissing: 'center',
       title: 'Notes by remedy',
-      body: 'Once you write notes on a remedy, it gets a line under Remedies with its newest note and how many there are. {Tap} the line to read, edit or delete them.',
+      body: 'Once you write notes on a remedy, it gets a line under By remedy with its newest note and how many there are. {Tap} the line to read, edit or delete them.',
     },
     {
       id: 'books',
       target: 'my-notes-book',
       magnify: false,
       title: 'Notes by book',
-      body: "Each book you wrote notes in gets a line under Books, with how many notes it holds. {Tap} one to open that book's notes.",
+      body: "Each book you wrote notes in also gets a line under By book, counting all its notes, including those on its remedies. {Tap} one to open that book's notes.",
     },
     {
       // signed out of Common Room

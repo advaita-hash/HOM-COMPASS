@@ -91,10 +91,10 @@ export default function RemedyOfTheDayPage() {
             instead of following the day stepper when that wraps below */}
         <div className="flex min-w-0 flex-auto items-center gap-3">
           <div className="min-w-0 flex-auto">
-            <div className="flex items-center gap-2 text-brand-600">
-              <CalendarDays className="h-4 w-4 shrink-0" aria-hidden />
-              <h1 className="text-xs font-semibold uppercase tracking-wide">Remedy of the Day</h1>
-            </div>
+            <h1 className="flex items-center gap-2 text-2xl font-semibold text-ink/90">
+              <CalendarDays className="h-5 w-5 shrink-0 text-brand-600" aria-hidden />
+              Remedy of the Day
+            </h1>
             <p className="mt-1 text-sm text-ink/70">
               <time dateTime={isoOfDay(day)}>{dateLabel}</time>
               {!isToday && <span className="sr-only"> (an earlier day)</span>}

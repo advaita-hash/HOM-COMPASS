@@ -1,12 +1,14 @@
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import {
+  Activity,
   ArrowRight,
   BookMarked,
   CalendarDays,
   FlaskConical,
   Info,
   Library,
+  Search,
   Sparkles,
 } from 'lucide-react';
 import { REMEDIES } from '../../data/remedies';
@@ -20,6 +22,14 @@ import { DISCLAIMER } from '../../components/ClinicalDisclaimer';
 import { useDisclaimerAck } from './disclaimerStore';
 import { usePageTour } from '../tour/usePageTour';
 import { TourButton } from '../tour/TourButton';
+
+/** Shorten a keynote for a chip at a word boundary, never mid-word. */
+function chipText(k: string, max = 42) {
+  if (k.length <= max) return k;
+  const space = k.lastIndexOf(' ', max);
+  const cut = space > 20 ? space : max;
+  return `${k.slice(0, cut).replace(/[\s,;:.\-–]+$/, '')}…`;
+}
 
 const REMEDY_TOTAL =
   REMEDIES.length + BOOKS.reduce((n, b) => n + b.approxRemedies, 0);
@@ -59,7 +69,7 @@ export default function DashboardPage() {
   // three short keynotes from Boericke's own text for the hero chips
   const keynotes = useMemo(() => {
     if (!remedy) return [];
-    const dp = distill(remedy.text);
+    const dp = distill(remedy.text, remedy.commonName);
     return [...dp.mind, ...dp.generals, ...dp.constitution, ...dp.worse].slice(0, 3);
   }, [remedy]);
   const bookCount = useLibraryStore((s) => s.books.length);
@@ -77,7 +87,7 @@ export default function DashboardPage() {
       <header className="mb-6 flex items-center gap-3">
         <div className="min-w-0">
           <h1 className="text-2xl font-semibold text-slate-800">Dashboard</h1>
-          <p className="text-sm text-ink/70">{dateLabel}</p>
+          <p className="text-sm text-ink/70">Look up remedies, find rubrics and work up cases · {dateLabel}</p>
         </div>
         <TourButton tour="dashboard" />
       </header>
@@ -129,10 +139,11 @@ export default function DashboardPage() {
                     {keynotes.map((k, i) => (
                       <li
                         key={i}
+                        title={k.length > 42 ? k : undefined}
                         className="inline-flex items-center gap-1 rounded-full bg-black/20 px-3 py-1 text-xs"
                       >
                         <Sparkles className="h-3 w-3" aria-hidden />
-                        {k.length > 42 ? `${k.slice(0, 42).trimEnd()}…` : k}
+                        {chipText(k)}
                       </li>
                     ))}
                   </ul>
@@ -157,25 +168,25 @@ export default function DashboardPage() {
       <div data-tour="dashboard-stats" className="mt-6 grid gap-4 sm:grid-cols-3">
         <StatCard icon={FlaskConical} label="Remedies" value={`${REMEDY_TOTAL}+`} to="/materia-medica" />
         <StatCard icon={Library} label="Your books" value={bookCount} to="/library" />
-        <StatCard icon={BookMarked} label="Repertory chapters" value="—" to="/repertory" />
+        <StatCard icon={BookMarked} label="Repertory rubrics" value="74k+" to="/repertory" />
       </div>
 
       {/* Quick actions */}
       <section className="mt-6">
-        <h3 className="mb-2 text-sm font-semibold text-slate-700">Quick actions</h3>
+        <h2 className="mb-2 text-sm font-semibold text-slate-700">Quick actions</h2>
         <div data-tour="dashboard-quick-actions" className="grid gap-3 sm:grid-cols-2">
-          <Link to="/library" className="card flex items-center gap-3 p-4 pressable">
-            <Library className="h-5 w-5 text-brand-600" />
+          <Link to="/search" className="card flex items-center gap-3 p-4 pressable">
+            <Search className="h-5 w-5 text-brand-600" aria-hidden />
             <div>
-              <div className="text-sm font-medium text-slate-800">Add a book</div>
-              <div className="text-xs text-ink/70">List your own book files</div>
+              <div className="text-sm font-medium text-slate-800">Search</div>
+              <div className="text-xs text-ink/70">A remedy, symptom or rubric</div>
             </div>
           </Link>
-          <Link to="/materia-medica" className="card flex items-center gap-3 p-4 pressable">
-            <FlaskConical className="h-5 w-5 text-brand-600" />
+          <Link to="/analysis" className="card flex items-center gap-3 p-4 pressable">
+            <Activity className="h-5 w-5 text-brand-600" aria-hidden />
             <div>
-              <div className="text-sm font-medium text-slate-800">Browse Materia Medica</div>
-              <div className="text-xs text-ink/70">Study remedy profiles</div>
+              <div className="text-sm font-medium text-slate-800">Work up a case</div>
+              <div className="text-xs text-ink/70">Rubrics → best-matching remedies</div>
             </div>
           </Link>
         </div>

@@ -115,7 +115,7 @@ function Notepad() {
     <div className="space-y-6">
       {remedies.length > 0 && (
         <div>
-          <GroupHeading>Remedies</GroupHeading>
+          <GroupHeading>By remedy</GroupHeading>
           <ul className="card divide-y divide-ink/10 overflow-hidden">
             {remedies.map((f, i) => (
               <li key={f.key}>
@@ -151,7 +151,7 @@ function Notepad() {
 
       {books.length > 0 && (
         <div>
-          <GroupHeading>Books</GroupHeading>
+          <GroupHeading>By book</GroupHeading>
           <ul className="card divide-y divide-ink/10 overflow-hidden">
             {books.map((b, i) => {
               const meta = BOOKS.find((m) => m.id === b.id);
@@ -239,7 +239,7 @@ export default function MyNotesPage() {
             <Loader2 className="h-4 w-4 animate-spin text-slate-400" />
           ) : (
             <>
-              <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-xs text-ink/70">
                 <span>Signed in to Common Room as {usernameOf(session.user.email)}</span>
                 <button data-tour="my-notes-sign-out" className="underline" onClick={() => signOutOfCommonRoom()}>
                   Sign out
@@ -276,9 +276,9 @@ export default function MyNotesPage() {
                         </span>
                         <span className="min-w-0 flex-1">
                           <span className="block font-medium text-slate-800">{canonicalName(f.remedy)}</span>
-                          <span className="block truncate text-sm text-slate-500">{f.latest}</span>
+                          <span className="block truncate text-sm text-ink/70">{f.latest}</span>
                         </span>
-                        <span className="shrink-0 text-xs text-slate-400">
+                        <span className="shrink-0 text-xs text-ink/70">
                           {f.count} {f.count === 1 ? 'note' : 'notes'}
                         </span>
                       </Link>

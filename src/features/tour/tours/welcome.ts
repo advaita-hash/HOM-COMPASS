@@ -51,7 +51,7 @@ export default {
       menu: 'open',
       placement: 'right',
       title: 'Repertory',
-      body: 'Find rubrics by chapter or by words, then add them to your case worksheet. You choose which repertory to use.',
+      body: 'Find rubrics by chapter or by words, then add them to your case. You choose which repertory to use.',
     },
     {
       id: 'cases',
@@ -67,7 +67,7 @@ export default {
       menu: 'open',
       placement: 'right',
       title: 'Materia Medica',
-      body: "Browse and search remedies from Boericke, Tyler, Allen and the app's own Curated study cards. Open one to read about it.",
+      body: "Browse and search remedies from Boericke, Tyler, Allen and the app's own study cards. Open one to read about it.",
     },
     {
       id: 'compare',

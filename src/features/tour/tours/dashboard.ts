@@ -8,7 +8,7 @@ export default {
   summary: "Your home page: today's remedy, a few quick counts and shortcuts to the main parts of the app.",
   route: '/dashboard',
   order: 10,
-  version: 1,
+  version: 2,
   steps: [
     {
       id: 'disclaimer',
@@ -29,14 +29,14 @@ export default {
       magnify: false,
       title: 'Quick counts',
       body: 'Remedies counts every remedy entry across the four sources. Your books counts the files listed in your Library. Each box is a shortcut: {tap} it to open that part.',
-      tip: '{Tap} Repertory chapters to jump straight to the Repertory.',
+      tip: '{Tap} Repertory rubrics to jump straight to the Repertory.',
     },
     {
       id: 'quick-actions',
       target: 'dashboard-quick-actions',
       magnify: false,
       title: 'Quick actions',
-      body: 'Add a book opens your Library, where you list your own book files. Browse Materia Medica opens the list of remedies to study.',
+      body: 'Search finds a remedy, symptom or rubric anywhere in the app. Work up a case opens Cases, where you add rubrics and see which remedies cover them best.',
     },
   ],
 } satisfies Tour;

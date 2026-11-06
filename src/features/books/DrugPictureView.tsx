@@ -93,7 +93,7 @@ export function DrugPictureView({
   /** Replaces the default note about the reader's "Full text" view. */
   caption?: string;
 }) {
-  const dp: DrugPicture = useMemo(() => distill(remedy.text), [remedy.text]);
+  const dp: DrugPicture = useMemo(() => distill(remedy.text, remedy.commonName), [remedy.text, remedy.commonName]);
   const empty =
     dp.constitution.length +
       dp.mind.length +

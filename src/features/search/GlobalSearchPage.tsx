@@ -78,17 +78,21 @@ export default function GlobalSearchPage() {
   const bookHits = useMemo(() => {
     if (!active) return [];
     // Up to 20 hits per book, interleaved so every book shows near the top.
+    // Chapters named after the query come first, so "belladonna" opens with
+    // Belladonna's own chapters, and the cap never drops them.
+    type Hit = { book: string; id: string; slug: string; name: string; snip: string };
     const perBook = BOOKS.map((meta, i) => {
-      const hits: { book: string; id: string; slug: string; name: string; snip: string }[] = [];
+      const named: Hit[] = [];
+      const mentions: Hit[] = [];
       for (const r of books[i].data?.remedies ?? []) {
-        if (!(r.name + ' ' + r.text).toLowerCase().includes(q)) continue;
+        const inName = r.name.toLowerCase().includes(q);
+        if (!inName && (mentions.length >= 20 || !(r.name + ' ' + r.text).toLowerCase().includes(q))) continue;
         const flat = r.text.replace(/\s*•\s*/g, ' ');
-        hits.push({ book: meta.label, id: meta.id, slug: r.slug, name: r.name, snip: snippet(flat, q) });
-        if (hits.length >= 20) break;
+        (inName ? named : mentions).push({ book: meta.label, id: meta.id, slug: r.slug, name: r.name, snip: snippet(flat, q) });
       }
-      return hits;
+      return [...named, ...mentions].slice(0, 20);
     });
-    const out: (typeof perBook)[number] = [];
+    const out: Hit[] = [];
     for (let k = 0; k < 20; k++) for (const hits of perBook) if (hits[k]) out.push(hits[k]);
     return out;
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -106,13 +110,21 @@ export default function GlobalSearchPage() {
     return out;
   }, [q, active, rep]);
 
+  // in-page jump links, in on-screen order; only sections with results
+  const jumps = [
+    { id: 'sr-notes', label: 'Notes', n: noteHits.total },
+    { id: 'sr-mm', label: 'Materia Medica', n: curated.length },
+    { id: 'sr-rubrics', label: 'Rubrics', n: rubricHits.length },
+    { id: 'sr-books', label: 'Books', n: bookHits.length },
+  ].filter((j) => j.n > 0);
+
   return (
     <div className="mx-auto max-w-4xl p-6 md:p-8">
       <header className="mb-4 flex items-center gap-3">
         <Search className="mt-1 h-6 w-6 shrink-0 self-start text-brand-600" />
         <div className="min-w-0 flex-1">
           <h1 className="text-2xl font-semibold text-slate-800">Search</h1>
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-ink/70">
             Across your notes, materia medica, reference books and the repertory.
           </p>
         </div>
@@ -120,9 +132,11 @@ export default function GlobalSearchPage() {
       </header>
 
       <div className="relative mb-6">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden />
         <input
           autoFocus
+          type="search"
+          aria-label="Search"
           data-tour="search-input"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -131,8 +145,18 @@ export default function GlobalSearchPage() {
         />
       </div>
 
+      {active && !loading && jumps.length >= 2 && (
+        <nav aria-label="Jump to results" className="mb-4 flex flex-wrap gap-2">
+          {jumps.map((j) => (
+            <a key={j.id} href={`#${j.id}`} className="btn-secondary tap">
+              {j.label} ({j.n})
+            </a>
+          ))}
+        </nav>
+      )}
+
       {active && noteHits.total > 0 && (
-        <section className="mb-6">
+        <section id="sr-notes" className="mb-6 scroll-mt-4">
           <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-ink/70">
             Your notes ({noteHits.total}
             {noteHits.total > noteHits.shown.length && `, showing ${noteHits.shown.length}`})
@@ -170,19 +194,19 @@ export default function GlobalSearchPage() {
       )}
 
       {!active && (
-        <p className="text-sm text-slate-400">Type at least two characters to search.</p>
+        <p className="text-sm text-ink/70">Type at least two characters to search.</p>
       )}
       {loading && (
-        <div className="flex items-center gap-2 text-sm text-slate-400">
-          <Loader2 className="h-4 w-4 animate-spin" /> Searching the books…
+        <div className="flex items-center gap-2 text-sm text-ink/70">
+          <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> Searching the books…
         </div>
       )}
 
       {active && !loading && (
         <div className="space-y-6">
           {curated.length > 0 && (
-            <section>
-              <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+            <section id="sr-mm" className="scroll-mt-4">
+              <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-ink/70">
                 Materia Medica ({curated.length})
               </h2>
               <div className="grid gap-2 sm:grid-cols-2">
@@ -197,15 +221,41 @@ export default function GlobalSearchPage() {
                       <FlaskConical className="h-4 w-4 text-brand-500" />
                       <Highlight text={canonicalName(r.name)} q={q} />
                     </div>
-                    <p className="mt-1 line-clamp-2 text-xs text-slate-500">{r.essence}</p>
+                    <p className="mt-1 line-clamp-2 text-xs text-ink/70">{r.essence}</p>
                   </Link>
                 ))}
               </div>
             </section>
           )}
 
-          <section>
-            <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+          {rubricHits.length > 0 && (
+            <section id="sr-rubrics" className="scroll-mt-4">
+              <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-ink/70">
+                Repertory rubrics ({rubricHits.length})
+              </h2>
+              <div className="card overflow-hidden">
+                {rubricHits.map((r, i) => (
+                  <Link
+                    key={r.id}
+                    to={`/repertory?q=${encodeURIComponent(r.rubric)}&chapter=${encodeURIComponent(r.chapter)}`}
+                    data-tour={i === 0 ? 'search-rubric-result' : undefined}
+                    className="block min-h-[44px] border-b border-slate-100 px-3 py-2 text-sm last:border-0 hover:bg-slate-50"
+                  >
+                    <span className="text-2xs uppercase tracking-wide text-ink/70">
+                      {r.chapter}
+                    </span>{' '}
+                    <Highlight text={r.rubric} q={q} />
+                    <span className="ml-1 text-xs text-ink/70">
+                      ({r.remedies.length})
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          )}
+
+          <section id="sr-books" className="scroll-mt-4">
+            <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-ink/70">
               Reference Books ({bookHits.length})
             </h2>
             <div className="space-y-2">
@@ -219,46 +269,20 @@ export default function GlobalSearchPage() {
                   <div className="flex items-center gap-2 text-sm font-medium text-slate-800">
                     <BookText className="h-4 w-4 text-brand-500" />
                     {canonicalName(h.name)}
-                    <span className="text-2xs uppercase tracking-wide text-slate-400">
+                    <span className="text-2xs uppercase tracking-wide text-ink/70">
                       {h.book}
                     </span>
                   </div>
-                  <p className="mt-1 text-xs text-slate-500">
+                  <p className="mt-1 text-xs text-ink/70">
                     <Highlight text={h.snip} q={q} />
                   </p>
                 </Link>
               ))}
               {bookHits.length === 0 && (
-                <p className="text-sm text-slate-400">No book matches.</p>
+                <p className="text-sm text-ink/70">No book matches.</p>
               )}
             </div>
           </section>
-
-          {rubricHits.length > 0 && (
-            <section>
-              <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                Repertory rubrics ({rubricHits.length})
-              </h2>
-              <div className="card overflow-hidden">
-                {rubricHits.map((r, i) => (
-                  <Link
-                    key={r.id}
-                    to="/repertory"
-                    data-tour={i === 0 ? 'search-rubric-result' : undefined}
-                    className="block border-b border-slate-100 px-3 py-2 text-sm last:border-0 hover:bg-slate-50"
-                  >
-                    <span className="text-2xs uppercase tracking-wide text-slate-400">
-                      {r.chapter}
-                    </span>{' '}
-                    <Highlight text={r.rubric} q={q} />
-                    <span className="ml-1 text-xs text-slate-400">
-                      ({r.remedies.length})
-                    </span>
-                  </Link>
-                ))}
-              </div>
-            </section>
-          )}
         </div>
       )}
     </div>

@@ -37,7 +37,7 @@ export default {
       magnify: false,
       ifMissing: 'center',
       title: 'A visit',
-      body: 'After you {tap} New case, its card shows the visit date. Type symptoms one per line, and notes like the remedy given. It all saves as you type.',
+      body: 'Each new case card shows the visit date; change it for a past visit. List symptoms one per line and notes like the remedy given. It saves as you type.',
     },
     {
       id: 'delete',
@@ -49,8 +49,8 @@ export default {
     {
       id: 'workspace',
       target: 'patient-detail-workspace',
-      title: 'Case workspace',
-      body: '{Tap} Open the case workspace to go to the Cases page. There you turn symptoms into rubrics and see which remedies fit.',
+      title: 'Find remedies',
+      body: "{Tap} Find remedies in Cases to open the Cases page. Enter this case's symptoms there to turn them into rubrics and see which remedies fit.",
     },
   ],
 } satisfies Tour;

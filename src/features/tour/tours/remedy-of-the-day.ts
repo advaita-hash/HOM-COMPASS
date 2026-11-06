@@ -46,7 +46,7 @@ export default {
       id: 'study-card',
       target: 'remedy-of-the-day-study-card',
       title: 'Study card',
-      body: "Opens this remedy's short study card from the app's own Curated list. Only some remedies have one.",
+      body: "Opens this remedy's short study card. Only some remedies have one.",
     },
     {
       id: 'books',

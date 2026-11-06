@@ -17,7 +17,7 @@ export const REPERTORIES: RepertoryOption[] = [
     id: 'kent',
     label: 'Repertorium Publicum',
     blurb:
-      'A complete public Kentian repertory (~74k rubrics, all chapters) with proper grades 1–4 and clean remedy names, from the open OOREP database (GPL-3.0).',
+      'A complete public Kentian repertory (~74k rubrics, all chapters) with proper grades 1–3 and clean remedy names, from the open OOREP database (GPL-3.0).',
   },
   {
     id: 'seed',

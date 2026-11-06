@@ -45,7 +45,7 @@ export default {
       target: 'remedy-profile-rubric',
       magnify: false,
       title: 'Rubrics and grades',
-      body: 'Each line is a rubric with this remedy: purple capitals are grade 3, blue italics grade 2, plain grey grade 1. The numbers show its grade, then how many remedies share it.',
+      body: 'Each line is a rubric with this remedy: purple capitals are grade 3, blue italics grade 2, plain grey grade 1. The number on the right shows how many remedies share it.',
       tip: 'On a long list, scroll to the end and {tap} Show more.',
     },
     {

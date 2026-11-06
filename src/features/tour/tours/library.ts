@@ -38,14 +38,14 @@ export default {
       magnify: false,
       ifMissing: 'center',
       title: 'Your books',
-      body: 'Once you add a book, it gets a line here marked Stored locally. On wider screens, its menu sets the type: Repertory, Materia Medica or Other.',
+      body: 'Once you add a book, it gets a line here marked Listed only. On wider screens, its menu sets the type: Repertory, Materia Medica or Other.',
     },
     {
       id: 'remove',
       target: 'library-remove',
       magnify: true,
       title: 'Remove a book',
-      body: '{Tap} the bin button to take a book off your list. It goes straight away, without asking first.',
+      body: "{Tap} the bin button to take a book off your list. It asks you first, and the file on your device isn't affected.",
     },
   ],
 } satisfies Tour;

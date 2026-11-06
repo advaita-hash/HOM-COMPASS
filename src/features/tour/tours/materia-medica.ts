@@ -6,7 +6,7 @@ import type { Tour } from '../types';
 export default {
   id: 'materia-medica',
   title: 'Materia Medica',
-  summary: 'Browse and search remedies from the Curated list, Boericke, Tyler and Allen, and open one to read it.',
+  summary: 'Browse and search remedies from the Study cards, Boericke, Tyler and Allen, and open one to read it.',
   route: '/materia-medica',
   order: 60,
   version: 1,
@@ -14,7 +14,7 @@ export default {
     {
       id: 'intro',
       title: 'Materia Medica',
-      body: 'Read remedies from four sources. Curated remedies are short study cards, and Boericke, Tyler and Allen are the full classic books.',
+      body: "Read remedies from four sources. Study cards are the app's own short summaries, and Boericke, Tyler and Allen are the full classic books.",
     },
     {
       id: 'sources',
@@ -34,7 +34,7 @@ export default {
       id: 'remedy',
       target: 'materia-medica-remedy',
       title: 'Open a remedy',
-      body: '{Tap} a remedy to read it. The coloured label shows its source: Curated ones open here, book ones open in Reference Books.',
+      body: '{Tap} a remedy to read it. The coloured label shows its source: study cards open here, book remedies open in Reference Books.',
     },
     {
       // only on an open remedy
@@ -49,7 +49,7 @@ export default {
       magnify: false,
       ifMissing: 'center',
       title: 'Keynotes and more',
-      body: 'A Curated remedy shows a one-line picture and its keynotes, then mind, generals, what makes it worse or better, and typical rubrics.',
+      body: 'A study card shows a one-line picture and its keynotes, then mind, generals, what makes it worse or better, and typical rubrics.',
     },
     {
       id: 'notepad',
@@ -57,7 +57,7 @@ export default {
       magnify: false,
       ifMissing: 'center',
       title: 'Notepad',
-      body: 'Under each Curated remedy, write your own note, pick a colour, then {tap} Save. Notes stay on this device and also show in My notes.',
+      body: 'Under each study card, write your own note, pick a colour, then {tap} Save. Notes stay on this device and also show in My notes.',
     },
     {
       id: 'books',
@@ -65,7 +65,7 @@ export default {
       magnify: false,
       ifMissing: 'center',
       title: 'Read in the books',
-      body: 'At the end of each Curated remedy, buttons open its chapter in Boericke, Tyler or Allen, where the book has it, so you can read it in full.',
+      body: 'At the end of each study card, buttons open its chapter in Boericke, Tyler or Allen, where the book has it, so you can read it in full.',
     },
   ],
 } satisfies Tour;

@@ -2,12 +2,13 @@ import { useRef, useState } from 'react';
 import {
   BookOpen,
   BookText,
+  FilePlus,
   FileText,
   Library,
   Trash2,
-  UploadCloud,
 } from 'lucide-react';
 import { EmptyState } from '../../components/ui/EmptyState';
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import {
   type Book,
   type BookCategory,
@@ -25,7 +26,7 @@ const CATEGORY_LABELS: Record<BookCategory, string> = {
 };
 
 const STATUS_STYLES: Record<BookStatus, string> = {
-  LOCAL: 'bg-amber-100 text-amber-700',
+  LOCAL: 'bg-slate-100 text-slate-600',
   QUEUED: 'bg-slate-100 text-slate-600',
   INGESTING: 'bg-blue-100 text-blue-700',
   INDEXED: 'bg-emerald-100 text-emerald-700',
@@ -33,7 +34,7 @@ const STATUS_STYLES: Record<BookStatus, string> = {
 };
 
 const STATUS_LABELS: Record<BookStatus, string> = {
-  LOCAL: 'Stored locally',
+  LOCAL: 'Listed only',
   QUEUED: 'Queued',
   INGESTING: 'Ingesting…',
   INDEXED: 'Indexed',
@@ -61,6 +62,7 @@ function guessCategory(fileName: string): BookCategory {
 function BookRow({ book, first }: { book: Book; first: boolean }) {
   const { removeBook, updateBook } = useLibraryStore();
   const Icon = book.category === 'REPERTORY' ? BookText : BookOpen;
+  const [confirming, setConfirming] = useState(false);
 
   return (
     <div
@@ -73,7 +75,7 @@ function BookRow({ book, first }: { book: Book; first: boolean }) {
 
       <div className="min-w-0 flex-1">
         <div className="truncate text-sm font-medium text-slate-800">{book.title}</div>
-        <div className="truncate text-xs text-slate-500">
+        <div className="truncate text-xs text-ink/70">
           {book.author ? `${book.author} · ` : ''}
           {book.fileName} · {formatSize(book.sizeBytes)}
         </div>
@@ -99,13 +101,27 @@ function BookRow({ book, first }: { book: Book; first: boolean }) {
       </span>
 
       <button
-        onClick={() => removeBook(book.id)}
+        type="button"
+        onClick={() => setConfirming(true)}
         data-tour={first ? 'library-remove' : undefined}
-        className="shrink-0 rounded-md p-2 text-slate-400 hover:bg-red-50 hover:text-red-600"
+        className="tap shrink-0 rounded-md p-2 text-slate-400 hover:bg-red-50 hover:text-red-600"
         aria-label={`Remove ${book.title}`}
       >
-        <Trash2 className="h-4 w-4" />
+        <Trash2 className="h-4 w-4" aria-hidden />
       </button>
+
+      <ConfirmDialog
+        open={confirming}
+        destructive
+        title={`Remove “${book.title}”?`}
+        message="It comes off this list. The file on your device isn’t affected."
+        confirmLabel="Remove"
+        onConfirm={() => {
+          setConfirming(false);
+          removeBook(book.id);
+        }}
+        onCancel={() => setConfirming(false)}
+      />
     </div>
   );
 }
@@ -137,7 +153,7 @@ export default function LibraryPage() {
         <Library className="mt-1 h-6 w-6 shrink-0 self-start text-brand-600" />
         <div className="min-w-0 flex-1">
           <h1 className="text-2xl font-semibold text-slate-800">Library</h1>
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-ink/70">
             Keep a list of your own repertory and materia medica files, on this device.
           </p>
         </div>
@@ -145,7 +161,7 @@ export default function LibraryPage() {
       </header>
 
       {/* Dropzone */}
-      <div
+      <label
         data-tour="library-upload"
         onDragOver={(e) => {
           e.preventDefault();
@@ -157,37 +173,36 @@ export default function LibraryPage() {
           setDragging(false);
           ingest(e.dataTransfer.files);
         }}
-        onClick={() => inputRef.current?.click()}
-        className={`flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-6 py-12 text-center transition-colors ${
+        className={`flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-6 py-8 text-center transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-brand-500 has-[:focus-visible]:ring-offset-2 ${
           dragging
             ? 'border-brand-500 bg-brand-50'
             : 'border-slate-300 bg-surface hover:border-brand-400 hover:bg-slate-50'
         }`}
       >
-        <UploadCloud className="h-10 w-10 text-brand-500" />
-        <p className="mt-3 text-sm font-medium text-slate-700">
-          Drag &amp; drop books here, or click to browse
-        </p>
-        <p className="mt-1 text-xs text-slate-400">PDF, EPUB, TXT or Word · up to a few files at a time</p>
+        <FilePlus className="h-10 w-10 text-brand-500" aria-hidden />
+        <span className="mt-3 block text-sm font-medium text-slate-700">
+          Drag &amp; drop book files here, or click to choose
+        </span>
+        <span className="mt-1 block text-xs text-ink/70">PDF, EPUB, TXT or Word · add several at once</span>
         <input
           ref={inputRef}
           type="file"
           accept={ACCEPTED}
           multiple
-          className="hidden"
+          className="sr-only"
           onChange={(e) => {
             ingest(e.target.files);
             e.target.value = '';
           }}
         />
-      </div>
+      </label>
 
       {/* What gets saved */}
       <div
         data-tour="library-about"
-        className="mt-4 flex items-start gap-2 rounded-lg bg-slate-50 px-4 py-3 text-xs text-slate-500"
+        className="mt-4 flex items-start gap-2 rounded-lg bg-slate-50 px-4 py-3 text-xs text-ink/70"
       >
-        <FileText className="mt-1 h-4 w-4 shrink-0 text-slate-400" />
+        <FileText className="mt-1 h-4 w-4 shrink-0 text-slate-400" aria-hidden />
         <span>
           Only each file’s name, type and size are saved, in this browser. The file
           itself isn’t copied or read, so its rubrics don’t appear in the app.
@@ -199,7 +214,7 @@ export default function LibraryPage() {
         <div className="mb-2 flex items-center justify-between">
           <h2 data-tour="library-catalogue" className="text-sm font-semibold text-slate-700">
             Catalogue{' '}
-            <span className="ml-1 rounded-full bg-slate-100 px-2 py-1 text-xs text-slate-500">
+            <span className="ml-1 rounded-full bg-slate-100 px-2 py-1 text-xs text-ink/70">
               {books.length}
             </span>
           </h2>
@@ -213,7 +228,7 @@ export default function LibraryPage() {
               description="Add a book file to list it here. Only its name, type and size are kept."
               action={
                 <button className="btn-primary" onClick={() => inputRef.current?.click()}>
-                  <UploadCloud className="h-4 w-4" /> Add a book
+                  <FilePlus className="h-4 w-4" aria-hidden /> Add a book
                 </button>
               }
             />

@@ -16,7 +16,7 @@ export default {
       id: 'sample',
       target: 'graph-sample',
       magnify: false,
-      title: 'Demo data',
+      title: 'Sample data',
       body: "This graph uses a small sample of 55 rubrics, not the full Kent repertory. It's for exploring how things link up, not for real cases.",
     },
     {
@@ -47,7 +47,7 @@ export default {
       target: 'graph-connections',
       magnify: false,
       title: 'Connections',
-      body: "The same links as a list, strongest first. g1 to g3 is the remedy's grade in that rubric. {Tap} one to move there.",
+      body: "The same links as a list, strongest first. Grade 1 to 3 is the remedy's grade in that rubric. {Tap} one to move there.",
     },
     {
       id: 'legend',

@@ -50,7 +50,7 @@ export function ComparisonTable({ items }: { items: CompareItem[] }) {
           book: BOOKS[idx],
           remedy,
           common: remedy ? commonNameFor(it.book, remedy, boericke) : null,
-          picture: remedy ? distill(remedy.text) : null,
+          picture: remedy ? distill(remedy.text, remedy.commonName) : null,
         };
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -59,7 +59,7 @@ export function ComparisonTable({ items }: { items: CompareItem[] }) {
 
   if (loading) {
     return (
-      <div className="card flex items-center gap-2 p-6 text-sm text-ink/60">
+      <div className="card flex items-center gap-2 p-6 text-sm text-ink/70">
         <Loader2 className="h-4 w-4 animate-spin" /> Loading the books…
       </div>
     );
@@ -80,7 +80,7 @@ export function ComparisonTable({ items }: { items: CompareItem[] }) {
   return (
     <div className="card overflow-x-auto lg:overflow-visible">
       {scrolls && (
-        <p className="px-4 pt-3 text-xs text-ink/60 lg:hidden">Swipe sideways to see all {n} remedies.</p>
+        <p className="px-4 pt-3 text-xs text-ink/70 lg:hidden">Swipe sideways to see all {n} remedies.</p>
       )}
       <div
         className={scrolls ? 'w-max lg:w-auto' : ''}
@@ -97,13 +97,13 @@ export function ComparisonTable({ items }: { items: CompareItem[] }) {
             >
               <div className="flex items-start gap-2">
                 <div className="min-w-0 flex-1">
-                  <div className="text-2xs font-semibold uppercase tracking-wide text-ink/60">
+                  <div className="text-2xs font-semibold uppercase tracking-wide text-ink/70">
                     {book?.label ?? item.book}
                   </div>
                   <h3 className="font-serif text-lg font-semibold leading-tight text-ink/90">
                     {canonicalName(item.name)}
                   </h3>
-                  {common && <p className="truncate text-xs italic text-ink/60">{common}</p>}
+                  {common && <p className="truncate text-xs italic text-ink/70">{common}</p>}
                 </div>
                 <button
                   type="button"
@@ -139,7 +139,7 @@ export function ComparisonTable({ items }: { items: CompareItem[] }) {
             >
               <div className="flex items-center gap-2 px-4 pb-2 pt-6">
                 <Icon className={`h-4 w-4 ${tint}`} />
-                <h4 className="flex-1 text-xs font-semibold uppercase tracking-wide text-ink/60">{title}</h4>
+                <h4 className="flex-1 text-xs font-semibold uppercase tracking-wide text-ink/70">{title}</h4>
                 {longest > PREVIEW && (
                   <button
                     type="button"
@@ -169,7 +169,7 @@ export function ComparisonTable({ items }: { items: CompareItem[] }) {
                       style={{ scrollSnapAlign: 'start' }}
                     >
                       {!picture ? (
-                        <p className="text-sm text-ink/45">Not found in this book.</p>
+                        <p className="text-sm text-ink/70">Not found in this book.</p>
                       ) : lines.length === 0 ? (
                         <p className="text-sm text-ink/30">
                           —<span className="sr-only">No entries</span>
@@ -186,7 +186,7 @@ export function ComparisonTable({ items }: { items: CompareItem[] }) {
                             </li>
                           ))}
                           {!isOpen && lines.length > PREVIEW && (
-                            <li className="pl-4 text-xs text-ink/45">+{lines.length - PREVIEW} more</li>
+                            <li className="pl-4 text-xs text-ink/70">+{lines.length - PREVIEW} more</li>
                           )}
                         </ul>
                       )}

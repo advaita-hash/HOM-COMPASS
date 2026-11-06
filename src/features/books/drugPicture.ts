@@ -43,14 +43,35 @@ function splitSentences(text: string): string[] {
   return text
     .replace(/\s+/g, ' ')
     .split(/(?<=[.!?”"])\s+(?=[A-Z“"])/)
-    // Boericke's "Ears. — Skin within…" reads as "Ears: Skin within…" in a list
-    .map((s) => s.trim().replace(/^([A-Z][A-Za-z ,&'’()-]{1,40}?)\.\s*[—–-]+\s*/, '$1: '))
+    .map((s) =>
+      s
+        .trim()
+        // "Influenza (Influenzin) Mind. — …": drop the stray alias before a label
+        .replace(/^[A-Z][A-Za-z]+ \([^)]+\) (?=[A-Z][A-Za-z ]{1,30}\.\s*[—–-])/, '')
+        // Boericke's "Ears. — Skin within…" reads as "Ears: Skin within…" in a list
+        .replace(/^([A-Z][A-Za-z ,&'’()-]{1,40}?)\.\s*[—–-]+\s*/, '$1: '),
+    )
     .filter((s) => s.length >= 24 && s.length <= 320);
 }
 
-function hasAny(low: string, keys: string[]): boolean {
-  return keys.some((k) => low.includes(k));
+/** A sentence that opens a Boericke section ("Head: …", after splitSentences). */
+const SECTION_LABEL_RE = /^([A-Z][A-Za-z ,&'’()-]{1,40}?): /;
+
+const escapeRe = (k: string) => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/** Keyword matcher on word starts, so "thin" no longer hits "everything". */
+function matcher(keys: string[]): (low: string) => boolean {
+  const symbols = keys.filter((k) => /^[<>] $/.test(k));
+  const words = keys.filter((k) => !symbols.includes(k)).map((k) => escapeRe(k.trim()));
+  const re = new RegExp('\\b(?:' + words.join('|') + ')', 'i');
+  return (low) => re.test(low) || symbols.some((k) => low.includes(k));
 }
+
+const isConstitution = matcher(CONSTITUTION);
+const isMind = matcher(MIND);
+const isWorse = matcher(WORSE);
+const isBetter = matcher(BETTER);
+const isGeneral = matcher(GENERAL);
 
 // Tyler is full of clinical anecdotes; skip them so the portrait keeps only
 // descriptive statements about the remedy type.
@@ -104,8 +125,8 @@ function distillSections(text: string): DrugPicture {
         else if (label === 'amelioration') splitModality(it.text).forEach((s) => push('better', s));
         else {
           const low = it.text.toLowerCase();
-          if (hasAny(low, WORSE)) push('worse', it.text);
-          else if (hasAny(low, BETTER)) push('better', it.text);
+          if (isWorse(low)) push('worse', it.text);
+          else if (isBetter(low)) push('better', it.text);
         }
       }
       continue;
@@ -117,9 +138,13 @@ function distillSections(text: string): DrugPicture {
   return out;
 }
 
-/** Distil a remedy text into a structured drug picture. */
-export function distill(text: string): DrugPicture {
-  if (!isSectioned(text)) return distillNarrative(text);
+/**
+ * Distil a remedy text into a structured drug picture. Pass the remedy's
+ * common name so a leading "Monkshood" is not read as part of the first
+ * sentence.
+ */
+export function distill(text: string, commonName?: string | null): DrugPicture {
+  if (!isSectioned(text)) return distillNarrative(text, commonName);
   // Allen: use his own classification; fill any section he leaves empty from
   // the keyword classifier so the portrait never has needless gaps.
   const out = distillSections(text);
@@ -135,7 +160,8 @@ export function distill(text: string): DrugPicture {
 }
 
 /** Classify a narrative remedy text's sentences into a drug picture. */
-function distillNarrative(text: string): DrugPicture {
+function distillNarrative(text: string, commonName?: string | null): DrugPicture {
+  if (commonName) text = text.replace(new RegExp('^\\s*' + escapeRe(commonName) + '\\s+'), '');
   const out: DrugPicture = {
     constitution: [],
     mind: [],
@@ -144,18 +170,23 @@ function distillNarrative(text: string): DrugPicture {
     better: [],
   };
   const seen = new Set<string>();
+  // Boericke: constitution only comes from the opening general section; once
+  // the first "Head: …" style section starts, symptoms are local.
+  let inGeneralSection = true;
   for (const s of splitSentences(text)) {
     const low = s.toLowerCase();
+    const label = SECTION_LABEL_RE.exec(s)?.[1];
+    if (label && label !== 'Modalities') inGeneralSection = false;
     const key = low.slice(0, 40);
     if (seen.has(key) || isAnecdote(low)) continue;
 
     // priority: constitution → worse → better → mind → generals
     let bucket: keyof DrugPicture | null = null;
-    if (hasAny(low, CONSTITUTION)) bucket = 'constitution';
-    else if (hasAny(low, WORSE)) bucket = 'worse';
-    else if (hasAny(low, BETTER)) bucket = 'better';
-    else if (hasAny(low, MIND)) bucket = 'mind';
-    else if (hasAny(low, GENERAL)) bucket = 'generals';
+    if (inGeneralSection && isConstitution(low)) bucket = 'constitution';
+    else if (isWorse(low)) bucket = 'worse';
+    else if (isBetter(low)) bucket = 'better';
+    else if (isMind(low)) bucket = 'mind';
+    else if (isGeneral(low)) bucket = 'generals';
     if (!bucket) continue;
 
     if (out[bucket].length >= CAP[bucket]) continue;

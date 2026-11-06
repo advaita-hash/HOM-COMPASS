@@ -9,11 +9,11 @@ import { isRepertoryKey, remedyKeyLabel } from './remedyKey';
 //   /books/:book/:slug?note=<id>     a pinned note: the chapter at its place;
 //                                    a general note on a book-only remedy:
 //                                    its notepad, on that note
-//   /books/:book?note=<id>           a general book note: "This book", on it
+//   /books/:book?note=<id>           a general book note: "Whole book", on it
 //   /remedy/:name?tab=notes&note=<id>  a general note on a repertory remedy:
 //                                    the remedy page's notes tab, on that note
 //   /books/:book/:slug?notes=remedy  open the Notes sheet on "This remedy"
-//   /books/:book?notes=book          open the Notes sheet on "This book"
+//   /books/:book?notes=book          open the Notes sheet on "Whole book"
 //   /remedy/:name?tab=notes          the remedy page's notes tab
 // ---------------------------------------------------------------------------
 
@@ -38,7 +38,7 @@ export function remedyHref(key: string): string {
 /** A book chapter's notepad (the reader's Notes sheet on "This remedy"). */
 export const chapterHref = (book: string, slug: string) => `/books/${enc(book)}/${enc(slug)}?notes=remedy`;
 
-/** A book's notepad (the reader's Notes sheet on "This book"). */
+/** A book's notepad (the reader's Notes sheet on "Whole book"). */
 export const bookHref = (book: string) => `/books/${enc(book)}?notes=book`;
 
 /**

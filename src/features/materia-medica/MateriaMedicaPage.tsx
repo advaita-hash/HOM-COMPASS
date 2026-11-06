@@ -12,7 +12,7 @@ import { commonNameFor } from '../books/commonName';
 import { canonicalName } from '../../lib/remedyName';
 import { SegmentedControl } from '../../components/ui/SegmentedControl';
 import { RemedyNotepad } from '../notepad/RemedyNotepad';
-import { remedyKeyForCurated } from '../notepad/remedyKey';
+import { isRepertoryKey, remedyKeyForCurated } from '../notepad/remedyKey';
 import { usePageTour } from '../tour/usePageTour';
 import { TourButton } from '../tour/TourButton';
 
@@ -32,6 +32,9 @@ const SOURCE_BADGE: Record<string, string> = {
   Tyler: 'bg-indigo-100 text-indigo-700',
   Allen: 'bg-amber-100 text-amber-700',
 };
+
+/** Display names only: 'Curated' stays the internal key. */
+const SOURCE_LABEL: Record<string, string> = { Curated: 'Study cards' };
 
 function RemedyBrowser() {
   const [query, setQuery] = useState('');
@@ -90,7 +93,7 @@ function RemedyBrowser() {
         <FlaskConical className="mt-1 h-6 w-6 shrink-0 self-start text-brand-600" />
         <div className="min-w-0 flex-1">
           <h1 className="text-2xl font-semibold text-slate-800">Materia Medica</h1>
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-ink/70">
             {loading ? 'Loading remedies…' : `${entries.length} remedies across ${BOOKS.length + 1} sources`}
           </p>
         </div>
@@ -98,7 +101,7 @@ function RemedyBrowser() {
       </header>
 
       {/* Source segregation — scrolls sideways on phones rather than truncating */}
-      <div className="-mx-6 mb-4 overflow-x-auto px-6 md:mx-0 md:px-0">
+      <div className="-mx-6 mb-4 overflow-x-auto px-6 [mask-image:linear-gradient(to_right,#000_calc(100%-40px),transparent)] md:mx-0 md:px-0 md:[mask-image:none]">
         {/* plain wrapper: SegmentedControl takes no extra props, the tour needs a target */}
         <div data-tour="materia-medica-sources" className="w-max">
           <SegmentedControl
@@ -108,8 +111,8 @@ function RemedyBrowser() {
             onChange={setSource}
             options={tabs.map((t) => ({
               value: t,
-              label: t,
-              badge: <span className="text-2xs tabular-nums text-ink/60">{counts[t] ?? 0}</span>,
+              label: SOURCE_LABEL[t] ?? t,
+              badge: <span className="text-2xs tabular-nums text-ink/70">{counts[t] ?? 0}</span>,
             }))}
           />
         </div>
@@ -121,13 +124,15 @@ function RemedyBrowser() {
           data-tour="materia-medica-search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
+          type="search"
+          aria-label="Search remedies"
           placeholder="Search remedies…"
           className="w-full rounded-lg border border-slate-200 bg-surface py-3 pl-10 pr-3 text-sm focus:outline-none"
         />
       </div>
 
       {loading && (
-        <div className="flex items-center gap-2 p-6 text-sm text-slate-400">
+        <div className="flex items-center gap-2 p-6 text-sm text-ink/70">
           <Loader2 className="h-4 w-4 animate-spin" /> Loading the reference books…
         </div>
       )}
@@ -146,10 +151,10 @@ function RemedyBrowser() {
                 {canonicalName(e.name)}
               </span>
               <span className={`shrink-0 rounded-full px-2 py-1 text-2xs font-medium ${SOURCE_BADGE[e.source] ?? SOURCE_BADGE.Curated}`}>
-                {e.source}
+                {e.source === 'Curated' ? 'Study card' : e.source}
               </span>
             </div>
-            {e.sub && <p className="mt-1 line-clamp-2 text-xs text-slate-500">{e.sub}</p>}
+            {e.sub && <p className="mt-1 line-clamp-2 text-xs text-ink/70">{e.sub}</p>}
           </Link>
         ))}
       </div>
@@ -157,7 +162,7 @@ function RemedyBrowser() {
         <EmptyState
           icon={SearchX}
           title="No remedies match"
-          description={<>Nothing in {source === 'All' ? 'any source' : source} matches “{query.trim()}”.</>}
+          description={<>Nothing in {source === 'All' ? 'any source' : (SOURCE_LABEL[source] ?? source)} matches “{query.trim()}”.</>}
           action={
             <button
               className="btn-secondary"
@@ -172,7 +177,7 @@ function RemedyBrowser() {
         />
       )}
       {filtered.length === 400 && (
-        <p className="mt-2 text-center text-xs text-slate-400">
+        <p className="mt-2 text-center text-xs text-ink/70">
           Showing first 400 — refine your search to narrow.
         </p>
       )}
@@ -212,15 +217,23 @@ export default function MateriaMedicaPage() {
     );
   }
 
+  const repKey = remedyKeyForCurated(remedy);
   return (
     <div className="mx-auto max-w-4xl p-6 md:p-8">
       <BackRow />
       <RemedyDetail remedy={remedy} />
+      {isRepertoryKey(repKey) && (
+        <div className="mt-4 flex">
+          <Link to={`/remedy/${encodeURIComponent(repKey)}`} className="btn-secondary">
+            Repertory profile
+          </Link>
+        </div>
+      )}
       <section className="card mt-5 p-5" aria-labelledby="notepad-heading">
         <h2 id="notepad-heading" className="mb-3 flex items-center gap-2 text-lg font-semibold text-ink/90">
           <NotebookPen className="h-5 w-5 text-brand-600" aria-hidden /> Notepad
         </h2>
-        <RemedyNotepad remedyKey={remedyKeyForCurated(remedy)} remedyName={remedy.name} />
+        <RemedyNotepad remedyKey={repKey} remedyName={remedy.name} />
       </section>
       <div data-tour="materia-medica-books" className="mt-5">
         <BookCrossLinks remedyName={remedy.name} />

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Activity, BookOpen, CheckCircle2, Save, Trash2 } from 'lucide-react';
-import { REPERTORIES, useRepertory, useRepertorySelection } from './repertoryData';
+import { useRepertory, useRepertorySelection } from './repertoryData';
 import { repertorize, useBindWorksheet, useWorksheet } from './worksheetStore';
 import { RepertorySelect } from './RepertorySelect';
 import { SymptomTranslator } from './SymptomTranslator';
@@ -45,7 +45,6 @@ export default function RepertorizationPage() {
   usePageTour('cases');
   const { data: rep, isError: repFailed } = useRepertory();
   const repId = useRepertorySelection((s) => s.id);
-  const repMeta = REPERTORIES.find((r) => r.id === repId);
   useBindWorksheet(repId); // rubrics only ever from the chosen repertory
   const items = useWorksheet((s) => s.items);
   const clear = useWorksheet((s) => s.clear);
@@ -71,7 +70,10 @@ export default function RepertorizationPage() {
   const openRecordRef = useRef<HTMLAnchorElement>(null);
   const focusAfterClear = useRef(false);
   const [supportRemedy, setSupportRemedy] = useState<string | null>(null);
-  const [tab, setTab] = useState<CaseTab>('patient'); // phone/tablet only
+  // phone/tablet only: arriving with rubrics (e.g. from Open case) shows them first
+  const [tab, setTab] = useState<CaseTab>(() =>
+    useWorksheet.getState().items.length > 0 ? 'analysis' : 'patient',
+  );
   // While the page tour points at something on another tab, that tab shows;
   // the person's own tab comes back when the tour ends. The switch waits a
   // frame so the tour is already looking for the new target when the old one
@@ -104,6 +106,8 @@ export default function RepertorizationPage() {
   // Only save once the repertory has loaded and the rubrics resolve: saving
   // clears the worksheet, so saving an unresolved (empty) case would lose it.
   const canSave = !!rep && rubrics.length > 0 && (patientId !== '' || name.trim() !== '');
+  // Save is blocked only by the missing patient — say so next to the button.
+  const needsPatient = !!rep && rubrics.length > 0 && patientId === '' && name.trim() === '';
 
   function saveCase() {
     // The guard against double saves is the live worksheet: it is emptied
@@ -213,15 +217,10 @@ export default function RepertorizationPage() {
         </div>
       </header>
 
-      {/* Chosen repertory — all rubrics come only from here */}
-      <div className="mb-4 flex items-center gap-2 rounded-lg border border-brand-200 bg-brand-50 px-3 py-2 text-xs text-brand-800">
-        <BookOpen className="h-4 w-4" />
-        <span>
-          Rubrics are taken <strong>only</strong> from the chosen repertory:{' '}
-          <strong>{repMeta?.label ?? repId}</strong>. Switch it top-right (this clears the
-          worksheet).
-        </span>
-      </div>
+      {/* One quiet line: the selector shows which repertory; it asks before clearing. */}
+      <p className="mb-4 text-xs text-ink/70">
+        Rubrics come only from the selected repertory. Changing it clears the case.
+      </p>
 
       {/* Phone/tablet: segmented control — each segment fits one screen. Hidden on desktop. */}
       <div data-tour="cases-tabs" className="mb-4 lg:hidden">
@@ -251,10 +250,10 @@ export default function RepertorizationPage() {
       {/* minmax(0,…) + min-w-0 let wide content (the score table) scroll inside
           its own card instead of widening the column and the page. */}
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[340px_minmax(0,1fr)]">
-        {/* Left: STEP 1 — patient's language → rubrics */}
+        {/* Left: patient & symptoms */}
         <div className="min-w-0 space-y-4">
-          <div className="hidden text-xs font-semibold uppercase tracking-wide text-slate-400 lg:block">
-            Step 1 · Patient’s language → rubrics
+          <div className="hidden text-xs font-semibold uppercase tracking-wide text-ink/70 lg:block">
+            Patient &amp; symptoms
           </div>
           <div data-tour="cases-patient" className={`card p-4 ${panel('patient')}`}>
             <h2 id="case-patient-heading" className="mb-2 text-sm font-semibold text-slate-700">
@@ -347,15 +346,28 @@ export default function RepertorizationPage() {
             onClick={saveCase}
             disabled={!canSave}
             data-tour="cases-save"
+            aria-describedby={needsPatient ? 'case-save-hint' : undefined}
             className="btn-primary w-full justify-center"
           >
             <Save className="h-4 w-4" /> Save case
           </button>
           {items.length > 0 && !rep && (
-            <p className="text-center text-xs text-ink/60">
+            <p className="text-center text-xs text-ink/70">
               {repFailed
                 ? 'The repertory couldn’t load, so this case can’t be saved yet. Your rubrics are kept.'
                 : 'Loading the repertory — you can save once it’s ready.'}
+            </p>
+          )}
+          {needsPatient && (
+            <p id="case-save-hint" className="text-center text-xs text-ink/70">
+              Add the patient’s name to save this case.{' '}
+              <button
+                type="button"
+                onClick={() => setTab('patient')}
+                className="tap font-medium text-brand-600 hover:underline lg:hidden"
+              >
+                Go to Patient
+              </button>
             </p>
           )}
           <div role="status" aria-live="polite">
@@ -363,7 +375,7 @@ export default function RepertorizationPage() {
               <div className="flex items-start gap-2 rounded-lg border border-brand-200 bg-brand-50 px-3 py-2 text-sm text-ink/90">
                 <CheckCircle2 className="mt-px h-4 w-4 shrink-0 text-brand-600" aria-hidden />
                 <span className="min-w-0 flex-1">
-                  Case saved to {savedTo.name}’s record. The worksheet is clear for the next
+                  Case saved to {savedTo.name}’s record. The page is clear for the next
                   patient.{' '}
                   <Link
                     ref={openRecordRef}
@@ -387,14 +399,14 @@ export default function RepertorizationPage() {
           </div>
         </div>
 
-        {/* Right: STEP 2 & 3 — chosen rubrics graded & evaluated */}
+        {/* Right: analysis — chosen rubrics graded & ranked */}
         <div className={`min-w-0 ${panel('analysis')}`}>
-          <div className="mb-2 hidden text-xs font-semibold uppercase tracking-wide text-slate-400 lg:block">
-            Step 2 &amp; 3 · Chosen rubrics — graded &amp; evaluated
+          <div className="mb-2 hidden text-xs font-semibold uppercase tracking-wide text-ink/70 lg:block">
+            Analysis
           </div>
           <WorksheetGrid rep={rep} onRemedy={setSupportRemedy} />
           {items.length > 0 && (
-            <p className="mt-2 text-xs text-slate-400">
+            <p className="mt-2 text-xs text-ink/70">
               Tip: click any remedy (a ranked card or a column heading) to see the Materia
               Medica lines that support it for these rubrics.
             </p>

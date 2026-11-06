@@ -5,7 +5,7 @@ import { getBookMeta, useBook } from './booksIndex';
 import { DrugPictureView, RemedyHeading } from './DrugPictureView';
 import { canonicalName } from '../../lib/remedyName';
 import type { BookRemedy } from './types';
-import { parseSections } from './sections';
+import { parseSections, runInLabelLen } from './sections';
 import { commonNameFor } from './commonName';
 import { SegmentedControl } from '../../components/ui/SegmentedControl';
 import { Sheet } from '../../components/ui/Sheet';
@@ -37,7 +37,7 @@ import { usePageTour } from '../tour/usePageTour';
 //                   the note open as a sticky note above its marker
 //                   (general notes open the notepad)
 //   ?notes=remedy   open the notepad on "This remedy"
-//   ?notes=book     open the notepad on "This book"
+//   ?notes=book     open the notepad on "Whole book"
 //   ?view=full      open on Full text (?view=portrait: on Drug picture)
 // Each param is removed once acted on, so refresh/back doesn't reopen it. A
 // ?note= for a note that belongs to another chapter, remedy or book is sent
@@ -192,7 +192,7 @@ function PinnedText({
   for (let k = 0; k < cuts.length - 1; k++) {
     const [a, b] = [cuts[k], cuts[k + 1]];
     let node: ReactNode = text.slice(a, b);
-    if (b <= labelLen) node = <strong className="font-semibold text-slate-800">{node}</strong>;
+    if (b <= labelLen) node = <strong className="font-sans font-semibold text-ink/90">{node}</strong>;
     const cover = ranges.filter((r) => r.start <= a && r.end >= b);
     if (cover.length) {
       const ids = cover.flatMap((r) => r.notes.map((n) => n.id));
@@ -254,7 +254,7 @@ function RemedyText({
             return (
               <PinnedText
                 text={label + it.text}
-                labelLen={label.length}
+                labelLen={label ? label.length : it.bullet ? 0 : runInLabelLen(it.text)}
                 pins={pins.get(`${i}.${j}`)}
                 sectionMarker={!heading || j !== 0}
                 active={active}
@@ -637,7 +637,7 @@ export default function BookReaderPage() {
         <Link to="/books" className="btn-ghost mb-4">
           <ChevronLeft className="h-4 w-4" /> Reference Books
         </Link>
-        <p className="text-sm text-slate-500">Unknown book “{bookId}”.</p>
+        <p className="text-sm text-ink/70">Unknown book “{bookId}”.</p>
       </div>
     );
   }
@@ -648,8 +648,8 @@ export default function BookReaderPage() {
       {/* Header */}
       <div className="flex items-start gap-3 border-b border-slate-200 bg-surface px-6 py-4">
         <div className="min-w-0 flex-1">
-          <Link to="/books" className="mb-1 inline-flex items-center gap-1 text-xs text-slate-500 hover:text-brand-600">
-            <ChevronLeft className="h-3.5 w-3.5" /> Reference Books
+          <Link to="/books" className="-my-2 inline-flex min-h-11 items-center gap-1 text-sm text-ink/70 hover:text-brand-600">
+            <ChevronLeft className="h-4 w-4" /> Reference Books
           </Link>
           <h1 className="font-serif text-xl font-semibold text-slate-800">{meta.title}</h1>
           <p className="text-xs text-brand-600">{meta.author}</p>
@@ -664,7 +664,7 @@ export default function BookReaderPage() {
             aria-label={`Book notes${bookNotes.length ? `, ${bookNotes.length}` : ''}`}
           >
             <NotebookPen className="h-4 w-4" />
-            <span className="hidden sm:inline">Book notes</span>
+            <span className="hidden min-[360px]:inline">Book notes</span>
             {bookNotes.length > 0 && <span className="text-xs tabular-nums text-ink/70">{bookNotes.length}</span>}
           </button>
           <TourButton tour="book-reader" className="-mr-3" />
@@ -711,8 +711,8 @@ export default function BookReaderPage() {
           </div>
           <div className="min-h-0 flex-1 overflow-auto px-2 pb-2">
             {isLoading && (
-              <div className="flex items-center gap-2 px-3 py-4 text-sm text-slate-400">
-                <Loader2 className="h-4 w-4 animate-spin" /> Loading…
+              <div className="flex items-center gap-2 px-3 py-4 text-sm text-ink/70">
+                <Loader2 className="h-4 w-4 animate-spin text-slate-400" /> Loading…
               </div>
             )}
             {filtered.map((r) => {
@@ -722,7 +722,7 @@ export default function BookReaderPage() {
                   key={r.slug}
                   to={`/books/${bookId}/${r.slug}`}
                   onClick={() => setListOpen(false)}
-                  className={`block truncate rounded-md px-3 py-2 text-sm ${
+                  className={`block truncate rounded-md px-3 py-3 text-sm lg:py-2 ${
                     active
                       ? 'bg-brand-100 font-medium text-brand-800'
                       : 'text-slate-600 hover:bg-slate-100'
@@ -733,11 +733,11 @@ export default function BookReaderPage() {
               );
             })}
             {!isLoading && filtered.length === 0 && (
-              <p className="px-3 py-4 text-sm text-slate-400">No matches.</p>
+              <p className="px-3 py-4 text-sm text-ink/70">No matches.</p>
             )}
           </div>
           {book && (
-            <div className="border-t border-slate-200 px-3 py-2 text-2xs text-slate-400">
+            <div className="border-t border-slate-200 px-3 py-2 text-xs text-ink/70">
               {book.remedyCount} remedies
             </div>
           )}
@@ -835,7 +835,7 @@ export default function BookReaderPage() {
             </div>
           ) : (
             !isLoading && (
-              <p className="text-sm text-slate-400">Select a remedy to begin reading.</p>
+              <p className="text-sm text-ink/70">Select a remedy to begin reading.</p>
             )
           )}
         </div>
@@ -880,7 +880,7 @@ export default function BookReaderPage() {
 
       {notesTab && (
         <Sheet
-          title="Notes"
+          title={notesTab === 'book' && !remedyTab ? 'Book notes' : 'Notes'}
           subtitle={notesTab === 'remedy' && remedyTab ? `${remedyName} · ${meta.label}` : meta.title}
           onClose={closeNotes}
         >
@@ -898,7 +898,7 @@ export default function BookReaderPage() {
               }}
               options={[
                 { value: 'remedy', label: `This remedy (${remedyCount})` },
-                { value: 'book', label: `This book (${bookNotes.length})` },
+                { value: 'book', label: `Whole book (${bookNotes.length})` },
               ]}
             />
           )}

@@ -47,3 +47,9 @@ export function parseSections(text: string): Section[] {
 export function isSectioned(text: string): boolean {
   return /\n• /.test(text);
 }
+
+/** Boericke-style run-in label at the start of a prose paragraph: "Head. —". */
+const RUNIN_RE = /^([A-Z][A-Za-z ,&-]{1,30}\.\s?[—–-])\s/;
+export function runInLabelLen(text: string): number {
+  return RUNIN_RE.exec(text)?.[1].length ?? 0;
+}

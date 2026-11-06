@@ -61,12 +61,6 @@ export default function RemedyProfilePage() {
     });
   }, [rep, name]);
 
-  const counts = useMemo(() => {
-    const c = { 1: 0, 2: 0, 3: 0, 4: 0 } as Record<Grade, number>;
-    for (const r of rows) c[r.grade]++;
-    return c;
-  }, [rows]);
-
   const chapters = useMemo(() => [...new Set(rows.map((r) => r.chapter))], [rows]);
   const q = query.trim().toLowerCase();
   const filtered = rows.filter(
@@ -127,8 +121,8 @@ export default function RemedyProfilePage() {
           {/* -my-2: the 44px button doesn't make the title row taller */}
           <TourButton tour="remedy-profile" className="-my-2" />
         </div>
-        {display !== name && <p className="mt-1 text-sm text-slate-500">Repertory name: {name}</p>}
-        {alts.length > 0 && <p className="mt-1 text-sm text-slate-500">Also known as {alts.join(', ')}</p>}
+        {display !== name && <p className="mt-1 text-sm text-ink/70">Repertory name: {name}</p>}
+        {alts.length > 0 && <p className="mt-1 text-sm text-ink/70">Also known as {alts.join(', ')}</p>}
         <div className="mt-4 flex flex-wrap gap-2">
           {curated && (
             <Link to={`/materia-medica/${curated.id}`} className="btn-ghost inline-flex items-center gap-2">
@@ -175,14 +169,13 @@ export default function RemedyProfilePage() {
       <section className="card p-5">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h2 className="text-lg font-semibold">Repertory</h2>
-          <p className="text-sm text-slate-500">
-            {rows.length.toLocaleString()} rubrics in {rep?.title ?? 'the repertory'} · grade 4: {counts[4]} · 3: {counts[3]} · 2:{' '}
-            {counts[2]} · 1: {counts[1]}
+          <p className="text-sm text-ink/70">
+            {rows.length.toLocaleString()} rubrics in {rep?.title ?? 'the repertory'}
           </p>
         </div>
 
         {isLoading ? (
-          <div className="flex items-center gap-2 py-10 text-slate-500">
+          <div className="flex items-center gap-2 py-10 text-ink/70">
             <Loader2 className="h-4 w-4 animate-spin" /> Loading the repertory…
           </div>
         ) : error ? (
@@ -227,7 +220,7 @@ export default function RemedyProfilePage() {
                 }))}
               />
             </div>
-            <p className="mt-2 text-xs text-slate-500">
+            <p className="mt-2 text-xs text-ink/70">
               <span className="text-grade-3 font-semibold uppercase">bold capitals</span> grade 3–4 ·{' '}
               <span className="text-grade-2 font-medium italic">italic</span> grade 2 · <span className="text-grade-1">plain</span> grade 1
             </p>
@@ -255,7 +248,7 @@ export default function RemedyProfilePage() {
               <div className="mt-4 space-y-5">
                 {grouped.map(([ch, list], gi) => (
                   <div key={ch}>
-                    <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">{ch}</h3>
+                    <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-ink/70">{ch}</h3>
                     <ul className="divide-y divide-slate-100">
                       {list.map((r, ri) => (
                         <li
@@ -264,9 +257,7 @@ export default function RemedyProfilePage() {
                           className="flex items-baseline justify-between gap-3 py-2 text-sm"
                         >
                           <span className={GRADE_CLASS[r.grade]}>{r.rubric.slice(ch.length).replace(/^,\s*/, '') || ch}</span>
-                          <span className="shrink-0 font-mono text-xs text-slate-400" title={`${r.others} remedies in this rubric`}>
-                            {r.grade} · {r.others}
-                          </span>
+                          <span className="shrink-0 text-xs text-ink/70">{r.others.toLocaleString()} remedies</span>
                         </li>
                       ))}
                     </ul>

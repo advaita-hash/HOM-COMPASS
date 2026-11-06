@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { BookOpen, Library as LibraryIcon, StickyNote } from 'lucide-react';
+import { BookOpen, BookText, StickyNote } from 'lucide-react';
 import { useBookPad } from '../notepad/notepadStore';
 import { TourButton } from '../tour/TourButton';
 import { usePageTour } from '../tour/usePageTour';
@@ -23,10 +23,10 @@ export default function BooksPage() {
   return (
     <div className="mx-auto max-w-4xl p-6 md:p-8">
       <header className="mb-6 flex items-center gap-3">
-        <LibraryIcon className="mt-1 h-6 w-6 shrink-0 self-start text-brand-600" />
+        <BookText className="mt-1 h-6 w-6 shrink-0 self-start text-brand-600" aria-hidden />
         <div className="min-w-0 flex-1">
           <h1 className="text-2xl font-semibold text-slate-800">Reference Books</h1>
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-ink/70">
             Full-text materia medica, searchable by remedy.
           </p>
         </div>
@@ -52,8 +52,8 @@ export default function BooksPage() {
               </h2>
               <p className="text-xs font-medium text-brand-600">{book.author}</p>
               <p className="mt-2 line-clamp-3 text-sm text-slate-600">{book.blurb}</p>
-              <p className="mt-3 flex items-center justify-between gap-2 text-xs text-slate-400">
-                <span>~{book.approxRemedies} remedies</span>
+              <p className="mt-3 flex items-center justify-between gap-2 text-xs text-ink/70">
+                <span>{book.approxRemedies} remedies</span>
                 <BookNoteCount book={book.id} />
               </p>
             </div>

@@ -75,8 +75,9 @@ export function WorksheetGrid({
               <span className="flex-1 truncate text-left text-sm font-medium text-slate-800" title={canonicalName(s.name)}>
                 {canonicalName(s.name)}
               </span>
-              <span className="text-xs text-slate-500">
-                {s.rubricsCovered}/{items.length} · {s.totalScore}
+              <span className="shrink-0 whitespace-nowrap text-xs text-slate-500">
+                {s.rubricsCovered}/{items.length} {items.length === 1 ? 'rubric' : 'rubrics'} · {s.totalScore}{' '}
+                {s.totalScore === 1 ? 'pt' : 'pts'}
               </span>
             </>
           );
@@ -100,8 +101,8 @@ export function WorksheetGrid({
       {/* Controls */}
       <div className="mb-2 flex items-center justify-between text-xs text-slate-500">
         <span>
-          {scores.length} remedies across {items.length} rubric
-          {items.length === 1 ? '' : 's'}
+          {scores.length} {scores.length === 1 ? 'remedy' : 'remedies'} across {items.length}{' '}
+          {items.length === 1 ? 'rubric' : 'rubrics'}
         </span>
         <label className="inline-flex items-center gap-2">
           Show
@@ -128,7 +129,7 @@ export function WorksheetGrid({
               <th className="sticky left-0 z-10 bg-surface px-3 py-2 text-left font-medium text-slate-500">
                 Rubric
               </th>
-              <th className="px-2 py-2 text-center font-medium text-slate-400">Int.</th>
+              <th className="px-2 py-2 text-center font-medium text-slate-500">Weight</th>
               {top.map((s) => (
                 <th key={s.name} className="px-1 py-2 align-bottom">
                   {onRemedy ? (
@@ -173,8 +174,9 @@ export function WorksheetGrid({
                     <select
                       value={intensity}
                       onChange={(e) => setIntensity(rubricId, Number(e.target.value))}
-                      className="rounded border border-slate-200 bg-surface px-1 py-1 text-xs"
-                      title="Rubric intensity"
+                      aria-label={`Weight for ${rubric.rubric}`}
+                      className="min-h-[44px] rounded border border-slate-200 bg-surface px-2 text-sm"
+                      title="How much this rubric counts (×1–×3)"
                     >
                       {[1, 2, 3].map((n) => (
                         <option key={n} value={n}>
@@ -237,9 +239,9 @@ export function WorksheetGrid({
         </table>
       </div>
 
-      <p className="mt-3 text-xs text-slate-400">
-        Score = Σ (grade × rubric intensity). Ranked by rubrics covered, then score.
-        Showing {top.length} of {scores.length} remedies.
+      <p className="mt-3 text-xs text-ink/70">
+        Ranked by rubrics covered, then points (grade × rubric weight, summed). Showing{' '}
+        {top.length} of {scores.length} remedies.
       </p>
     </>
   );

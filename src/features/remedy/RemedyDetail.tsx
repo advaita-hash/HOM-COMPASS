@@ -14,24 +14,27 @@ function Section({
   title,
   items,
   accent = 'text-brand-600',
+  dot = 'bg-slate-500',
 }: {
   icon: typeof Leaf;
   title: string;
   items: string[];
   accent?: string;
+  /** literal bg-* class, so Tailwind generates it (a built class name would not be) */
+  dot?: string;
 }) {
   return (
     <div className="card p-4">
       <div className="mb-3 flex items-center gap-2">
         <Icon className={`h-4 w-4 ${accent}`} />
-        <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+        <h3 className="text-xs font-semibold uppercase tracking-wide text-ink/70">
           {title}
         </h3>
       </div>
       <ul className="space-y-2">
         {items.map((item, i) => (
           <li key={i} className="flex gap-2 text-sm text-slate-700">
-            <span className={`mt-2 h-1.5 w-1.5 shrink-0 rounded-full ${accent.replace('text-', 'bg-')}`} />
+            <span className={`mt-2 h-1.5 w-1.5 shrink-0 rounded-full ${dot}`} aria-hidden="true" />
             <span>{item}</span>
           </li>
         ))}
@@ -47,6 +50,7 @@ export function RemedyDetail({ remedy }: { remedy: Remedy }) {
       {/* Header */}
       <div className="card overflow-hidden">
         <div className="bg-gradient-to-r from-art-pine to-art-sea px-6 py-6 text-white">
+          <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-white/80">Study card</p>
           <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
             <h1 className="font-serif text-3xl font-bold">{remedy.name}</h1>
             <span className="rounded-md bg-white/20 px-2 py-1 text-sm font-medium">
@@ -81,19 +85,21 @@ export function RemedyDetail({ remedy }: { remedy: Remedy }) {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
-        <Section icon={Brain} title="Mind & Emotions" items={remedy.mind} accent="text-grade-3" />
-        <Section icon={Leaf} title="Physical Generals" items={remedy.generals} accent="text-brand-600" />
+        <Section icon={Brain} title="Mind & Emotions" items={remedy.mind} accent="text-grade-3" dot="bg-grade-3" />
+        <Section icon={Leaf} title="Physical Generals" items={remedy.generals} accent="text-brand-600" dot="bg-brand-600" />
         <Section
           icon={ArrowDownRight}
           title="Worse from (aggravation)"
           items={remedy.worse}
           accent="text-grade-4"
+          dot="bg-grade-4"
         />
         <Section
           icon={ArrowUpRight}
           title="Better from (amelioration)"
           items={remedy.better}
           accent="text-grade-2"
+          dot="bg-grade-2"
         />
       </div>
 
@@ -102,6 +108,7 @@ export function RemedyDetail({ remedy }: { remedy: Remedy }) {
         title="Representative rubrics"
         items={remedy.keyRubrics}
         accent="text-slate-500"
+        dot="bg-slate-500"
       />
     </div>
   );

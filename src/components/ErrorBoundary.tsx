@@ -59,7 +59,7 @@ export class ErrorBoundary extends Component<Props, State> {
             Something went wrong on this screen.
           </h1>
           {error.message && (
-            <p className="mt-2 break-words text-xs text-ink/60">{error.message}</p>
+            <p className="mt-2 break-words text-xs text-ink/70">{error.message}</p>
           )}
           <div className="mt-5 flex flex-wrap justify-center gap-3">
             <button type="button" className="btn-primary" onClick={this.reset}>

@@ -107,7 +107,7 @@ function NoteItem({
         </button>
 
         {!shareUrl && (
-          <span className="text-2xs text-ink/60">This note is too long to share as a link.</span>
+          <span className="text-2xs text-ink/70">This note is too long to share as a link.</span>
         )}
 
         {isPublic && shareUrl && (
@@ -126,7 +126,7 @@ function NoteItem({
               onFocus={(e) => e.currentTarget.select()}
               className="min-w-0 flex-1 truncate rounded border border-slate-200 bg-slate-50 px-2 py-1 text-2xs text-slate-500"
             />
-            <p className="w-full text-2xs leading-relaxed text-ink/60">
+            <p className="w-full text-2xs leading-relaxed text-ink/70">
               Anyone with this link can read this snapshot of the note. It can’t be withdrawn —
               “Hide share link” only hides it on this device.
             </p>

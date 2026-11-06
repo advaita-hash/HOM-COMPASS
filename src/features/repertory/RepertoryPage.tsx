@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { BookOpen, Check, Loader2, Plus, Search } from 'lucide-react';
-import { SearchX, TextSearch } from 'lucide-react';
+import { CloudOff, SearchX, TextSearch } from 'lucide-react';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { REPERTORIES, useRepertory, useRepertorySelection } from './repertoryData';
 import { RepertorySelect } from './RepertorySelect';
@@ -57,19 +57,24 @@ function RubricRow({ rubric, onRemedy }: { rubric: Rubric; onRemedy: (name: stri
             ? 'border-accent bg-accent text-on-accent'
             : 'border-ink/30 text-ink/45 hover:border-accent hover:text-brand-600'
         }`}
-        aria-label={has ? 'Remove from worksheet' : 'Add to worksheet'}
-        title={has ? 'On worksheet' : 'Add to worksheet'}
+        aria-label={has ? 'Remove from case' : 'Add to case'}
+        title={has ? 'Remove from case' : 'Add to case'}
       >
         {has ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
       </button>
       <div className="min-w-0 flex-1">
         <div className="text-sm">
-          <span className="text-2xs font-medium uppercase tracking-wide text-slate-400">
-            {rubric.chapter}
-          </span>{' '}
-          <span className="font-medium text-slate-800">{rubric.rubric}</span>
-          <span className="ml-2 text-xs text-slate-400">
-            {rubric.remedies.length} remedies
+          {/* skip the tag when the rubric text already starts with its chapter */}
+          {!rubric.rubric.toLowerCase().startsWith(rubric.chapter.toLowerCase()) && (
+            <>
+              <span className="text-2xs font-medium uppercase tracking-wide text-ink/70">
+                {rubric.chapter}
+              </span>{' '}
+            </>
+          )}
+          <span className="font-medium text-ink/90">{rubric.rubric}</span>
+          <span className="ml-2 text-xs text-ink/70">
+            {rubric.remedies.length} {rubric.remedies.length === 1 ? 'remedy' : 'remedies'}
           </span>
         </div>
         <RemedyChips rubric={rubric} onRemedy={onRemedy} />
@@ -80,12 +85,14 @@ function RubricRow({ rubric, onRemedy }: { rubric: Rubric; onRemedy: (name: stri
 
 export default function RepertoryPage() {
   usePageTour('repertory');
-  const { data: rep, isLoading, isError } = useRepertory();
+  const { data: rep, isLoading, isError, refetch, isFetching } = useRepertory();
   const repId = useRepertorySelection((s) => s.id);
   const repMeta = REPERTORIES.find((r) => r.id === repId);
   useBindWorksheet(repId); // rubrics only ever from the chosen repertory
-  const [query, setQuery] = useState('');
-  const [chapter, setChapter] = useState<string>('All');
+  // Deep links from Search (/repertory?q=…&chapter=…) land on that rubric.
+  const [params] = useSearchParams();
+  const [query, setQuery] = useState(() => params.get('q') ?? '');
+  const [chapter, setChapter] = useState<string>(() => params.get('chapter') ?? 'All');
   const [support, setSupport] = useState<{ name: string; rubric: Rubric } | null>(null);
   const count = useWorksheet((s) => s.items.length);
 
@@ -110,7 +117,11 @@ export default function RepertoryPage() {
           <div className="min-w-0">
             <h1 className="text-2xl font-semibold text-slate-800">Repertory</h1>
             <p className="text-sm text-slate-500">
-              {rep ? `${rep.rubricCount} rubrics · ${repMeta?.label ?? rep.title}` : 'Loading…'}
+              {rep
+                ? `${rep.rubricCount.toLocaleString()} rubrics · ${repMeta?.label ?? rep.title}`
+                : isError
+                  ? 'Not loaded'
+                  : 'Loading…'}
             </p>
           </div>
           <TourButton tour="repertory" />
@@ -118,7 +129,7 @@ export default function RepertoryPage() {
         <div className="flex flex-wrap items-center gap-2">
           <RepertorySelect />
           <Link to="/analysis" data-tour="repertory-worksheet" className="btn-primary">
-            Worksheet
+            Open case
             {count > 0 && (
               <span className="ml-1 rounded-full bg-white/25 px-2 text-xs">{count}</span>
             )}
@@ -139,6 +150,7 @@ export default function RepertoryPage() {
             data-tour="repertory-search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
+            aria-label="Search rubrics"
             placeholder="Search rubrics, e.g. thirst…"
             className="w-full rounded-lg border border-slate-200 bg-surface py-3 pl-10 pr-3 text-sm focus:outline-none"
           />
@@ -147,9 +159,10 @@ export default function RepertoryPage() {
           data-tour="repertory-chapter"
           value={chapter}
           onChange={(e) => setChapter(e.target.value)}
+          aria-label="Chapter"
           className="rounded-lg border border-slate-200 bg-surface px-3 py-3 text-sm text-slate-600"
         >
-          <option>All</option>
+          <option value="All">All chapters</option>
           {rep?.chapters.map((c) => (
             <option key={c}>{c}</option>
           ))}
@@ -157,15 +170,29 @@ export default function RepertoryPage() {
       </div>
 
       {isLoading && (
-        <div className="flex items-center gap-2 p-8 text-sm text-slate-400">
+        <div className="flex items-center gap-2 p-8 text-sm text-ink/70">
           <Loader2 className="h-4 w-4 animate-spin" /> Loading repertory…
         </div>
       )}
-      {isError && <p className="p-8 text-sm text-red-600">Failed to load repertory.</p>}
+      {isError && (
+        <div className="card">
+          <EmptyState
+            icon={CloudOff}
+            title="The repertory couldn’t load"
+            description="Check your connection and try again, or pick another repertory above."
+            action={
+              <button className="btn-primary" onClick={() => refetch()} disabled={isFetching}>
+                {isFetching ? 'Trying…' : 'Try again'}
+              </button>
+            }
+          />
+        </div>
+      )}
 
       {rep && needsFilter && (
         <div className="card">
           <EmptyState
+            headingLevel="h2"
             icon={TextSearch}
             title={`Search ${rep.rubricCount.toLocaleString()} rubrics`}
             description="Type a symptom above or pick a chapter to browse the repertory in Chapter → Rubric → Sub-rubric order."
@@ -184,6 +211,17 @@ export default function RepertoryPage() {
 
       {rep && !needsFilter && (
         <>
+          {/* Grade key right above the results, where the eye already is.
+              w-fit: the tour's spotlight hugs the key instead of the full row */}
+          <div
+            data-tour="repertory-grades"
+            className="mb-2 flex w-fit flex-wrap items-center gap-x-4 gap-y-1 text-xs text-ink/70"
+          >
+            <span>Grade:</span>
+            <span className="text-grade-3 font-semibold">3 bold</span>
+            <span className="text-grade-2 font-medium italic">2 italic</span>
+            <span className="text-grade-1">1 plain</span>
+          </div>
           {total > filtered.length && (
             <p className="mb-2 text-xs text-slate-400">
               Showing {filtered.length} of {total.toLocaleString()} matches — refine your
@@ -217,17 +255,6 @@ export default function RepertoryPage() {
           </div>
         </>
       )}
-
-      {/* w-fit: the tour's spotlight hugs the key instead of the full row */}
-      <div
-        data-tour="repertory-grades"
-        className="mt-3 flex w-fit flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-400"
-      >
-        <span>Grade:</span>
-        <span className="text-grade-3 font-semibold">3 bold</span>
-        <span className="text-grade-2 font-medium italic">2 italic</span>
-        <span className="text-grade-1">1 plain</span>
-      </div>
 
       {support && (
         <RemedySupportModal

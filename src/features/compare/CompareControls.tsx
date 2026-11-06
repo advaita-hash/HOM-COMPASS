@@ -31,7 +31,7 @@ export function CompareButton({ book, slug, name }: { book: string; slug: string
         {inSet ? <Check className="h-4 w-4" strokeWidth={2.5} /> : <Plus className="h-4 w-4" strokeWidth={2.5} />}
         {inSet ? 'In Compare' : 'Compare'}
       </button>
-      <span role="status" className={refused ? 'text-xs text-ink/60' : 'sr-only'}>
+      <span role="status" className={refused ? 'text-xs text-ink/70' : 'sr-only'}>
         {refused ? `Compare holds ${COMPARE_MAX}. Remove one first.` : ''}
       </span>
     </div>

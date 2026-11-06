@@ -8,7 +8,7 @@
 // and gain a dark mode without per-component edits.
 //
 //   • slate  → the brand ink blended over the surface at Apple's label/fill
-//              opacities (90 / 60 / 30 % text, 10 % hairlines, 3–6 % fills).
+//              opacities (90 / 70 / 30 % text, 10 % hairlines, 3–6 % fills).
 //   • brand  → light: the original pine scale; dark: accent tints over the
 //              deep-green surface for fills, lifted pines for text.
 //   • hues   → (reds for destructive, ambers for highlights, …) keep Tailwind's
@@ -55,8 +55,8 @@ const INK_ALPHA = {
   100: 0.06, // fill (hover, chips)
   200: 0.1, // hairline separator
   300: 0.3, // tertiary label
-  400: 0.45, // placeholder / muted caption
-  500: 0.6, // secondary label
+  400: 0.65, // placeholder / muted caption (≥ 4.5:1 on canvas)
+  500: 0.7, // secondary label (the 70 minimum for readable text)
   600: 0.72,
   700: 0.82,
   800: 0.9, // primary label

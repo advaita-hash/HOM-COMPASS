@@ -56,7 +56,7 @@ function RemedyRow({
         }`}
       >
         <span className="truncate text-subhead leading-5 text-ink/90">{name}</span>
-        {sub && <span className="truncate text-xs text-ink/60">{sub}</span>}
+        {sub && <span className="truncate text-xs text-ink/70">{sub}</span>}
       </span>
     </button>
   );
@@ -114,16 +114,16 @@ function BookGroup({
           />
           <span data-tour="compare-book" className="min-w-0 flex-1">
             <span className="block truncate text-subhead font-semibold leading-5 text-ink/90">{author}</span>
-            <span className="block truncate text-xs text-ink/60">{meta.title}</span>
+            <span className="block truncate text-xs text-ink/70">{meta.title}</span>
           </span>
-          <span className="shrink-0 rounded-full bg-ink/[0.06] px-2 text-xs tabular-nums leading-5 text-ink/60">
+          <span className="shrink-0 rounded-full bg-ink/[0.06] px-2 text-xs tabular-nums leading-5 text-ink/70">
             {isLoading ? '…' : total}
           </span>
         </>
       }
     >
       {isLoading ? (
-        <div className="flex items-center gap-2 px-4 py-3 text-sm text-ink/60">
+        <div className="flex items-center gap-2 px-4 py-3 text-sm text-ink/70">
           <Loader2 className="h-4 w-4 animate-spin" /> Loading {author}…
         </div>
       ) : isError ? (
@@ -148,7 +148,7 @@ function BookGroup({
                 header={
                   <>
                     <span className="w-6 text-subhead font-semibold text-ink/90">{L}</span>
-                    <span className="text-xs tabular-nums text-ink/45">{list.length}</span>
+                    <span className="text-xs tabular-nums text-ink/70">{list.length}</span>
                   </>
                 }
               >
@@ -214,7 +214,7 @@ export function RemedyPicker({ defaultOpen = true }: { defaultOpen?: boolean }) 
         header={
           <span data-tour="compare-choose" className="min-w-0 flex-1">
             <span className="block text-base font-semibold text-ink/90">Choose remedies</span>
-            <span className="block text-xs text-ink/60">
+            <span className="block text-xs text-ink/70">
               {items.length} of {COMPARE_MAX} selected
             </span>
           </span>
@@ -246,13 +246,13 @@ export function RemedyPicker({ defaultOpen = true }: { defaultOpen?: boolean }) 
             </label>
           </div>
 
-          <p role="status" className={full ? 'px-4 pt-3 text-xs text-ink/60' : 'sr-only'}>
+          <p role="status" className={full ? 'px-4 pt-3 text-xs text-ink/70' : 'sr-only'}>
             {full ? `Compare holds ${COMPARE_MAX} remedies. Deselect one to choose another.` : ''}
           </p>
 
           {items.length > 0 && !q && (
             <section data-tour="compare-selected" aria-label="Selected remedies" className="pt-3">
-              <h3 className="px-4 pb-1 text-2xs font-semibold uppercase tracking-wide text-ink/60">Selected</h3>
+              <h3 className="px-4 pb-1 text-2xs font-semibold uppercase tracking-wide text-ink/70">Selected</h3>
               {items.map((i: CompareItem, idx) => {
                 const meta = BOOKS.find((b) => b.id === i.book);
                 return (
@@ -272,7 +272,7 @@ export function RemedyPicker({ defaultOpen = true }: { defaultOpen?: boolean }) 
 
           <div className="pt-3">
             {items.length > 0 && !q && (
-              <h3 className="px-4 pb-1 text-2xs font-semibold uppercase tracking-wide text-ink/60">All books</h3>
+              <h3 className="px-4 pb-1 text-2xs font-semibold uppercase tracking-wide text-ink/70">All books</h3>
             )}
             {BOOKS.map((meta) => (
               <BookGroup
@@ -292,6 +292,27 @@ export function RemedyPicker({ defaultOpen = true }: { defaultOpen?: boolean }) 
             ))}
             <SearchEmpty query={q} count={matches} onClear={() => setQuery('')} />
           </div>
+
+          {/* phone: the comparison sits below this list, so give a way to it */}
+          {items.length >= 2 && (
+            <div className="material sticky bottom-0 z-10 border-t border-ink/10 p-3 lg:hidden">
+              <button
+                type="button"
+                className="btn-primary min-h-11 w-full"
+                onClick={() => {
+                  setOpen(false);
+                  requestAnimationFrame(() =>
+                    document.querySelector('section[aria-label="Comparison"]')?.scrollIntoView({
+                      behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+                      block: 'start',
+                    }),
+                  );
+                }}
+              >
+                See comparison ({items.length})
+              </button>
+            </div>
+          )}
         </div>
       </Disclosure>
     </div>
@@ -302,7 +323,7 @@ export function RemedyPicker({ defaultOpen = true }: { defaultOpen?: boolean }) 
 function SearchEmpty({ query, count, onClear }: { query: string; count: number; onClear: () => void }) {
   if (!query) return null;
   return (
-    <div className="flex items-center justify-between gap-3 px-4 py-3 text-xs text-ink/60" role="status">
+    <div className="flex items-center justify-between gap-3 px-4 py-3 text-xs text-ink/70" role="status">
       <span className="inline-flex items-center gap-2">
         {count === 0 ? (
           <>

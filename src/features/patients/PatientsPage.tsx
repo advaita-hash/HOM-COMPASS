@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronRight, Trash2, UserPlus, Users } from 'lucide-react';
 import { usePatients, type Patient } from './patientsStore';
@@ -14,6 +14,12 @@ export default function PatientsPage() {
   const [name, setName] = useState('');
   const [age, setAge] = useState('');
   const [gender, setGender] = useState('');
+  const [nameError, setNameError] = useState(false);
+  const nameRef = useRef<HTMLInputElement>(null);
+  const nameId = useId();
+  const ageId = useId();
+  const genderId = useId();
+  const nameErrorId = useId();
   const [toDelete, setToDelete] = useState<Patient | null>(null);
   const cancelDelete = useCallback(() => setToDelete(null), []);
   // row index to move focus to once a deleted row (and its bin button) is gone
@@ -34,7 +40,11 @@ export default function PatientsPage() {
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!name.trim()) return;
+    if (!name.trim()) {
+      setNameError(true);
+      nameRef.current?.focus();
+      return;
+    }
     addPatient({
       name: name.trim(),
       age: age ? Number(age) : null,
@@ -44,6 +54,7 @@ export default function PatientsPage() {
     setName('');
     setAge('');
     setGender('');
+    setNameError(false);
   }
 
   return (
@@ -51,33 +62,43 @@ export default function PatientsPage() {
       <header className="mb-5 flex items-center gap-3">
         <Users className="mt-1 h-6 w-6 shrink-0 self-start text-brand-600" />
         <div className="min-w-0 flex-1">
-          <h1 ref={headingRef} tabIndex={-1} className="text-2xl font-semibold text-slate-800">Patients &amp; Cases</h1>
-          <p className="text-sm text-slate-500">{patients.length} {patients.length === 1 ? 'patient' : 'patients'}</p>
+          <h1 ref={headingRef} tabIndex={-1} className="text-2xl font-semibold text-slate-800">Patients</h1>
+          <p className="text-sm text-ink/70">{patients.length} {patients.length === 1 ? 'patient' : 'patients'}</p>
         </div>
         <TourButton tour="patients" className="-mr-2" />
       </header>
 
       <form onSubmit={submit} data-tour="patients-add" className="card mb-5 flex flex-wrap items-end gap-3 p-4">
         <div className="flex-1">
-          <label className="mb-1 block text-xs font-medium text-slate-500">Name</label>
+          <label htmlFor={nameId} className="mb-1 block text-xs font-medium text-ink/70">Name</label>
           <input
+            id={nameId}
+            ref={nameRef}
+            autoComplete="off"
             value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Patient name"
-            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none"
+            onChange={(e) => {
+              setName(e.target.value);
+              if (nameError) setNameError(false);
+            }}
+            aria-invalid={nameError || undefined}
+            aria-describedby={nameError ? nameErrorId : undefined}
+            className={`w-full rounded-lg border ${nameError ? 'border-red-600' : 'border-slate-200'} px-3 py-2 text-sm focus:outline-none`}
           />
         </div>
         <div className="w-20">
-          <label className="mb-1 block text-xs font-medium text-slate-500">Age</label>
+          <label htmlFor={ageId} className="mb-1 block text-xs font-medium text-ink/70">Age</label>
           <input
+            id={ageId}
+            inputMode="numeric"
             value={age}
             onChange={(e) => setAge(e.target.value.replace(/\D/g, ''))}
             className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none"
           />
         </div>
         <div className="w-28">
-          <label className="mb-1 block text-xs font-medium text-slate-500">Gender</label>
+          <label htmlFor={genderId} className="mb-1 block text-xs font-medium text-ink/70">Gender</label>
           <select
+            id={genderId}
             value={gender}
             onChange={(e) => setGender(e.target.value)}
             className="w-full rounded-lg border border-slate-200 bg-surface px-2 py-2 text-sm"
@@ -89,8 +110,13 @@ export default function PatientsPage() {
           </select>
         </div>
         <button type="submit" className="btn-primary">
-          <UserPlus className="h-4 w-4" /> Add
+          <UserPlus className="h-4 w-4" aria-hidden /> Add
         </button>
+        {nameError && (
+          <p id={nameErrorId} role="alert" className="basis-full text-xs text-red-600">
+            Enter the patient’s name to add them.
+          </p>
+        )}
       </form>
 
       {patients.length === 0 ? (
@@ -118,7 +144,7 @@ export default function PatientsPage() {
               >
                 <Link to={`/patients/${p.id}`} className="min-w-0 flex-1" data-patient-link>
                   <div className="text-sm font-medium text-slate-800">{p.name}</div>
-                  <div className="text-xs text-slate-500">
+                  <div className="text-xs text-ink/70">
                     {[p.age ? `${p.age}y` : null, p.gender].filter(Boolean).join(' · ') || '—'} ·{' '}
                     {n} case{n === 1 ? '' : 's'}
                   </div>
