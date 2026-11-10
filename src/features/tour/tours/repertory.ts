@@ -56,7 +56,7 @@ export default {
       id: 'remedy',
       target: 'repertory-remedy',
       title: 'Remedy names',
-      body: "{Tap} any remedy name under a rubric to read the lines in Boericke, Tyler and Allen that mention the rubric's words, plus a link to its full chapter.",
+      body: "{Tap} any remedy name under a rubric to read the lines in Boericke, Tyler, Allen and Farrington that mention the rubric's words, plus a link to its full chapter.",
       magnify: true,
       ifMissing: 'center',
     },

@@ -28,7 +28,7 @@ export default {
       target: 'dashboard-stats',
       magnify: false,
       title: 'Quick counts',
-      body: 'Remedies counts every remedy entry across the four sources. Your books counts the files listed in your Library. Each box is a shortcut: {tap} it to open that part.',
+      body: 'Remedies counts every remedy entry across the five sources. Your books counts the files listed in your Library. Each box is a shortcut: {tap} it to open that part.',
       tip: '{Tap} Repertory rubrics to jump straight to the Repertory.',
     },
     {

@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import type { BookData, BookMeta, BookRemedy } from './types';
 
 // Cross-source spelling aliases (per word) so the same remedy matches across
-// Kent's Repertory, Boericke, Tyler and Allen. Non-destructive — the source
+// Kent's Repertory, Boericke, Tyler, Allen and Farrington. Non-destructive — the source
 // data keeps its own names; this only normalises names at lookup time.
 const WORD_ALIAS: Record<string, string> = {
   kalium: 'kali', // Kent uses Kalium/Natrium; Boericke & Tyler use Kali/Natrum
@@ -162,6 +162,17 @@ export const BOOKS: BookMeta[] = [
       'Characteristic keynotes of the leading remedies, sorted into constitution, mental and physical generals, systems and modalities — plus the bowel nosodes.',
     cover: 'from-art-amber to-art-rose',
     approxRemedies: 210,
+  },
+  {
+    id: 'farrington',
+    title: 'A Clinical Materia Medica',
+    author: 'E. A. Farrington',
+    label: 'Farrington',
+    shortTitle: 'Clinical Materia Medica',
+    blurb:
+      'Lectures that teach remedies by natural family — kingdom and family introductions, then each remedy compared with its relatives at the bedside.',
+    cover: 'from-art-rose to-art-violet',
+    approxRemedies: 130,
   },
 ];
 

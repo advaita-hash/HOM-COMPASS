@@ -6,7 +6,7 @@ import type { Tour } from '../types';
 export default {
   id: 'materia-medica',
   title: 'Materia Medica',
-  summary: 'Browse and search remedies from the Study cards, Boericke, Tyler and Allen, and open one to read it.',
+  summary: 'Browse and search remedies from the Study cards, Boericke, Tyler, Allen and Farrington, and open one to read it.',
   route: '/materia-medica',
   order: 60,
   version: 1,
@@ -14,7 +14,7 @@ export default {
     {
       id: 'intro',
       title: 'Materia Medica',
-      body: "Read remedies from four sources. Study cards are the app's own short summaries, and Boericke, Tyler and Allen are the full classic books.",
+      body: "Read remedies from five sources. Study cards are the app's own short summaries, and Boericke, Tyler, Allen and Farrington are the full classic books.",
     },
     {
       id: 'sources',
@@ -65,7 +65,7 @@ export default {
       magnify: false,
       ifMissing: 'center',
       title: 'Read in the books',
-      body: 'At the end of each study card, buttons open its chapter in Boericke, Tyler or Allen, where the book has it, so you can read it in full.',
+      body: 'At the end of each study card, buttons open its chapter in Boericke, Tyler, Allen or Farrington, where the book has it, so you can read it in full.',
     },
   ],
 } satisfies Tour;

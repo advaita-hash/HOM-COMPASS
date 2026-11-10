@@ -6,7 +6,7 @@ import type { Tour } from '../types';
 export default {
   id: 'books',
   title: 'Reference Books',
-  summary: 'Read Boericke, Tyler and Allen in full, one remedy at a time.',
+  summary: 'Read Boericke, Tyler, Allen and Farrington in full, one remedy at a time.',
   route: '/books',
   order: 90,
   version: 1,
@@ -14,7 +14,7 @@ export default {
     {
       id: 'intro',
       title: 'Reference Books',
-      body: 'Read three classic materia medica books in full, one remedy at a time: Boericke, Tyler and Allen.',
+      body: 'Read four classic materia medica books in full, one remedy at a time: Boericke, Tyler, Allen and Farrington.',
     },
     {
       id: 'book',

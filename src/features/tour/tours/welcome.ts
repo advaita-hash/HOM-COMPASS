@@ -67,7 +67,7 @@ export default {
       menu: 'open',
       placement: 'right',
       title: 'Materia Medica',
-      body: "Browse and search remedies from Boericke, Tyler, Allen and the app's own study cards. Open one to read about it.",
+      body: "Browse and search remedies from Boericke, Tyler, Allen, Farrington and the app's own study cards. Open one to read about it.",
     },
     {
       id: 'compare',
@@ -91,7 +91,7 @@ export default {
       menu: 'open',
       placement: 'right',
       title: 'Reference Books',
-      body: 'Read whole materia medica books, like Boericke, Tyler and Allen, one remedy at a time.',
+      body: 'Read whole materia medica books, like Boericke, Tyler, Allen and Farrington, one remedy at a time.',
     },
     {
       id: 'library',

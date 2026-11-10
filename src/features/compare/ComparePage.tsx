@@ -26,7 +26,7 @@ export default function ComparePage() {
           <div className="min-w-0 flex-1">
             <h1 className="text-2xl font-semibold text-ink/90">Compare</h1>
             <p className="text-sm text-ink/70">
-              Up to {COMPARE_MAX} remedies from Boericke, Tyler and Allen, side by side.
+              Up to {COMPARE_MAX} remedies from Boericke, Tyler, Allen and Farrington, side by side.
             </p>
           </div>
         </div>

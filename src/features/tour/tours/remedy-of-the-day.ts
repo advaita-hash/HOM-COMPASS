@@ -53,7 +53,7 @@ export default {
       target: 'remedy-of-the-day-books',
       magnify: false,
       title: 'Read in the books',
-      body: "Read this remedy in Boericke, Tyler or Allen. Each button opens its chapter in that book; a book that doesn't have it shows no button.",
+      body: "Read this remedy in Boericke, Tyler, Allen or Farrington. Each button opens its chapter in that book; a book that doesn't have it shows no button.",
     },
   ],
 } satisfies Tour;

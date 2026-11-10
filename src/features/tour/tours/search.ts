@@ -47,7 +47,7 @@ export default {
       id: 'books',
       target: 'search-book-result',
       title: 'Reference Books',
-      body: 'Remedy chapters in Boericke, Tyler and Allen that use your words, with the words highlighted. {Tap} one to read that chapter.',
+      body: 'Remedy chapters in Boericke, Tyler, Allen and Farrington that use your words, with the words highlighted. {Tap} one to read that chapter.',
     },
   ],
 } satisfies Tour;

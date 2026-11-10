@@ -35,6 +35,8 @@ const FULL_CANON: Record<string, string> = {
 
 function titleCase(word: string): string {
   if (!word) return word;
+  // a Roman numeral stays as written: Farrington's "Lecture XXV — …"
+  if (/^[IVXL]+$/.test(word)) return word;
   // Latin binomials: capitalise the first letter, lower-case the rest
   // (fixes Tyler's "vomica" / "phosphoricum"). Only a word that starts with
   // a letter (or a bracket/quote and a letter, as in "(Bach)") is capitalised,

@@ -22,7 +22,7 @@ export default {
       target: 'remedy-profile-header',
       magnify: false,
       title: 'Remedy name',
-      body: "Its full name and Kentian abbreviation. The buttons below open its Study card or its chapter in Boericke, Tyler or Allen, where the app has one.",
+      body: "Its full name and Kentian abbreviation. The buttons below open its Study card or its chapter in Boericke, Tyler, Allen or Farrington, where the app has one.",
     },
     {
       id: 'tabs',

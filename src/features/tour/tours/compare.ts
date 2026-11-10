@@ -7,7 +7,7 @@ import type { Tour } from '../types';
 export default {
   id: 'compare',
   title: 'Compare',
-  summary: 'Put two to four remedies from Boericke, Tyler and Allen side by side to see how they differ.',
+  summary: 'Put two to four remedies from Boericke, Tyler, Allen and Farrington side by side to see how they differ.',
   route: '/compare',
   order: 70,
   version: 1,
@@ -22,7 +22,7 @@ export default {
       id: 'search',
       target: 'compare-search',
       title: 'Search remedies',
-      body: "Type a remedy's name or common name to find it in Boericke, Tyler and Allen at once. The × button clears it.",
+      body: "Type a remedy's name or common name to find it in Boericke, Tyler, Allen and Farrington at once. The × button clears it.",
       tip: 'Type sepia and pick it from two different books.',
     },
     {

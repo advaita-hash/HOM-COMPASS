@@ -33,6 +33,7 @@ const SOURCE_BADGE: Record<string, string> = {
   Boericke: 'bg-teal-100 text-teal-700',
   Tyler: 'bg-indigo-100 text-indigo-700',
   Allen: 'bg-amber-100 text-amber-700',
+  Farrington: 'bg-pink-100 text-pink-700',
 };
 
 /** Display names only: 'Curated' stays the internal key. */

@@ -107,6 +107,48 @@ the repertorial index at the back are skipped.
 > pending the publisher's permission. Serve it only from a deployment behind
 > Vercel Deployment Protection, and don't commit the source PDF.
 
+## Farrington's Clinical Materia Medica (`gen_farrington.py`)
+
+E. A. Farrington, _A Clinical Materia Medica_, 2nd ed. (Philadelphia:
+Hahnemann Publishing House, 1890) — public domain. Source: the Wellcome
+Collection scan, `https://iiif.wellcomecollection.org/pdf/b21118838`
+(catalogue: wellcomecollection.org/works/hh24qeg4). The PDF has no text layer,
+so each page image (the IIIF manifest's canvases, full size) was OCR'd with
+Tesseract 5 and the page texts cached as a JSON list, one string per canvas:
+
+```bash
+# for each canvas id in https://iiif.wellcomecollection.org/presentation/v3/b21118838
+curl -sSf -o p.jpg "https://iiif.wellcomecollection.org/image/<canvas id>/full/full/0/default.jpg"
+tesseract p.jpg stdout -l eng --psm 3      # → one entry of farrington-pages.json
+python3 scripts/ingestion/gen_farrington.py farrington-pages.json --headings   # review headings
+python3 scripts/ingestion/gen_farrington.py farrington-pages.json public/books/farrington.json
+python3 scripts/ingestion/check_books.py
+```
+
+Farrington teaches in numbered lectures grouped by natural family. Each remedy
+heading inside a lecture starts a chapter; the lecture's opening remarks
+become a chapter of their own (`Lecture XXV — Ranunculaceae (introduction)`).
+A lecture titled with a single remedy (`LECTURE VII. CANTHARIS.`) is that
+remedy's chapter, and a `(continued)` lecture runs on into it. Front matter
+(title page, preface, memoir, contents) and the index are left out.
+
+Headings are small-caps lines that OCR spells unevenly (`MyYGALE LASIODORA.`,
+`Vinca MInor.`), so the script only accepts headings listed in its `NAMES`
+table (OCR form → clean Latin name, spelled so the app's remedy matching finds
+the repertory remedy) or explicitly rejected in `NOT_A_HEADING`; an unknown
+heading stops the build. Running headers and page numbers are dropped, lines
+are re-joined into paragraphs (a short line ending a sentence closes one), a
+line-break hyphen is removed unless the hyphenated form is the commoner one in
+the book, stray quote marks and specks are dropped, and a short list of
+unambiguous OCR misreadings is corrected (`WORD_FIXES`, e.g. `diarrhcea`,
+`calearea`, `Natrwm`); then the shared `clean_ocr` from `clean_books.py` runs on
+each chapter (the script calls it itself — `clean_books.py` still only rewrites
+the other three books). Other OCR errors are left as they are. Known
+limitations: the synoptic tables at the start of many lectures lose their
+bracket layout and read as fragments, footnotes run into the text, and some
+paragraph breaks are missed. A spot-check of 10 random chapters against the
+scan found about 5 word errors in 760 words of prose (~0.7%).
+
 ## Re-running the cleanup
 
 ```bash
