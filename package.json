@@ -5,7 +5,9 @@
   "type": "module",
   "description": "HOM-COMPASS: homeopathic repertory, repertorisation worksheet and materia medica reference for practitioners.",
   "scripts": {
+    "predev": "node scripts/build-daily.mjs",
     "dev": "vite",
+    "prebuild": "node scripts/build-daily.mjs",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",

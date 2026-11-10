@@ -15,7 +15,7 @@ import { REMEDIES } from '../../data/remedies';
 import { canonicalName } from '../../lib/remedyName';
 import { distill } from '../books/drugPicture';
 import { commonNameFor } from '../books/commonName';
-import { DAILY_BOOK, dateOfDay, openingLede, useDailyRemedy, useLocalDay } from '../remedy/dailyRemedy';
+import { DAILY_BOOK, dateOfDay, openingLede, useDailyChapter, useLocalDay } from '../remedy/dailyRemedy';
 import { BOOKS } from '../books/booksIndex';
 import { useLibraryStore } from '../library/libraryStore';
 import { DISCLAIMER } from '../../components/ClinicalDisclaimer';
@@ -64,8 +64,7 @@ export default function DashboardPage() {
   usePageTour('dashboard');
   // moves on at local midnight, so a tab left open overnight shows the new day
   const today = useLocalDay();
-  const { book, pick, isError } = useDailyRemedy(today);
-  const remedy = pick?.remedy;
+  const { remedy, isError } = useDailyChapter(today);
   // three short keynotes from Boericke's own text for the hero chips
   const keynotes = useMemo(() => {
     if (!remedy) return [];
@@ -123,12 +122,12 @@ export default function DashboardPage() {
                 Remedy of the Day
               </span>
             </div>
-            {remedy && book ? (
+            {remedy ? (
               <>
                 <div className="mt-2 flex flex-wrap items-baseline gap-x-2">
                   <h2 className="font-serif text-3xl font-bold">{canonicalName(remedy.name)}</h2>
-                  {commonNameFor(DAILY_BOOK, remedy, book) && (
-                    <span className="text-sm text-white">{commonNameFor(DAILY_BOOK, remedy, book)}</span>
+                  {commonNameFor(DAILY_BOOK, remedy) && (
+                    <span className="text-sm text-white">{commonNameFor(DAILY_BOOK, remedy)}</span>
                   )}
                 </div>
                 <p className="mt-2 font-serif text-subhead italic leading-relaxed text-white">

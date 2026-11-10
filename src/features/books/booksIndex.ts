@@ -176,6 +176,9 @@ export function getBookMeta(id: string | undefined): BookMeta | undefined {
  */
 const SCRAPED_FOOTER_RE = /\s*Copyright\s*©\s*Médi-T\s*1999\s*Home\s*$/;
 
+/** A chapter as the reader shows it (without the scraped site footer). */
+export const cleanRemedy = (r: BookRemedy): BookRemedy => ({ ...r, text: r.text.replace(SCRAPED_FOOTER_RE, '') });
+
 async function fetchBook(id: string): Promise<BookData> {
   const res = await fetch(`${import.meta.env.BASE_URL}books/${id}.json`);
   if (!res.ok) {
@@ -184,7 +187,7 @@ async function fetchBook(id: string): Promise<BookData> {
   const data: BookData = await res.json();
   return {
     ...data,
-    remedies: data.remedies.map((r) => ({ ...r, text: r.text.replace(SCRAPED_FOOTER_RE, '') })),
+    remedies: data.remedies.map(cleanRemedy),
   };
 }
 

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useBook } from '../books/booksIndex';
+import { useQuery } from '@tanstack/react-query';
+import { cleanRemedy, useBook } from '../books/booksIndex';
 import type { BookData, BookRemedy } from '../books/types';
 
 // ---------------------------------------------------------------------------
@@ -129,11 +130,44 @@ function deckOf(book: BookData): BookRemedy[] {
 /** The book remedy for a day number. Remedies are ordered by slug so the deck is stable. */
 export function pickDaily(book: BookData, day: number): DailyPick {
   const remedies = deckOf(book);
-  const n = remedies.length;
+  const { index, pos } = dailyIndex(remedies.length, day);
+  return { remedy: remedies[index], dayInCycle: pos + 1, cycleLength: remedies.length };
+}
+
+/** Index into a deck of n for a day, and the day's 0-based position in its cycle. */
+function dailyIndex(n: number, day: number) {
   const offset = day - EPOCH_DAY;
   const cycle = Math.floor(offset / n);
   const pos = offset - cycle * n; // 0..n-1, also for days before the epoch
-  return { remedy: remedies[cycleOrder(n, cycle)[pos]], dayInCycle: pos + 1, cycleLength: n };
+  return { index: cycleOrder(n, cycle)[pos], pos };
+}
+
+async function fetchJson<T>(file: string): Promise<T> {
+  const res = await fetch(`${import.meta.env.BASE_URL}daily/${DAILY_BOOK}/${file}`);
+  if (!res.ok) throw new Error(`Could not load today's remedy (${res.status})`);
+  return res.json();
+}
+
+/**
+ * The same remedy as useDailyRemedy, without the whole book: a small list of
+ * slugs, then that one chapter (files from scripts/build-daily.mjs). For the
+ * Dashboard, which shows only the day's remedy.
+ */
+export function useDailyChapter(day: number) {
+  const deck = useQuery({
+    queryKey: ['daily', DAILY_BOOK, 'index'],
+    queryFn: () => fetchJson<{ slugs: string[] }>('index.json'),
+    staleTime: Infinity,
+  });
+  const slugs = deck.data?.slugs;
+  const slug = slugs ? slugs[dailyIndex(slugs.length, day).index] : undefined;
+  const chapter = useQuery({
+    queryKey: ['daily', DAILY_BOOK, slug],
+    queryFn: () => fetchJson<BookRemedy>(`${slug}.json`).then(cleanRemedy),
+    enabled: Boolean(slug),
+    staleTime: Infinity,
+  });
+  return { remedy: chapter.data, isError: deck.isError || chapter.isError };
 }
 
 /** Today's (or a given day's) remedy, once Boericke has loaded. */
