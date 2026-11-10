@@ -27,8 +27,8 @@ export default {
       id: 'search',
       target: 'materia-medica-search',
       title: 'Search remedies',
-      body: "Type a few letters of a remedy's name to narrow the list. Words in the small line under each name count too.",
-      tip: 'Type nux to find Nux vomica and Nux moschata.',
+      body: "Type a remedy's name to narrow the list. Switch Search in to Text to find every line, in every book, that has all your words.",
+      tip: 'Put words in quotes, like "better from motion", for an exact phrase.',
     },
     {
       id: 'remedy',

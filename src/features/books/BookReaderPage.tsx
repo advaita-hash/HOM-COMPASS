@@ -39,10 +39,19 @@ import { usePageTour } from '../tour/usePageTour';
 //   ?notes=remedy   open the notepad on "This remedy"
 //   ?notes=book     open the notepad on "Whole book"
 //   ?view=full      open on Full text (?view=portrait: on Drug picture)
+//   ?find=i.j:a-b   open on Full text at block i.j, characters a to b
+//                   highlighted (a line found by the Materia Medica text search)
 // Each param is removed once acted on, so refresh/back doesn't reopen it. A
 // ?note= for a note that belongs to another chapter, remedy or book is sent
 // on to that note's own page (links.ts noteHref).
 // ---------------------------------------------------------------------------
+
+/** A line from ?find=, highlighted in Full text. */
+interface Found {
+  block: string;
+  start: number;
+  end: number;
+}
 
 /** Notes pinned in one block: passages (character ranges) and whole sections. */
 interface BlockPins {
@@ -167,6 +176,7 @@ function PinnedText({
   sectionMarker,
   active,
   onOpen,
+  found,
 }: {
   text: string;
   labelLen: number;
@@ -174,9 +184,15 @@ function PinnedText({
   sectionMarker: boolean;
   active: Set<string>;
   onOpen: OpenNotes;
+  /** A line found by the text search, highlighted: [start, end). */
+  found?: [number, number];
 }) {
   const ranges = pins?.ranges ?? [];
-  const cuts = [...new Set([0, text.length, labelLen, ...ranges.flatMap((r) => [r.start, r.end])])].sort((a, b) => a - b);
+  const cuts = [
+    ...new Set([0, text.length, labelLen, ...ranges.flatMap((r) => [r.start, r.end]), ...(found ?? [])]),
+  ]
+    .filter((c) => c >= 0 && c <= text.length)
+    .sort((a, b) => a - b);
   const out: ReactNode[] = [];
   if (sectionMarker && pins?.section.length) {
     out.push(
@@ -193,6 +209,12 @@ function PinnedText({
     const [a, b] = [cuts[k], cuts[k + 1]];
     let node: ReactNode = text.slice(a, b);
     if (b <= labelLen) node = <strong className="font-sans font-semibold text-ink/90">{node}</strong>;
+    if (found && a >= found[0] && b <= found[1])
+      node = (
+        <mark data-find className="rounded-sm bg-amber-200 text-inherit [box-decoration-break:clone] [-webkit-box-decoration-break:clone]">
+          {node}
+        </mark>
+      );
     const cover = ranges.filter((r) => r.start <= a && r.end >= b);
     if (cover.length) {
       const ids = cover.flatMap((r) => r.notes.map((n) => n.id));
@@ -233,6 +255,7 @@ function RemedyText({
   active,
   onOpenNotes,
   textRef,
+  found,
 }: {
   remedy: BookRemedy;
   common: string | null;
@@ -240,6 +263,7 @@ function RemedyText({
   active: Set<string>;
   onOpenNotes: OpenNotes;
   textRef: RefObject<HTMLDivElement>;
+  found: Found | null;
 }) {
   const sections = useMemo(() => parseSections(remedy.text), [remedy.text]);
   return (
@@ -259,6 +283,7 @@ function RemedyText({
                 sectionMarker={!heading || j !== 0}
                 active={active}
                 onOpen={onOpenNotes}
+                found={found?.block === `${i}.${j}` ? [found.start, found.end] : undefined}
               />
             );
           };
@@ -406,6 +431,8 @@ export default function BookReaderPage() {
   const [sticky, setSticky] = useState<{ ids: string[]; id: string; focusText: boolean; reveal?: boolean } | null>(
     null,
   );
+  /** A line from ?find=, highlighted and scrolled to in Full text. */
+  const [found, setFound] = useState<Found | null>(null);
   /** A pinned note to bring into view and open as a sticky once Full text shows it. */
   const [scrollTo, setScrollTo] = useState<{ id: string } | null>(null);
   const textRef = useRef<HTMLDivElement>(null);
@@ -506,7 +533,29 @@ export default function BookReaderPage() {
     setPending(null);
     setSticky(null);
     setMarkerIds([]);
+    setFound(null);
   }, [bookId, slug]);
+
+  // ?find= (see the top of this file): show the line, then drop the param
+  useEffect(() => {
+    const m = /^(\d+\.\d+):(\d+)-(\d+)$/.exec(searchParams.get('find') ?? '');
+    if (!searchParams.has('find') || (m && !selected)) return; // wait for the chapter
+    if (m) {
+      setView('full');
+      setFound({ block: m[1], start: +m[2], end: +m[3] });
+    }
+    const next = new URLSearchParams(searchParams);
+    next.delete('find');
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams, selected, setView]);
+  useEffect(() => {
+    if (!found || view !== 'full') return;
+    const t = window.setTimeout(
+      () => scrollerRef.current?.querySelector('[data-find]')?.scrollIntoView({ block: 'center', behavior: 'smooth' }),
+      80,
+    );
+    return () => window.clearTimeout(t);
+  }, [found, view]);
 
   // URL contract (see the top of this file)
   useEffect(() => {
@@ -824,6 +873,7 @@ export default function BookReaderPage() {
                   active={active}
                   onOpenNotes={onOpenMarker}
                   textRef={textRef}
+                  found={found}
                 />
               )}
               {/* attribution for the edition the text comes from */}

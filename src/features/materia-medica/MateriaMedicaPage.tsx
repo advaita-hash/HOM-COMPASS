@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useDeferredValue, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ChevronLeft, FlaskConical, Loader2, NotebookPen, Search } from 'lucide-react';
 import { SearchX } from 'lucide-react';
@@ -15,6 +15,8 @@ import { RemedyNotepad } from '../notepad/RemedyNotepad';
 import { isRepertoryKey, remedyKeyForCurated } from '../notepad/remedyKey';
 import { usePageTour } from '../tour/usePageTour';
 import { TourButton } from '../tour/TourButton';
+import { TextSearchResults } from './TextSearchResults';
+import { useTextSearch } from './useTextSearch';
 
 type Source = 'Curated' | (typeof BOOKS)[number]['label'];
 
@@ -39,8 +41,15 @@ const SOURCE_LABEL: Record<string, string> = { Curated: 'Study cards' };
 function RemedyBrowser() {
   const [query, setQuery] = useState('');
   const [source, setSource] = useState<'All' | Source>('All');
+  /** Search remedy names, or every line of the books' text. */
+  const [mode, setMode] = useState<'names' | 'text'>('names');
   const books = useQueries({ queries: BOOKS.map((b) => bookQueryOptions(b.id)) });
   const loading = books.some((b) => b.isLoading);
+  const text = useTextSearch(
+    books.map((b) => b.data),
+    useDeferredValue(query),
+    mode === 'text',
+  );
 
   const entries = useMemo<Entry[]>(() => {
     const out: Entry[] = [];
@@ -67,12 +76,13 @@ function RemedyBrowser() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [books.map((b) => b.dataUpdatedAt).join()]);
 
-  const counts = useMemo(() => {
+  const nameCounts = useMemo(() => {
     const c: Record<string, number> = { All: entries.length, Curated: 0 };
     for (const b of BOOKS) c[b.label] = 0;
     for (const e of entries) c[e.source] += 1;
     return c;
   }, [entries]);
+  const counts = text.active ? text.counts : nameCounts;
 
   const q = query.trim().toLowerCase();
   const filtered = useMemo(() => {
@@ -118,6 +128,18 @@ function RemedyBrowser() {
         </div>
       </div>
 
+      <div className="mb-2 flex items-center gap-3">
+        <span className="text-sm text-ink/70">Search in</span>
+        <SegmentedControl
+          ariaLabel="Search in"
+          value={mode}
+          onChange={setMode}
+          options={[
+            { value: 'names', label: 'Names' },
+            { value: 'text', label: 'Text' },
+          ]}
+        />
+      </div>
       <div className="relative mb-4">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
         <input
@@ -125,8 +147,8 @@ function RemedyBrowser() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           type="search"
-          aria-label="Search remedies"
-          placeholder="Search remedies…"
+          aria-label={mode === 'names' ? 'Search remedies' : 'Search the text of every book'}
+          placeholder={mode === 'names' ? 'Search remedies…' : 'Words in any order, or a "phrase"…'}
           className="w-full rounded-lg border border-slate-200 bg-surface py-3 pl-10 pr-3 text-sm focus:outline-none"
         />
       </div>
@@ -137,49 +159,67 @@ function RemedyBrowser() {
         </div>
       )}
 
-      {/* grid-cols-1 is minmax(0,1fr): a long name can't widen the column past the screen */}
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-        {filtered.map((e, i) => (
-          <Link
-            key={e.key}
-            to={e.to}
-            data-tour={i === 0 ? 'materia-medica-remedy' : undefined}
-            className="card min-w-0 p-3 pressable"
-          >
-            <div className="flex items-center gap-2">
-              <span className="min-w-0 flex-1 truncate font-serif text-base font-semibold text-slate-800">
-                {canonicalName(e.name)}
-              </span>
-              <span className={`shrink-0 rounded-full px-2 py-1 text-2xs font-medium ${SOURCE_BADGE[e.source] ?? SOURCE_BADGE.Curated}`}>
-                {e.source === 'Curated' ? 'Study card' : e.source}
-              </span>
-            </div>
-            {e.sub && <p className="mt-1 line-clamp-2 text-xs text-ink/70">{e.sub}</p>}
-          </Link>
-        ))}
-      </div>
-      {filtered.length === 0 && !loading && (
-        <EmptyState
-          icon={SearchX}
-          title="No remedies match"
-          description={<>Nothing in {source === 'All' ? 'any source' : (SOURCE_LABEL[source] ?? source)} matches “{query.trim()}”.</>}
-          action={
-            <button
-              className="btn-secondary"
-              onClick={() => {
-                setQuery('');
-                setSource('All');
-              }}
-            >
-              Clear search
-            </button>
-          }
-        />
-      )}
-      {filtered.length === 400 && (
-        <p className="mt-2 text-center text-xs text-ink/70">
-          Showing first 400 — refine your search to narrow.
-        </p>
+      {mode === 'text' ? (
+        text.active ? (
+          <TextSearchResults
+            groups={source === 'All' ? text.groups : text.groups.filter((g) => g.source === source)}
+            terms={text.terms}
+            total={counts[source] ?? 0}
+            badge={(s) => SOURCE_BADGE[s] ?? SOURCE_BADGE.Curated}
+          />
+        ) : (
+          <p className="text-sm text-ink/70">
+            Type words to find every line that contains them, in any order. Put words in quotes to find an exact
+            phrase.
+          </p>
+        )
+      ) : (
+        <>
+          {/* grid-cols-1 is minmax(0,1fr): a long name can't widen the column past the screen */}
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            {filtered.map((e, i) => (
+              <Link
+                key={e.key}
+                to={e.to}
+                data-tour={i === 0 ? 'materia-medica-remedy' : undefined}
+                className="card min-w-0 p-3 pressable"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="min-w-0 flex-1 truncate font-serif text-base font-semibold text-slate-800">
+                    {canonicalName(e.name)}
+                  </span>
+                  <span className={`shrink-0 rounded-full px-2 py-1 text-2xs font-medium ${SOURCE_BADGE[e.source] ?? SOURCE_BADGE.Curated}`}>
+                    {e.source === 'Curated' ? 'Study card' : e.source}
+                  </span>
+                </div>
+                {e.sub && <p className="mt-1 line-clamp-2 text-xs text-ink/70">{e.sub}</p>}
+              </Link>
+            ))}
+          </div>
+          {filtered.length === 0 && !loading && (
+            <EmptyState
+              icon={SearchX}
+              title="No remedies match"
+              description={<>Nothing in {source === 'All' ? 'any source' : (SOURCE_LABEL[source] ?? source)} matches “{query.trim()}”.</>}
+              action={
+                <button
+                  className="btn-secondary"
+                  onClick={() => {
+                    setQuery('');
+                    setSource('All');
+                  }}
+                >
+                  Clear search
+                </button>
+              }
+            />
+          )}
+          {filtered.length === 400 && (
+            <p className="mt-2 text-center text-xs text-ink/70">
+              Showing first 400 — refine your search to narrow.
+            </p>
+          )}
+        </>
       )}
     </div>
   );
