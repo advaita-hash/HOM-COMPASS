@@ -1,0 +1,42 @@
+import type { Tour } from '../types';
+
+// The home page: the one-time disclaimer (skipped once "Got it" is tapped),
+// today's remedy, the count tiles and the two quick actions.
+export default {
+  id: 'dashboard',
+  title: 'Dashboard',
+  summary: "Your home page: today's remedy, a few quick counts and shortcuts to the main parts of the app.",
+  route: '/dashboard',
+  order: 10,
+  version: 2,
+  steps: [
+    {
+      id: 'disclaimer',
+      target: 'dashboard-disclaimer',
+      title: 'About this app',
+      body: 'A reminder that this app is a study aid, not a diagnosis or prescription. {Tap} Got it to hide this note on this device.',
+    },
+    {
+      id: 'remedy-of-the-day',
+      target: 'dashboard-remedy-of-the-day',
+      magnify: false,
+      title: 'Remedy of the Day',
+      body: 'A new remedy from Boericke every day, with its opening words and a few keynotes. {Tap} the card or Study now to read all about it.',
+    },
+    {
+      id: 'stats',
+      target: 'dashboard-stats',
+      magnify: false,
+      title: 'Quick counts',
+      body: 'Remedies counts every remedy entry across the five sources. Your books counts the files listed in your Library. Each box is a shortcut: {tap} it to open that part.',
+      tip: '{Tap} Repertory rubrics to jump straight to the Repertory.',
+    },
+    {
+      id: 'quick-actions',
+      target: 'dashboard-quick-actions',
+      magnify: false,
+      title: 'Quick actions',
+      body: 'Search finds a remedy, symptom or rubric anywhere in the app. Work up a case opens Cases, where you add rubrics and see which remedies cover them best.',
+    },
+  ],
+} satisfies Tour;
