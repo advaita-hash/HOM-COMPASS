@@ -13,6 +13,7 @@ import {
   Menu,
   Network,
   Search,
+  Sparkles,
   Users,
   X,
   NotebookPen,
@@ -39,6 +40,7 @@ const MyNotesPage = lazy(() => import('./features/notes/MyNotesPage'));
 const SharedNotePage = lazy(() => import('./features/notes/SharedNotePage'));
 const ComparePage = lazy(() => import('./features/compare/ComparePage'));
 const HelpPage = lazy(() => import('./features/tour/HelpPage'));
+const AskPage = lazy(() => import('./features/ask/AskPage'));
 import { TourOverlay } from './features/tour/TourOverlay';
 import { useWelcomeTour } from './features/tour/usePageTour';
 import { useCompare } from './features/compare/compareStore';
@@ -68,6 +70,7 @@ const NAV: readonly {
 }[] = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, tour: 'nav-dashboard' },
   { to: '/search', label: 'Search', icon: Search, tour: 'nav-search' },
+  { to: '/ask', label: 'Ask the books', icon: Sparkles, tour: 'nav-ask' },
   { to: '/remedy-of-the-day', label: 'Remedy of the Day', icon: CalendarDays, tour: 'nav-remedy-of-the-day' },
   { to: '/repertory', label: 'Repertory', icon: BookOpen, tour: 'nav-repertory', match: ['/remedy/'] },
   { to: '/analysis', label: 'Cases', icon: Activity, tour: 'nav-cases' },
@@ -394,6 +397,7 @@ export default function App() {
             <Route path="/patients" element={<PatientsPage />} />
             <Route path="/patients/:patientId" element={<PatientDetailPage />} />
             <Route path="/help" element={<HelpPage />} />
+            <Route path="/ask" element={<AskPage />} />
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
           </Suspense>

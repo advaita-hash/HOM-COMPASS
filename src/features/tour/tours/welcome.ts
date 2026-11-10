@@ -38,6 +38,14 @@ export default {
       body: 'Look up a remedy, symptom or rubric in one place. It searches your notes, the materia medica, the reference books and the repertory.',
     },
     {
+      id: 'ask',
+      target: 'nav-ask',
+      menu: 'open',
+      placement: 'right',
+      title: 'Ask the books',
+      body: 'Ask a question and get a short answer or comparison taken only from the books, with links to the lines used.',
+    },
+    {
       id: 'remedy-of-the-day',
       target: 'nav-remedy-of-the-day',
       menu: 'open',
