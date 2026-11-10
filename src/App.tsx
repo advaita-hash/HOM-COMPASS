@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { Suspense, lazy, useCallback, useEffect, useRef } from 'react';
 import { Link, NavLink, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import {
   Activity,
@@ -21,24 +21,24 @@ import {
   Moon,
   SunMoon,
 } from 'lucide-react';
-import { isSupabaseConfigured } from './lib/supabase';
+import { isSupabaseConfigured } from './lib/supabaseConfig';
 import DashboardPage from './features/dashboard/DashboardPage';
-import LibraryPage from './features/library/LibraryPage';
-import RemedyOfTheDayPage from './features/remedy/RemedyOfTheDayPage';
-import MateriaMedicaPage from './features/materia-medica/MateriaMedicaPage';
-import BooksPage from './features/books/BooksPage';
-import BookReaderPage from './features/books/BookReaderPage';
-import RepertoryPage from './features/repertory/RepertoryPage';
-import RepertorizationPage from './features/repertory/RepertorizationPage';
-import GlobalSearchPage from './features/search/GlobalSearchPage';
-import PatientsPage from './features/patients/PatientsPage';
-import PatientDetailPage from './features/patients/PatientDetailPage';
-import KnowledgeGraphPage from './features/graph/KnowledgeGraphPage';
-import RemedyProfilePage from './features/remedy/RemedyProfilePage';
-import MyNotesPage from './features/notes/MyNotesPage';
-import SharedNotePage from './features/notes/SharedNotePage';
-import ComparePage from './features/compare/ComparePage';
-import HelpPage from './features/tour/HelpPage';
+const LibraryPage = lazy(() => import('./features/library/LibraryPage'));
+const RemedyOfTheDayPage = lazy(() => import('./features/remedy/RemedyOfTheDayPage'));
+const MateriaMedicaPage = lazy(() => import('./features/materia-medica/MateriaMedicaPage'));
+const BooksPage = lazy(() => import('./features/books/BooksPage'));
+const BookReaderPage = lazy(() => import('./features/books/BookReaderPage'));
+const RepertoryPage = lazy(() => import('./features/repertory/RepertoryPage'));
+const RepertorizationPage = lazy(() => import('./features/repertory/RepertorizationPage'));
+const GlobalSearchPage = lazy(() => import('./features/search/GlobalSearchPage'));
+const PatientsPage = lazy(() => import('./features/patients/PatientsPage'));
+const PatientDetailPage = lazy(() => import('./features/patients/PatientDetailPage'));
+const KnowledgeGraphPage = lazy(() => import('./features/graph/KnowledgeGraphPage'));
+const RemedyProfilePage = lazy(() => import('./features/remedy/RemedyProfilePage'));
+const MyNotesPage = lazy(() => import('./features/notes/MyNotesPage'));
+const SharedNotePage = lazy(() => import('./features/notes/SharedNotePage'));
+const ComparePage = lazy(() => import('./features/compare/ComparePage'));
+const HelpPage = lazy(() => import('./features/tour/HelpPage'));
 import { TourOverlay } from './features/tour/TourOverlay';
 import { useWelcomeTour } from './features/tour/usePageTour';
 import { useCompare } from './features/compare/compareStore';
@@ -250,6 +250,15 @@ function Sidebar({
   );
 }
 
+/** Shown while a page's code downloads (each page loads only when opened). */
+function PageLoading() {
+  return (
+    <p role="status" className="p-6 text-sm text-ink/70 md:p-8">
+      Loading…
+    </p>
+  );
+}
+
 export default function App() {
   const menuOpen = useShell((s) => s.menuOpen);
   const setMenuOpen = useShell((s) => s.setMenuOpen);
@@ -289,7 +298,9 @@ export default function App() {
   if (location.pathname === '/shared/note')
     return (
       <ErrorBoundary>
-        <SharedNotePage />
+        <Suspense fallback={<PageLoading />}>
+          <SharedNotePage />
+        </Suspense>
       </ErrorBoundary>
     );
 
@@ -362,6 +373,7 @@ export default function App() {
         <StorageStatusBanner />
         {/* Reset by route: a crash stays on its screen and navigating away recovers. */}
         <ErrorBoundary resetKey={location.pathname}>
+          <Suspense fallback={<PageLoading />}>
           <Routes>
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<DashboardPage />} />
@@ -384,6 +396,7 @@ export default function App() {
             <Route path="/help" element={<HelpPage />} />
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
+          </Suspense>
         </ErrorBoundary>
       </main>
 

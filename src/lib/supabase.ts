@@ -1,13 +1,10 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { isSupabaseConfigured } from './supabaseConfig';
+
+export { isSupabaseConfigured };
 
 const url = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
-
-/**
- * Whether a live Supabase backend is configured. When false the app runs in
- * DEMO MODE and reads from the bundled seed knowledge graph instead.
- */
-export const isSupabaseConfigured = Boolean(url && anonKey);
 
 /**
  * Shared Supabase client, or `null` in demo mode. Consumers should branch on
