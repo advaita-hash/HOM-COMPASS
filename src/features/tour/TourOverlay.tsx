@@ -211,14 +211,20 @@ function arrowStyle(p: Placed, cw: number, ch: number): CSSProperties | undefine
 }
 
 /**
+ * A step can show if it has no target, is centred when missing, has a visible
+ * target, or its target is in the phone menu, which the step opens itself
+ * (the closed drawer hides its links, so they aren't visible yet).
+ */
+const canShow = (s: Tour['steps'][number]) =>
+  !s.target || s.ifMissing === 'center' || (s.menu === 'open' && window.innerWidth < LG) || !!findVisible(s.target);
+
+/**
  * Which steps can show now: no target, shown centred when missing, or a
  * visible target, and not skipped already. Drives the counter, the dots and
  * where Next and Back go (straight past controls this screen doesn't have).
  */
 function plan(tour: Tour, at: number, skipped: Set<number>) {
-  const ok = tour.steps.map(
-    (s, i) => i === at || (!skipped.has(i) && (!s.target || s.ifMissing === 'center' || !!findVisible(s.target))),
-  );
+  const ok = tour.steps.map((s, i) => i === at || (!skipped.has(i) && canShow(s)));
   let prev = -1;
   for (let j = at - 1; j >= 0; j--) {
     if (ok[j]) {
@@ -537,7 +543,7 @@ function TourLayer({ active, tour }: { active: ActiveTour; tour: Tour }) {
     if (!t) return;
     let last = '';
     const timer = window.setInterval(() => {
-      const sig = t.steps.map((s) => (!s.target || s.ifMissing === 'center' || findVisible(s.target) ? 1 : 0)).join('');
+      const sig = t.steps.map((s) => (canShow(s) ? 1 : 0)).join('');
       if (last && sig !== last) setSkipRev((n) => n + 1);
       last = sig;
     }, FOLLOW_MS);
