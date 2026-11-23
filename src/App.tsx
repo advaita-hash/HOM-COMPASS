@@ -22,7 +22,6 @@ import {
   Moon,
   SunMoon,
 } from 'lucide-react';
-import { isSupabaseConfigured } from './lib/supabaseConfig';
 import DashboardPage from './features/dashboard/DashboardPage';
 const LibraryPage = lazy(() => import('./features/library/LibraryPage'));
 const RemedyOfTheDayPage = lazy(() => import('./features/remedy/RemedyOfTheDayPage'));
@@ -234,15 +233,9 @@ function Sidebar({
       </div>
 
       <div className="px-5 py-4 text-2xs text-ink/70">
-        {isSupabaseConfigured ? (
-          <span className="inline-flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-emerald-500" /> Connected
-          </span>
-        ) : (
-          <span className="inline-flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-ink/30" /> Saved on this device
-          </span>
-        )}
+        <span className="inline-flex items-center gap-2">
+          <span className="h-2 w-2 rounded-full bg-ink/30" /> Saved on this device
+        </span>
         {/* Always-visible clinical disclaimer; full wording on hover / for screen readers. */}
         <p className="mt-2 leading-snug" title={DISCLAIMER}>
           Study aid — not a diagnosis or prescription.
