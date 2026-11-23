@@ -14,8 +14,8 @@ export default {
       id: 'plan',
       target: 'ask-plan',
       title: 'Free or premium',
-      body: 'Free answers use Allen and Tyler, 2 questions a day. Premium answers use all four books, with no daily limit.',
-      tip: 'Got a premium code? {Tap} Have a premium code? and enter it.',
+      body: 'Free answers use Allen and Tyler, 2 questions a day. Common Room Premium unlocks all four books, with no daily limit.',
+      tip: 'Have Common Room Premium? {Tap} Unlock all four books and sign in.',
     },
     {
       id: 'question',

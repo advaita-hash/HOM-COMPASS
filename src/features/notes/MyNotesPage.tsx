@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { ChevronRight, Loader2, NotebookPen, StickyNote } from 'lucide-react';
 import ABBREV from '../../data/remedyAbbrev.json';
 import { canonicalName } from '../../lib/remedyName';
-import { COMMON_ROOM_URL, usernameOf } from '../../lib/commonRoom';
+import { COMMON_ROOM_URL, isCaYear, usernameOf, yearLabel } from '../../lib/commonRoom';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { TourButton } from '../tour/TourButton';
 import { usePageTour } from '../tour/usePageTour';
@@ -14,7 +14,7 @@ import { placeLabel } from '../notepad/places';
 import { toneOf } from '../notepad/noteColors';
 import { remedyKeyLabel } from '../notepad/remedyKey';
 import CommonRoomSignIn from './CommonRoomSignIn';
-import { signOutOfCommonRoom, useCommonRoomSession, useRemedyNotes } from './useCommonRoom';
+import { signOutOfCommonRoom, useCommonRoomProfile, useCommonRoomSession, useRemedyNotes } from './useCommonRoom';
 
 const TABLE = ABBREV as unknown as Record<string, [string] | [string, string[]]>;
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -188,6 +188,7 @@ export default function MyNotesPage() {
   usePageTour('my-notes');
   const session = useCommonRoomSession();
   const notes = useRemedyNotes(session?.user.id);
+  const year = useCommonRoomProfile(session?.user.id).data?.year;
   const files = useMemo(() => {
     const m = new Map<string, { remedy: string; count: number; last: string; latest: string }>();
     for (const n of notes.data ?? []) {
@@ -240,16 +241,24 @@ export default function MyNotesPage() {
           ) : (
             <>
               <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-xs text-ink/70">
-                <span>Signed in to Common Room as {usernameOf(session.user.email)}</span>
+                <span>
+                  Signed in to Common Room as {usernameOf(session.user.email)}
+                  {yearLabel(year) && ` · ${yearLabel(year)}`}
+                </span>
                 <button data-tour="my-notes-sign-out" className="underline" onClick={() => signOutOfCommonRoom()}>
                   Sign out
                 </button>
               </div>
+              {isCaYear(year) && (
+                <p className="mb-3 rounded-lg bg-amber-50 p-3 text-sm text-ink/80">
+                  HOM-COMPASS is for homeopathy (BHMS) students. Common Room’s CA track has no remedy notes to show here.
+                </p>
+              )}
               {!files.length ? (
                 <EmptyState
                   icon={NotebookPen}
                   title="No remedy notes yet"
-                  description="In Common Room’s OPD notes, start a line with a remedy and a dash — “Puls - weepy, thirstless” — and it’s filed here under that remedy."
+                  description="In Common Room’s OPD notes, start a line with a remedy and a dash — “Puls - weepy, thirstless” — and it’s filed here under that remedy. Writing remedy notes is part of Common Room Premium."
                   action={
                     <a
                       data-tour="my-notes-open-common-room"

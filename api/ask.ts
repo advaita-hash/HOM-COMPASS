@@ -3,16 +3,18 @@ import path from 'node:path';
 import Anthropic from '@anthropic-ai/sdk';
 import type { BookData } from '../src/features/books/types';
 import { type SourceBook, retrieve } from '../src/features/ask/retrieve';
+import { COMMON_ROOM_PUBLISHABLE_KEY, COMMON_ROOM_SUPABASE_URL } from '../src/lib/commonRoomConfig';
 
 // ---------------------------------------------------------------------------
 // "Ask the books": answers a question from the reference books only, citing
-// the lines it used. Vercel function: POST /api/ask {question, code?}.
+// the lines it used. Vercel function: POST /api/ask {question}, with an
+// optional `Authorization: Bearer <Common Room access token>`.
 //
 //   free     Claude Haiku 5.5 · Allen and Tyler · FREE_DAILY_LIMIT a day
-//   premium  Claude Opus 5.5  · all four books  · a code from PREMIUM_CODES
+//   premium  Claude Opus 5.5  · all four books  · Common Room Premium
 //
-// Environment: ANTHROPIC_API_KEY (required), PREMIUM_CODES (comma-separated),
-// FREE_DAILY_LIMIT (default 2). The response is NDJSON, one event per line:
+// Environment: ANTHROPIC_API_KEY (required), FREE_DAILY_LIMIT (default 2).
+// The response is NDJSON, one event per line:
 //   {t:'sources', tier, docs}  the passages sent, with their line places
 //   {t:'text', i, d}           answer text for block i
 //   {t:'cite', i, c}           a citation on block i: c = {doc, start, end, text}
@@ -49,23 +51,46 @@ function loadBook(id: string): BookData {
   return b;
 }
 
-/** Free questions per network per day. Per server instance: a backstop to the app's own count. */
+/**
+ * Free questions per account (or network, signed out) per day.
+ * shortcut: counted in this server instance's memory, so a new instance starts
+ * from zero; move to a shared store (or Common Room's database) when abuse shows.
+ */
 const freeUse = new Map<string, { day: string; n: number }>();
-function takeFreeQuestion(ip: string): boolean {
+function takeFreeQuestion(who: string): boolean {
   const limit = Number(process.env.FREE_DAILY_LIMIT ?? 2);
   const day = new Date().toISOString().slice(0, 10);
-  const u = freeUse.get(ip);
+  const u = freeUse.get(who);
   const n = u && u.day === day ? u.n : 0;
   if (n >= limit) return false;
-  freeUse.set(ip, { day, n: n + 1 });
+  freeUse.set(who, { day, n: n + 1 });
   return true;
+}
+
+/**
+ * The signed-in Common Room user behind a bearer token, and whether they have
+ * Common Room Premium (also HOM-COMPASS Premium). An invalid token is no user;
+ * until Common Room's is_premium() exists, nobody is premium.
+ */
+async function commonRoomUser(token: string): Promise<{ id: string; premium: boolean } | null> {
+  const headers = { apikey: COMMON_ROOM_PUBLISHABLE_KEY, authorization: `Bearer ${token}` };
+  const user = await fetch(`${COMMON_ROOM_SUPABASE_URL}/auth/v1/user`, { headers });
+  if (!user.ok) return null;
+  const { id } = (await user.json()) as { id?: unknown };
+  if (typeof id !== 'string') return null;
+  const rpc = await fetch(`${COMMON_ROOM_SUPABASE_URL}/rest/v1/rpc/is_premium`, {
+    method: 'POST',
+    headers: { ...headers, 'content-type': 'application/json' },
+    body: '{}',
+  });
+  return { id, premium: rpc.ok && (await rpc.json()) === true };
 }
 
 const json = (status: number, body: unknown) =>
   new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });
 
 export async function POST(request: Request): Promise<Response> {
-  let body: { question?: unknown; code?: unknown };
+  let body: { question?: unknown };
   try {
     body = await request.json();
   } catch {
@@ -75,14 +100,15 @@ export async function POST(request: Request): Promise<Response> {
   if (question.length < 3 || question.length > 600) return json(400, { error: 'bad-question' });
   if (!process.env.ANTHROPIC_API_KEY) return json(503, { error: 'not-configured' });
 
-  const codes = (process.env.PREMIUM_CODES ?? '').split(',').map((c) => c.trim()).filter(Boolean);
-  const tier: Tier = typeof body.code === 'string' && codes.includes(body.code.trim()) ? 'premium' : 'free';
+  const token = /^Bearer (.+)$/.exec(request.headers.get('authorization') ?? '')?.[1];
+  const user = token ? await commonRoomUser(token).catch(() => null) : null;
+  const tier: Tier = user?.premium ? 'premium' : 'free';
   const books: SourceBook[] = TIERS[tier].books.map((id) => ({ id, label: LABELS[id], data: loadBook(id) }));
   const passages = retrieve(question, books);
   if (!passages.length) return json(200, { error: 'no-passages', tier });
 
   const ip = (request.headers.get('x-forwarded-for') ?? '').split(',')[0].trim() || 'unknown';
-  if (tier === 'free' && !takeFreeQuestion(ip)) return json(429, { error: 'limit', tier });
+  if (tier === 'free' && !takeFreeQuestion(user ? `user:${user.id}` : `ip:${ip}`)) return json(429, { error: 'limit', tier });
 
   const client = new Anthropic();
   const documents: Anthropic.Beta.BetaContentBlockParam[] = passages.map((p) => ({

@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { COMMON_ROOM_PUBLISHABLE_KEY, COMMON_ROOM_SUPABASE_URL } from './commonRoomConfig';
 
 // ---------------------------------------------------------------------------
 // Common Room connection. Students' own remedy notes are written in Common
@@ -11,8 +12,6 @@ import { createClient } from '@supabase/supabase-js';
 // ---------------------------------------------------------------------------
 
 export const COMMON_ROOM_URL = 'https://common-room-six.vercel.app';
-const SUPABASE_URL = 'https://iltosbkrqufpjprxbnmz.supabase.co';
-const PUBLISHABLE_KEY = 'sb_publishable_aqoCvEjShkCXYa5qAWD5Hg_b0jrCPsD';
 
 // localStorage that never throws (blocked site data, some private windows):
 // the sign-in is then simply not kept, instead of an uncaught SecurityError.
@@ -40,7 +39,7 @@ const guardedStorage = {
   },
 };
 
-export const commonRoom = createClient(SUPABASE_URL, PUBLISHABLE_KEY, {
+export const commonRoom = createClient(COMMON_ROOM_SUPABASE_URL, COMMON_ROOM_PUBLISHABLE_KEY, {
   auth: {
     storageKey: 'hom-compass.common-room-auth',
     storage: guardedStorage,
@@ -57,6 +56,14 @@ export const loginEmail = (id: string) => {
 };
 export const usernameOf = (email?: string | null) =>
   email && email.endsWith('@' + LOGIN_DOMAIN) ? email.slice(0, -LOGIN_DOMAIN.length - 1) : (email ?? '');
+
+/** A Common Room profile year: 1-4 are BHMS years, 11-13 the CA (ICAI) levels. */
+export function yearLabel(year: number | null | undefined): string | null {
+  if (year == null) return null;
+  if (year >= 1 && year <= 4) return `${['1st', '2nd', '3rd', '4th'][year - 1]} year BHMS`;
+  return ['CA Foundation', 'CA Intermediate', 'CA Final'][year - 11] ?? null;
+}
+export const isCaYear = (year: number | null | undefined) => year != null && year >= 11;
 
 export interface RemedyNoteEntry {
   id: string;

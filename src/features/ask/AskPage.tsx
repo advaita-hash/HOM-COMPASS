@@ -7,6 +7,9 @@ import { DISCLAIMER } from '../../components/ClinicalDisclaimer';
 import { usePageTour } from '../tour/usePageTour';
 import { TourButton } from '../tour/TourButton';
 import { FREE_DAILY, freeLeft, useAsk } from './askStore';
+import { COMMON_ROOM_URL } from '../../lib/commonRoom';
+import { useCommonRoomProfile, useCommonRoomSession } from '../notes/useCommonRoom';
+import CommonRoomSignIn from '../notes/CommonRoomSignIn';
 
 interface SourceDoc {
   book: string;
@@ -33,14 +36,16 @@ const MESSAGES: Record<string, string> = {
   busy: 'The assistant is busy right now. Please try again in a minute.',
   failed: 'Something went wrong while answering. Please try again.',
   network: 'Couldn’t reach the assistant. Check your connection and try again.',
-  'bad-code': 'Your premium code wasn’t accepted, so this is a free answer. Check the code or ask for a new one.',
 };
 
 export default function AskPage() {
   usePageTour('ask');
-  const { code, setCode, countFreeQuestion } = useAsk();
+  const countFreeQuestion = useAsk((s) => s.countFreeQuestion);
   const left = useAsk(freeLeft);
-  const premium = code !== '';
+  // HOM-COMPASS Premium is Common Room Premium (one purchase, one login)
+  const session = useCommonRoomSession();
+  const profile = useCommonRoomProfile(session?.user.id);
+  const premium = profile.data?.premium === true;
   const [question, setQuestion] = useState('');
   const [asked, setAsked] = useState('');
   const [busy, setBusy] = useState(false);
@@ -49,8 +54,7 @@ export default function AskPage() {
   const [tier, setTier] = useState<'free' | 'premium' | null>(null);
   const [docs, setDocs] = useState<SourceDoc[]>([]);
   const [blocks, setBlocks] = useState<Record<number, { text: string; cites: Cite[] }>>({});
-  const [codeOpen, setCodeOpen] = useState(false);
-  const [codeDraft, setCodeDraft] = useState('');
+  const [unlockOpen, setUnlockOpen] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
 
   async function ask(q: string) {
@@ -68,8 +72,11 @@ export default function AskPage() {
     try {
       const res = await fetch('/api/ask', {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ question: q.trim(), code }),
+        headers: {
+          'content-type': 'application/json',
+          ...(session ? { authorization: `Bearer ${session.access_token}` } : {}),
+        },
+        body: JSON.stringify({ question: q.trim() }),
         signal: ac.signal,
       });
       if (!res.ok || !res.headers.get('content-type')?.includes('ndjson')) {
@@ -94,7 +101,6 @@ export default function AskPage() {
             setTier(e.tier);
             setDocs(e.docs);
             if (e.tier === 'free') countFreeQuestion();
-            if (e.tier === 'free' && code) setError('bad-code');
           } else if (e.t === 'text')
             setBlocks((b) => ({ ...b, [e.i]: { text: (b[e.i]?.text ?? '') + e.d, cites: b[e.i]?.cites ?? [] } }));
           else if (e.t === 'cite')
@@ -157,34 +163,34 @@ export default function AskPage() {
             <Crown className="h-4 w-4 text-amber-600" aria-hidden /> Premium · Boericke, Tyler, Allen and Farrington
           </span>
         ) : (
-          <span className="text-ink/80">
-            <span className="font-medium text-ink/90">Free</span> · Allen and Tyler ·{' '}
-            {left} of {FREE_DAILY} questions left today
-          </span>
+          <>
+            <span className="text-ink/80">
+              <span className="font-medium text-ink/90">Free</span> · Allen and Tyler ·{' '}
+              {left} of {FREE_DAILY} questions left today
+            </span>
+            <button
+              type="button"
+              className="tap ml-auto font-medium text-brand-700 hover:underline"
+              aria-expanded={unlockOpen}
+              onClick={() => setUnlockOpen((o) => !o)}
+            >
+              Unlock all four books
+            </button>
+          </>
         )}
-        <button type="button" className="tap ml-auto font-medium text-brand-700 hover:underline" onClick={() => setCodeOpen((o) => !o)}>
-          {premium ? 'Change code' : 'Have a premium code?'}
-        </button>
-        {codeOpen && (
-          <form
-            className="flex w-full flex-wrap items-end gap-2"
-            onSubmit={(e) => {
-              e.preventDefault();
-              setCode(codeDraft);
-              setCodeOpen(false);
-            }}
-          >
-            <label className="min-w-0 flex-1 text-xs text-ink/70">
-              Premium code
-              <input value={codeDraft} onChange={(e) => setCodeDraft(e.target.value)} className="input mt-1 w-full" autoComplete="off" />
-            </label>
-            <button type="submit" className="btn-primary">Save</button>
-            {premium && (
-              <button type="button" className="btn-ghost" onClick={() => (setCode(''), setCodeOpen(false))}>
-                Remove code
-              </button>
+        {!premium && unlockOpen && (
+          <div className="w-full border-t border-ink/10 pt-3">
+            {!session ? (
+              <CommonRoomSignIn />
+            ) : (
+              <p className="text-sm text-ink/80">
+                Premium comes with Common Room Premium: unlimited questions answered from all four books.{' '}
+                <a className="font-medium text-brand-700 underline" href={COMMON_ROOM_URL} target="common-room" rel="noopener noreferrer">
+                  Get Premium in Common Room
+                </a>
+              </p>
             )}
-          </form>
+          </div>
         )}
       </div>
 

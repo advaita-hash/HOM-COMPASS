@@ -38,6 +38,26 @@ export function useRemedyNotes(userId: string | undefined, remedy?: string) {
   });
 }
 
+/**
+ * The signed-in student's year and whether they have Common Room Premium,
+ * which is also HOM-COMPASS Premium. is_premium() comes with Common Room's
+ * Premium migration; until it is applied the call fails and nobody is premium.
+ */
+export function useCommonRoomProfile(userId: string | undefined) {
+  return useQuery({
+    queryKey: ['common-room-profile', userId],
+    enabled: !!userId,
+    staleTime: 5 * 60_000,
+    queryFn: async () => {
+      const [profile, premium] = await Promise.all([
+        commonRoom.from('profiles').select('year').eq('id', userId!).maybeSingle(),
+        commonRoom.rpc('is_premium'),
+      ]);
+      return { year: (profile.data?.year as number | null) ?? null, premium: premium.data === true };
+    },
+  });
+}
+
 export function useDeleteRemedyNote() {
   const qc = useQueryClient();
   return useMutation({

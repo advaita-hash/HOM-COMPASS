@@ -27,8 +27,8 @@ export default function CommonRoomSignIn() {
       }}
     >
       <p className="text-sm text-slate-600">
-        Your remedy notes are written in Common Room's OPD notes. Sign in with the same Common Room account to
-        see them here.
+        Your remedy notes are written in Common Room's OPD notes (a Common Room Premium feature). Sign in with the
+        same Common Room account to see them here; Common Room Premium also unlocks HOM-COMPASS Premium.
       </p>
       <label className="block">
         <span className="mb-1 block text-sm font-medium text-ink/80">Common Room username or email</span>
