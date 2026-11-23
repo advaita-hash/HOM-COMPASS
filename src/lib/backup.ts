@@ -227,9 +227,73 @@ export function recordLastBackup(storage: KeyValueStorage, date: Date): void {
   }
 }
 
+// ---- optional password ----------------------------------------------------
+// A password-protected backup is { app, format, encrypted: {...} }: the plain
+// backup JSON sealed with AES-GCM under a key derived from the password
+// (PBKDF2-SHA-256). The browser's own Web Crypto does the work.
+
+const ITERATIONS = 310_000;
+function b64(bytes: Uint8Array): string {
+  let bin = '';
+  for (const byte of bytes) bin += String.fromCharCode(byte); // no spread: large backups overflow the stack
+  return btoa(bin);
+}
+const unb64 = (s: string) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
+
+async function keyFrom(password: string, salt: Uint8Array<ArrayBuffer>, iterations: number) {
+  const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey(
+    { name: 'PBKDF2', hash: 'SHA-256', salt, iterations },
+    base,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt', 'decrypt'],
+  );
+}
+
+/** The backup file's text, sealed with `password`. */
+export async function encryptBackup(backup: Backup, password: string): Promise<string> {
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const key = await keyFrom(password, salt, ITERATIONS);
+  const data = new Uint8Array(
+    await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, new TextEncoder().encode(JSON.stringify(backup))),
+  );
+  return JSON.stringify({
+    app: BACKUP_APP,
+    format: BACKUP_FORMAT,
+    exportedAt: backup.exportedAt,
+    encrypted: { cipher: 'AES-GCM', kdf: 'PBKDF2-SHA-256', iterations: ITERATIONS, salt: b64(salt), iv: b64(iv), data: b64(data) },
+  });
+}
+
+/** True when the file text is a password-protected backup. */
+export function isEncryptedBackup(text: string): boolean {
+  try {
+    const j: unknown = JSON.parse(text);
+    return isPlainObject(j) && j.app === BACKUP_APP && isPlainObject(j.encrypted);
+  } catch {
+    return false;
+  }
+}
+
+/** The plain backup text inside a protected file, or null for a wrong password or a damaged file. */
+export async function decryptBackup(text: string, password: string): Promise<string | null> {
+  try {
+    const e = (JSON.parse(text) as { encrypted: Record<string, unknown> }).encrypted;
+    if (typeof e.salt !== 'string' || typeof e.iv !== 'string' || typeof e.data !== 'string') return null;
+    const iterations = typeof e.iterations === 'number' && e.iterations >= 100_000 ? e.iterations : ITERATIONS;
+    const key = await keyFrom(password, unb64(e.salt), iterations);
+    const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(e.iv) }, key, unb64(e.data));
+    return new TextDecoder().decode(plain);
+  } catch {
+    return null;
+  }
+}
+
 /** Saves the backup as a JSON file through a temporary download link. */
-export function downloadBackup(backup: Backup): void {
-  const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+export function downloadBackup(backup: Backup, text: string = JSON.stringify(backup, null, 2)): void {
+  const blob = new Blob([text], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;

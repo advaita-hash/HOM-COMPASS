@@ -8,7 +8,10 @@ import {
   PATIENTS_KEY,
   browserStorage,
   buildBackup,
+  decryptBackup,
   downloadBackup,
+  encryptBackup,
+  isEncryptedBackup,
   parseBackup,
   readLastBackup,
   recordLastBackup,
@@ -56,6 +59,11 @@ export function BackupSection() {
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState<{ backup: Backup; counts: BackupCounts } | null>(null);
   const [justExported, setJustExported] = useState(false);
+  /** Optional password for the next export. */
+  const [password, setPassword] = useState('');
+  /** A chosen backup file that needs its password before it can be read. */
+  const [locked, setLocked] = useState<string | null>(null);
+  const [unlockPassword, setUnlockPassword] = useState('');
 
   // keyed on the location too, so following the banner link again re-scrolls
   useEffect(() => {
@@ -67,7 +75,7 @@ export function BackupSection() {
   const overdue =
     (patientCount > 0 || noteCount > 0) && (!lastBackup || now.getTime() - lastBackup.getTime() > REMIND_AFTER_DAYS * DAY_MS);
 
-  function exportBackup() {
+  async function exportBackup() {
     setError(null);
     setJustExported(false);
     try {
@@ -78,7 +86,7 @@ export function BackupSection() {
         [PATIENTS_KEY]: { state: { patients, cases }, version: 1 },
         [NOTEPAD_KEY]: { state: { notes, defaultColor }, version: NOTEPAD_VERSION },
       });
-      downloadBackup(backup);
+      downloadBackup(backup, password ? await encryptBackup(backup, password) : undefined);
       const at = new Date(backup.exportedAt);
       recordLastBackup(browserStorage(), at);
       setLastBackup(at);
@@ -102,12 +110,35 @@ export function BackupSection() {
       setError('That file couldn’t be opened.');
       return;
     }
+    setLocked(null);
+    if (isEncryptedBackup(text)) {
+      setUnlockPassword('');
+      setLocked(text);
+      return;
+    }
+    openBackup(text);
+  }
+
+  function openBackup(text: string) {
     const result = parseBackup(text);
     if (!result.ok) {
       setError(result.error);
       return;
     }
     setPending({ backup: result.backup, counts: result.counts });
+  }
+
+  async function unlock(e: React.FormEvent) {
+    e.preventDefault();
+    if (!locked) return;
+    const text = await decryptBackup(locked, unlockPassword);
+    if (text === null) {
+      setError('Wrong password, or the backup is damaged.');
+      return;
+    }
+    setError(null);
+    setLocked(null);
+    openBackup(text);
   }
 
   const cancelRestore = useCallback(() => setPending(null), []);
@@ -157,7 +188,7 @@ export function BackupSection() {
       )}
 
       <div className="mt-4 flex flex-wrap gap-3">
-        <button type="button" onClick={exportBackup} data-tour="patients-export" className="btn-primary">
+        <button type="button" onClick={() => void exportBackup()} data-tour="patients-export" className="btn-primary">
           <Download className="h-4 w-4" aria-hidden /> Export backup
         </button>
         <label data-tour="patients-restore" className="btn-secondary cursor-pointer has-[:focus-visible]:ring-2">
@@ -170,6 +201,39 @@ export function BackupSection() {
           />
         </label>
       </div>
+
+      <label className="mt-3 block max-w-sm text-sm text-ink/80">
+        Password for the backup (optional)
+        <input
+          type="password"
+          autoComplete="new-password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className="input mt-1 w-full"
+        />
+        <span className="mt-1 block text-xs text-ink/70">
+          With a password, the file can only be opened with it. A forgotten password can’t be recovered.
+        </span>
+      </label>
+
+      {locked && (
+        <form onSubmit={unlock} className="mt-4 flex max-w-sm flex-wrap items-end gap-2">
+          <label className="min-w-0 flex-1 text-sm text-ink/80">
+            This backup has a password
+            <input
+              type="password"
+              autoComplete="current-password"
+              autoFocus
+              value={unlockPassword}
+              onChange={(e) => setUnlockPassword(e.target.value)}
+              className="input mt-1 w-full"
+            />
+          </label>
+          <button type="submit" className="btn-primary" disabled={!unlockPassword}>
+            Unlock
+          </button>
+        </form>
+      )}
 
       {error && (
         <p role="alert" className="mt-3 text-sm text-red-600">

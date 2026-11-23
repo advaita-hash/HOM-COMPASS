@@ -117,10 +117,11 @@ export default function AskPage() {
   }
 
   // numbered sources, in order of first citation; markers appended to the cited text
-  const { markdown, sources } = useMemo(() => {
+  const { markdown, sources, uncited } = useMemo(() => {
     const index = new Map<string, number>();
     const list: { n: number; doc: SourceDoc; cite: Cite }[] = [];
     let md = '';
+    let uncited = false;
     for (const k of Object.keys(blocks).map(Number).sort((a, b) => a - b)) {
       const { text, cites } = blocks[k];
       const marks = new Set<number>();
@@ -136,9 +137,17 @@ export default function AskPage() {
         }
         marks.add(n);
       }
+      // a sentence or more with no citation gets a tag (table rows are left
+      // alone: a tag after a row's last | would break the table)
+      if (!cites.length && text.replace(/[\s*_#>|:.-]/g, '').length >= 30 && !text.includes('|')) {
+        const end = text.length - (/\s*$/.exec(text)?.[0].length ?? 0);
+        md += `${text.slice(0, end)} [not from the books](#uncited)${text.slice(end)}`;
+        uncited = true;
+        continue;
+      }
       md += text + [...marks].map((n) => `[${n}](#src-${n})`).join('');
     }
-    return { markdown: md, sources: list };
+    return { markdown: md, sources: list, uncited };
   }, [blocks, docs]);
 
   const submit = (e: FormEvent) => {
@@ -251,6 +260,11 @@ export default function AskPage() {
             </ReactMarkdown>
           </div>
           {refused && <p className="mt-3 text-sm text-ink/70">The assistant declined to answer this question.</p>}
+          {uncited && !busy && (
+            <p className="mt-3 text-sm text-ink/70">
+              Text tagged “not from the books” has no source in the books. Check it against the sources below.
+            </p>
+          )}
 
           {sources.length > 0 && (
             <div data-tour="ask-sources" className="mt-5 border-t border-ink/10 pt-4">
@@ -284,7 +298,11 @@ export default function AskPage() {
 /** Answer markdown, styled to the app (no typography plugin). */
 const MD = {
   a: ({ href, children }: { href?: string; children?: ReactNode }) =>
-    href?.startsWith('#src-') ? (
+    href === '#uncited' ? (
+      <span className="ml-1 whitespace-nowrap rounded bg-amber-100 px-1 align-middle text-2xs font-semibold text-amber-800">
+        {children}
+      </span>
+    ) : href?.startsWith('#src-') ? (
       <a href={href} className="ml-1 align-super text-2xs font-semibold text-brand-700 no-underline hover:underline">
         {children}
       </a>
